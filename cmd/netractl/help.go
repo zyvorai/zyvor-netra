@@ -53,6 +53,8 @@ func helpSections() []helpSection {
 				{"ebpf kernel-network [5m]", "Windowed kernel network pressure"},
 				{"ebpf attachments [--node N]", "BPF programs attached per interface + hook drift"},
 				{"netlink state|events|findings …", "Route, link, address and neighbor changes + what is wrong now"},
+				{"metrics nodes|contexts|query|top|anomalies|alerts", "Per-second host, network, workload and app metrics"},
+				{"metrics ack|silence|unsilence", "Acknowledge or silence metric alerts (notifications only)"},
 				{"ebpf sysctl-audit | dns-findings | scan-findings", "Hardening + detectors"},
 				{"ebpf coverage | census | maps | capabilities", "Hook coverage + map inventory"},
 				{"drops [explain]", "Drop explain from policy + kernel"},
@@ -156,6 +158,8 @@ func usagePlain(w io.Writer) {
   fleet | fleet-clusters | fleet-tenants | node-resources | handoff [--format markdown|json] | scorecard | talkers
   netlink state|events [--node NODE] [--kind link|address|route|neighbor|overrun] [--since 30m] [--limit N]
   netlink findings [--node NODE] [--window 15m]
+  metrics nodes|contexts|query CONTEXT|top|anomalies|alerts [--node N] [--after -600] [--points N] [--group-by dimension|chart|node|label:KEY] [--json]
+  metrics ack ALERT_ID | metrics silence [--rule G] [--node G] [--chart G] --for 2h [--comment T] | metrics unsilence ID
   namespaces | protocols | baselines | ports | dnsboard | lease
   capture start NODE [--protocol tcp|udp|icmp|icmpv6] [--host IP] [--port N] [--snaplen N] [--max-pps N] [--duration 60s]
   capture stop NODE | capture status

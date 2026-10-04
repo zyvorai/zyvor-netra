@@ -6,6 +6,7 @@ package kube
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/url"
 	"strings"
 	"time"
@@ -40,17 +41,31 @@ func EventLimitations() []string {
 	}
 }
 
+const maxWarningEvents = 200
+
+var errListDone = errors.New("list done")
+
 // ListWarningEvents lists pod Warning events. ns empty means all namespaces.
 func (c *Client) ListWarningEvents(ctx context.Context, ns string) ([]WorkloadEvent, error) {
 	p := "/api/v1/events?fieldSelector=" + url.QueryEscape("type=Warning,involvedObject.kind=Pod")
 	if strings.TrimSpace(ns) != "" {
 		p = "/api/v1/namespaces/" + esc(ns) + "/events?fieldSelector=" + url.QueryEscape("type=Warning,involvedObject.kind=Pod")
 	}
-	b, err := c.do(ctx, "GET", p, nil, "")
-	if err != nil {
+	var out []WorkloadEvent
+	err := c.listPages(ctx, p, func(b []byte) error {
+		out = append(out, ParseWarningEvents(b)...)
+		if len(out) >= maxWarningEvents {
+			return errListDone
+		}
+		return nil
+	})
+	if err != nil && !errors.Is(err, errListDone) {
 		return nil, err
 	}
-	return ParseWarningEvents(b), nil
+	if len(out) > maxWarningEvents {
+		out = out[:maxWarningEvents]
+	}
+	return out, nil
 }
 
 // ParseWarningEvents decodes a core v1 EventList and keeps pod warnings.
@@ -99,7 +114,7 @@ func ParseWarningEvents(b []byte) []WorkloadEvent {
 		ev.Message = msg
 		ev.MessageOmitted = omit
 		out = append(out, ev)
-		if len(out) >= 200 {
+		if len(out) >= maxWarningEvents {
 			break
 		}
 	}

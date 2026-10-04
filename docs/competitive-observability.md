@@ -2,8 +2,9 @@
 
 Internal product strategy. Compares Netra to products that do the same
 job: Cilium Hubble, Microsoft Retina, Red Hat Network Observability,
-Pixie, DeepFlow, Grafana Beyla, Coroot, Tetragon, and commercial network
-performance monitoring (Datadog NPM, Kentik).
+Pixie, DeepFlow, Grafana Beyla, Coroot, Tetragon, commercial network
+performance monitoring (Datadog NPM, Kentik), and per-second infrastructure
+monitoring (Netdata).
 
 Not versus cloud SSE or perimeter NGFW. Those are already non-goals in
 [`competitive-sse.md`](competitive-sse.md) and
@@ -25,6 +26,27 @@ reasons, qdisc and softnet counters, a workload experience score, and a
 drop-incident context (node, CPU, memory, comm-only processes) beside a
 PCAP. The section below is what used to be missing, and what is still
 refused.
+
+### Versus Netdata
+
+| | **Netdata** | **Netra metrics platform** |
+|---|---|---|
+| Resolution | Per second, zero config | Per second, zero config ([`metrics.md`](metrics.md)) |
+| Storage | dbengine tiers on each agent and parent | Tier 0 on the agent (also the replay buffer); tiers 0/1/2 per node on netrad |
+| Collectors | Hundreds of plugins: host, containers, apps, databases, SNMP | Host, network stack, conntrack, cgroups, process groups, eBPF datapath, workload RED, nine app kinds plus any Prometheus endpoint ([`app-collectors.md`](app-collectors.md)) |
+| Databases | Native PostgreSQL, MySQL and more | Through postgres_exporter / mysqld_exporter; no driver or DB credentials in the agent |
+| ML | Per-dimension k-means, anomaly rate, metric correlations | Same approach in stdlib Go, plus KS-based "what changed" ([`anomaly-detection.md`](anomaly-detection.md)) |
+| Alerts | Health config language, hundreds of stock alerts | Netdata-style rule YAML and expressions, over 40 stock rules including workload RED and eBPF drops ([`metric-alerts.md`](metric-alerts.md)) |
+| Process view | apps.plugin groups by process name and command line | Groups by kernel comm only; never argv, cmdline or environ |
+| Network evidence | Charts only | A chart window links to flows, drop reasons, TCP/DNS/HTTP boards and captures from the same eBPF datapath |
+| Workload context | Container and cgroup charts | Per-workload RED series from datapath counters, alerted and scored with no configuration |
+| Fleet | Netdata Cloud (SaaS) or parents | netrad per cluster plus a read-only roll-up across `NETRA_FLEET_PEERS` |
+| Control | None (monitoring only) | Monitoring stays read-only; separate leased emergency enforcement |
+
+Netdata still wins on collector breadth, native database and SNMP
+collectors, and long-standing stock alert tuning. Netra's metrics are the
+host baseline joined to network evidence, not a replacement for every
+Netdata plugin.
 
 ## Where Netra is already stronger
 
@@ -133,6 +155,7 @@ Netra should not grow a second Hubble. See [`packetwolf.md`](packetwolf.md).
 ## See also
 
 - [flow-log.md](flow-log.md) — queryable flow history, RED, traces
+- [metrics.md](metrics.md) — per-second metrics, anomalies, metric alerts
 - [p0-p5-surfaces.md](p0-p5-surfaces.md) — shipped observe catalog
 - [competitive-sse.md](competitive-sse.md) — cloud SSE / Zero Trust, out of scope
 - [competitive-quantum.md](competitive-quantum.md) — perimeter NGFW, out of scope

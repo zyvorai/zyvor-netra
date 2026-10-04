@@ -191,6 +191,8 @@ func run(args []string) error {
 		return request("GET", "/api/v1/node-resources", nil)
 	case "netlink":
 		return netlinkCmd(args[1:])
+	case "metrics":
+		return metricsCmd(args[1:], os.Stdout)
 	case "handoff":
 		return handoffCmd(args[1:])
 	case "scorecard":

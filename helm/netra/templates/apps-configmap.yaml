@@ -1,0 +1,10 @@
+{{- if and .Values.agent.enabled .Values.metricsPlatform.apps.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: netra-apps
+  labels: {{- include "netra.labels" . | nindent 4 }}
+data:
+  apps.yaml: |
+{{ .Values.metricsPlatform.apps.config | indent 4 }}
+{{- end }}

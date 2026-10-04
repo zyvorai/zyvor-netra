@@ -42,6 +42,14 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: 'Metrics',
+    children: [
+      { page: 'metrics', label: 'Metrics', blurb: 'Per-second host, network, workload, app and eBPF charts, generated from what the agents collect.' },
+      { page: 'metric-anomalies', label: 'Anomalies', blurb: 'Per-dimension ML anomaly rates, and “what changed here?” for any window.' },
+      { page: 'metric-alerts', label: 'Metric Alerts', blurb: 'Threshold and anomaly-rate rules with hysteresis, silences and acknowledgements.' },
+    ],
+  },
+  {
     label: 'Security',
     children: [
       { page: 'incidents', label: 'Incidents', blurb: 'Health, drift, exposure, drops, and audit signals joined by shared source.' },

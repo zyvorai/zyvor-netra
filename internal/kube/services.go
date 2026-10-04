@@ -4,7 +4,6 @@ package kube
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -16,32 +15,27 @@ func (c *Client) ListServices(ctx context.Context, ns string) ([]models.ServiceI
 	if strings.TrimSpace(ns) != "" {
 		p = "/api/v1/namespaces/" + esc(ns) + "/services"
 	}
-	b, err := c.do(ctx, "GET", p, nil, "")
+	type serviceItem struct {
+		Metadata struct {
+			Name      string `json:"name"`
+			Namespace string `json:"namespace"`
+		} `json:"metadata"`
+		Spec struct {
+			ClusterIP string            `json:"clusterIP"`
+			Selector  map[string]string `json:"selector"`
+			Ports     []struct {
+				Name     string `json:"name"`
+				Port     uint16 `json:"port"`
+				Protocol string `json:"protocol"`
+			} `json:"ports"`
+		} `json:"spec"`
+	}
+	items, err := listItems[serviceItem](ctx, c, p)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list services: %w", err)
 	}
-	var list struct {
-		Items []struct {
-			Metadata struct {
-				Name      string `json:"name"`
-				Namespace string `json:"namespace"`
-			} `json:"metadata"`
-			Spec struct {
-				ClusterIP string            `json:"clusterIP"`
-				Selector  map[string]string `json:"selector"`
-				Ports     []struct {
-					Name     string `json:"name"`
-					Port     uint16 `json:"port"`
-					Protocol string `json:"protocol"`
-				} `json:"ports"`
-			} `json:"spec"`
-		} `json:"items"`
-	}
-	if err := json.Unmarshal(b, &list); err != nil {
-		return nil, fmt.Errorf("decode services: %w", err)
-	}
-	out := make([]models.ServiceInfo, 0, len(list.Items))
-	for _, it := range list.Items {
+	out := make([]models.ServiceInfo, 0, len(items))
+	for _, it := range items {
 		if it.Spec.ClusterIP == "" || strings.EqualFold(it.Spec.ClusterIP, "None") {
 			continue
 		}

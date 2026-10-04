@@ -20,6 +20,7 @@ const (
 	IntentExposure   Intent = "exposure"
 	IntentMode       Intent = "mode"
 	IntentCongestion Intent = "congestion"
+	IntentMetrics    Intent = "metrics"
 )
 
 // Classify maps a free-text question onto one Intent. Unknown or empty
@@ -37,6 +38,8 @@ func Classify(question string) Intent {
 		return IntentExposure
 	case containsAny(q, "enforce", "observe", "lease", "mode"):
 		return IntentMode
+	case containsAny(q, "metric", "anomal", "alert", "cpu", "memory", "disk", "spike"):
+		return IntentMetrics
 	default:
 		return IntentBrief
 	}
@@ -102,6 +105,28 @@ func specialize(b Brief, snap Snapshot, intent Intent) Brief {
 		} else {
 			b.Summary = itoa(snap.KernelCritical) + " critical and " + itoa(snap.KernelWarnings) + " warning kernel-network finding(s) across the stack. " + b.Summary
 		}
+	case IntentMetrics:
+		b.Headline = "Metric alerts and anomalies"
+		var alerts, anomalies []string
+		for _, f := range snap.Metrics {
+			if f.Kind == "metric-alert" {
+				alerts = append(alerts, f.Message)
+			} else {
+				anomalies = append(anomalies, f.Message)
+			}
+		}
+		lead := "No metric alerts are raised and no metric is anomalous right now. "
+		if len(alerts) > 0 || len(anomalies) > 0 {
+			lead = itoa(len(alerts)) + " metric alert(s) raised, " + itoa(len(anomalies)) + " anomalous metric(s). "
+			if len(alerts) > 0 {
+				lead += "Alerts: " + strings.Join(alerts, "; ") + ". "
+			}
+			if len(anomalies) > 0 {
+				lead += "Most anomalous: " + strings.Join(anomalies, "; ") + ". "
+			}
+			b.NextSteps = append([]string{"Open the evidence for a metric (netractl metrics evidence CONTEXT --node N, or GET /api/v1/metrics/evidence) to see the flows, drops and captures behind it."}, b.NextSteps...)
+		}
+		b.Summary = lead + b.Summary
 	}
 	return b
 }

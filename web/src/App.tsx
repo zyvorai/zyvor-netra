@@ -28,6 +28,9 @@ import CongestionMap from './pages/CongestionMap';
 import SysctlAudit from './pages/SysctlAudit';
 import NodeResources from './pages/NodeResources';
 import Workloads from './pages/Workloads';
+import Metrics from './pages/Metrics';
+import MetricAnomalies from './pages/MetricAnomalies';
+import MetricAlerts from './pages/MetricAlerts';
 import PageHero, { type HeroTint } from './components/PageHero';
 import Login from './components/Login';
 import { sessionAlive } from './api';
@@ -190,6 +193,24 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     lede: 'Filtered, time-bounded packet capture per node — full packet bytes by default. A standalone, fail-open eBPF observer; never affects the datapath verdict.',
     tint: 'red',
   },
+  metrics: {
+    eyebrow: 'Metrics',
+    title: 'Every metric, every second.',
+    lede: 'Host, network, workload, application and eBPF datapath metrics, collected per second on each node and streamed live. Dashboards build themselves from what the agents report.',
+    tint: 'green',
+  },
+  'metric-anomalies': {
+    eyebrow: 'Metrics',
+    title: 'What looks unusual, and what changed.',
+    lede: 'Every dimension has its own unsupervised model on the node. Drag across the timeline to rank the metrics that shifted most in that window.',
+    tint: 'purple',
+  },
+  'metric-alerts': {
+    eyebrow: 'Metrics',
+    title: 'Alerts that wait before they shout.',
+    lede: 'Threshold and anomaly-rate rules with delays and hysteresis, delivered through the configured alert channels. Alerts never change the datapath.',
+    tint: 'amber',
+  },
 };
 
 export default function App() {
@@ -285,6 +306,9 @@ export default function App() {
     fleet: <Fleet />,
     traffic: <Traffic />,
     capture: <Capture />,
+    metrics: <Metrics />,
+    'metric-anomalies': <MetricAnomalies />,
+    'metric-alerts': <MetricAlerts />,
   }[page];
 
   const hero = pageHero[page];

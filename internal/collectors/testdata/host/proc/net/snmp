@@ -1,0 +1,8 @@
+Ip: Forwarding DefaultTTL InReceives InHdrErrors InAddrErrors ForwDatagrams InUnknownProtos InDiscards InDelivers OutRequests OutDiscards OutNoRoutes
+Ip: 1 64 10000 0 0 0 0 0 10000 9000 0 0
+Icmp: InMsgs InErrors InCsumErrors OutMsgs OutErrors
+Icmp: 10 0 0 10 0
+Tcp: RtoAlgorithm RtoMin RtoMax MaxConn ActiveOpens PassiveOpens AttemptFails EstabResets CurrEstab InSegs OutSegs RetransSegs InErrs OutRsts InCsumErrors
+Tcp: 1 200 120000 -1 100 50 2 3 42 8000 7000 10 0 5 0
+Udp: InDatagrams NoPorts InErrors OutDatagrams RcvbufErrors SndbufErrors InCsumErrors IgnoredMulti
+Udp: 2000 1 0 2000 0 0 0 0

@@ -134,40 +134,34 @@ func (c *Client) DeletePolicy(ctx context.Context, ns, name string) error {
 }
 
 func (c *Client) ListWorkloads(ctx context.Context, node string) ([]models.WorkloadIdentity, error) {
-	p := "/api/v1/pods"
+	sel := activePodsSelector
 	if strings.TrimSpace(node) != "" {
-		q := url.Values{}
-		q.Set("fieldSelector", "spec.nodeName="+strings.TrimSpace(node))
-		p += "?" + q.Encode()
+		sel = "spec.nodeName=" + strings.TrimSpace(node) + "," + sel
 	}
-	b, err := c.do(ctx, "GET", p, nil, "")
+	p := "/api/v1/pods?" + url.Values{"fieldSelector": {sel}}.Encode()
+	type podItem struct {
+		Metadata struct {
+			UID       string            `json:"uid"`
+			Name      string            `json:"name"`
+			Namespace string            `json:"namespace"`
+			Labels    map[string]string `json:"labels"`
+			Owners    []struct {
+				Kind       string `json:"kind"`
+				Name       string `json:"name"`
+				Controller bool   `json:"controller"`
+			} `json:"ownerReferences"`
+		} `json:"metadata"`
+		Spec struct {
+			NodeName           string `json:"nodeName"`
+			ServiceAccountName string `json:"serviceAccountName"`
+		} `json:"spec"`
+	}
+	items, err := listItems[podItem](ctx, c, p)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list pod inventory: %w", err)
 	}
-	var list struct {
-		Items []struct {
-			Metadata struct {
-				UID       string            `json:"uid"`
-				Name      string            `json:"name"`
-				Namespace string            `json:"namespace"`
-				Labels    map[string]string `json:"labels"`
-				Owners    []struct {
-					Kind       string `json:"kind"`
-					Name       string `json:"name"`
-					Controller bool   `json:"controller"`
-				} `json:"ownerReferences"`
-			} `json:"metadata"`
-			Spec struct {
-				NodeName           string `json:"nodeName"`
-				ServiceAccountName string `json:"serviceAccountName"`
-			} `json:"spec"`
-		} `json:"items"`
-	}
-	if err := json.Unmarshal(b, &list); err != nil {
-		return nil, fmt.Errorf("decode pod inventory: %w", err)
-	}
-	out := make([]models.WorkloadIdentity, 0, len(list.Items))
-	for _, pod := range list.Items {
+	out := make([]models.WorkloadIdentity, 0, len(items))
+	for _, pod := range items {
 		w := models.WorkloadIdentity{
 			UID: pod.Metadata.UID, Namespace: pod.Metadata.Namespace, Pod: pod.Metadata.Name,
 			Node: pod.Spec.NodeName, Labels: pod.Metadata.Labels,

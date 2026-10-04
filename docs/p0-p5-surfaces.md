@@ -237,6 +237,25 @@ Prometheus keeps one unlabeled gauge, `netra_flowlog_records`. Detail: [`flow-lo
 
 ---
 
+## Per-second metrics platform
+
+Netdata-class host, network, cgroup, process-group, eBPF and application metrics, collected every second, streamed to netrad and kept in tiers (1 s for 1 h, 1 min for 14 days, 1 h for a year by default). Read-only collectors, and alerts that only notify.
+
+| Surface | How it works | API |
+|---|---|---|
+| **Metrics** | Collectors read `/proc`, `/sys`, cgroup v2 and the agent's own report; Gorilla-compressed tiered store; Netdata-style query (`group`, `group_by`, `points`) | `GET /api/v1/metrics/{nodes,contexts,data,stream}` |
+| **Workload RED series** | Per-second `workload.red_*` per namespace/workload from datapath counters | contexts `workload.red_*` |
+| **Anomalies** | Per-dimension k-means (stdlib), anomaly rate per bucket, KS correlation for a highlighted range | `GET /api/v1/metrics/anomalies` |
+| **Metric alerts** | YAML rules with Netdata-style expressions and hysteresis; ack and silence only change notification state | `GET /api/v1/metrics/alerts` |
+| **Evidence** | Flows, drop reasons, TCP/DNS/HTTP boards, captures and co-anomalies behind a chart window | `GET /api/v1/metrics/evidence` |
+| **Fleet roll-up** | This cluster plus `NETRA_FLEET_PEERS` summaries, best-effort | `GET /api/v1/metrics/{summary,fleet}` |
+| **Exporters** | Prometheus remote write, OTLP JSON, Graphite; credentials from env only | `GET /api/v1/metrics/exporters` |
+| **App collectors** | nginx, apache, haproxy, redis, memcached, envoy, coredns, etcd, any Prometheus endpoint; optional comm + socket discovery | contexts `<kind>.*`, `apps.up` |
+
+Bounds: process groups are named by comm (never argv, cmdline or environ); app credentials come from operator env vars, never Kubernetes Secrets via the API; alerts and AI findings never change mode, rules or policy. Detail: [`metrics.md`](metrics.md), [`metric-alerts.md`](metric-alerts.md), [`anomaly-detection.md`](anomaly-detection.md), [`app-collectors.md`](app-collectors.md). UX: Metrics page (charts, anomalies, alerts, evidence). CI: `scripts/ci-metrics-unit.sh`, `scripts/ci-metrics-veth.sh`.
+
+---
+
 ## Data-flow sketch (encrypted path)
 
 ```text
@@ -268,3 +287,4 @@ cgroup egress skb
 - [`l7-metadata.md`](l7-metadata.md) — L7 metadata limits  
 - [`packetwolf.md`](packetwolf.md) — durable microseg ownership  
 - [`firewall.md`](firewall.md) — lease model for any apply path  
+- [`metrics.md`](metrics.md) — per-second metrics platform  

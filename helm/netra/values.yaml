@@ -376,6 +376,63 @@ agent:
   # kfree_skb drop-reason sensor both report "unavailable". Set false only on a
   # node image with no /sys/kernel/tracing directory (the pod would not start).
   hostTracefs: true
+# Per-second metrics platform (docs/metrics.md): collectors on every agent,
+# streamed into tiered stores on netrad, ML anomaly flags, metric alerts.
+# Separate from metrics: above, which is netrad's own Prometheus /metrics.
+metricsPlatform:
+  enabled: true
+  # netrad store directory; default <state dir>/metrics (on the PVC when
+  # persistence is enabled), "-" keeps everything in memory.
+  dir: ""
+  tier0Retention: 1h      # 1-second samples, in memory
+  tier1Retention: 336h    # 1-minute rollups
+  tier2Retention: 8760h   # 1-hour rollups
+  # Keep below persistence.size: the state file shares the volume.
+  diskQuotaMb: 512
+  maxSeries: 50000        # per node
+  maxNodes: 2000
+  # Score anomalies on netrad too (for agents running with agent.ml=false).
+  parentMl: false
+  agent:
+    ml: true              # per-dimension k-means anomaly models on the node
+    tier0Retention: 1h    # also the replay buffer when netrad is unreachable
+    maxSeries: 20000
+    processGroups: true   # per-comm CPU/memory/IO; never argv or environ
+    processGroupsMax: 40
+    # Chart every container cgroup too (about 3x the cgroup series; the
+    # pod cgroup already includes its containers).
+    cgroupContainers: false
+  # Application collectors on each agent (docs/app-collectors.md).
+  apps:
+    # Find nginx/apache/haproxy/redis/memcached/envoy/coredns/etcd and
+    # *_exporter processes listening in the host network namespace. Reads
+    # /proc/<pid>/comm and socket inodes only (never cmdline); turns on
+    # hostPID for the agent.
+    discovery: false
+    every: 5s
+    # YAML with a top-level apps: list, mounted at /etc/netra/apps/apps.yaml.
+    config: ""
+    # Secret exposed to the agent as environment variables; reference its
+    # keys from config with password_env / bearer_env / username_env.
+    existingSecret: ""
+  alerts:
+    enabled: true
+    defaults: true        # built-in rule pack (docs/metric-alerts.md)
+    # Extra rules (YAML with a top-level alerts: list), mounted at
+    # /etc/netra/metricalert.d. A rule with a built-in name replaces it.
+    rules: ""
+  # Ship stored metrics elsewhere (docs/metrics.md#exporting). Each sink is
+  # off until its target is set. Auth headers come only from existingSecret
+  # (keys: prometheus-rw-headers, otlp-headers), as "K=V,K2=V2".
+  export:
+    resolution: 10s
+    contexts: ""          # comma-separated globs; empty exports everything
+    exclude: ""
+    prefix: netra
+    existingSecret: ""
+    prometheusRemoteWriteUrl: ""   # e.g. http://prometheus:9090/api/v1/write
+    otlpEndpoint: ""               # e.g. http://otel-collector:4318
+    graphiteAddr: ""               # e.g. graphite:2003
 persistence:
   enabled: true
   existingClaim: ""

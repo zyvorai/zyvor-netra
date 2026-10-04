@@ -39,6 +39,9 @@ import (
 	"github.com/zyvorai/netra/internal/kerneldiag"
 	"github.com/zyvorai/netra/internal/kube"
 	"github.com/zyvorai/netra/internal/l7"
+	"github.com/zyvorai/netra/internal/metricalert"
+	"github.com/zyvorai/netra/internal/metricexport"
+	"github.com/zyvorai/netra/internal/metricstream"
 	"github.com/zyvorai/netra/internal/models"
 	"github.com/zyvorai/netra/internal/mtls"
 	"github.com/zyvorai/netra/internal/nsdrift"
@@ -84,6 +87,9 @@ type Server struct {
 	autoMitigate        *automitigate.Engine
 	tlsFP               *tlsfp.Detector
 	workloadInventory   *workloadInventoryCache
+	metricsHub          *metricstream.Hub
+	metricAlerts        *metricalert.Engine
+	metricExporters     func() []metricexport.Status
 }
 
 func New(log *slog.Logger, k *kube.Client, h *hubble.Client, st *store.Store) *Server {
@@ -432,6 +438,20 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /api/v1/ai/explain", s.auth(http.HandlerFunc(s.aiExplain)))
 	mux.Handle("POST /api/v1/ai/agent", s.auth(http.HandlerFunc(s.aiAgent)))
 	mux.Handle("POST /api/v1/agents/report", s.agentAuth(http.HandlerFunc(s.agentReport)))
+	mux.Handle("POST /api/v1/agents/metrics", s.agentAuth(http.HandlerFunc(s.agentMetricsIngest)))
+	mux.Handle("GET /api/v1/metrics/nodes", s.auth(http.HandlerFunc(s.metricsNodes)))
+	mux.Handle("GET /api/v1/metrics/contexts", s.auth(http.HandlerFunc(s.metricsContexts)))
+	mux.Handle("GET /api/v1/metrics/data", s.auth(http.HandlerFunc(s.metricsQuery)))
+	mux.Handle("GET /api/v1/metrics/stream", s.auth(http.HandlerFunc(s.metricsStream)))
+	mux.Handle("GET /api/v1/metrics/anomalies", s.auth(http.HandlerFunc(s.metricsAnomalies)))
+	mux.Handle("GET /api/v1/metrics/evidence", s.auth(http.HandlerFunc(s.metricsEvidence)))
+	mux.Handle("GET /api/v1/metrics/summary", s.auth(http.HandlerFunc(s.metricsSummary)))
+	mux.Handle("GET /api/v1/metrics/fleet", s.auth(http.HandlerFunc(s.metricsFleet)))
+	mux.Handle("GET /api/v1/metrics/alerts", s.auth(http.HandlerFunc(s.metricsAlerts)))
+	mux.Handle("GET /api/v1/metrics/exporters", s.auth(http.HandlerFunc(s.metricsExporters)))
+	mux.Handle("POST /api/v1/metrics/alerts/silences", s.auth(http.HandlerFunc(s.metricsAlertSilence)))
+	mux.Handle("DELETE /api/v1/metrics/alerts/silences/{id}", s.auth(http.HandlerFunc(s.metricsAlertUnsilence)))
+	mux.Handle("POST /api/v1/metrics/alerts/{id}/ack", s.auth(http.HandlerFunc(s.metricsAlertAck)))
 	mux.HandleFunc("/", s.serveWeb)
 	return requestLog(s.log, s.metricsData, securityHeaders(mux))
 }

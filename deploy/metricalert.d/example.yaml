@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+#
+# Example local metric alert rules. Copy into the directory named by
+# NETRA_METRICALERT_DIR (default /etc/netra/metricalert.d) or pass through
+# Helm as metricsPlatform.alerts.rules. Syntax: docs/metric-alerts.md.
+alerts:
+  # Tighten a built-in rule by reusing its name.
+  - alarm: ram_in_use
+    on: mem.used_percent
+    lookup: average -1m
+    units: "%"
+    warn: '$this > (($status >= $WARNING) ? 75 : 80)'
+    crit: $this > 90
+    delay_down: 15m
+
+  # Turn off a built-in rule.
+  - alarm: cpu_steal_high
+    enabled: false
+
+  # Workload-scoped rule: only pods in the payments namespace.
+  - alarm: payments_cpu_throttling
+    on: cgroup.throttled
+    labels: {namespace: payments}
+    lookup: average -5m
+    units: periods/s
+    warn: $this > 1
+    crit: $this > 20
+    delay_down: 10m
+    info: payments workloads are hitting their CPU quota

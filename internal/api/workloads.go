@@ -13,7 +13,7 @@ import (
 
 func (s *Server) listPods(w http.ResponseWriter, r *http.Request) {
 	ns := strings.TrimSpace(r.URL.Query().Get("namespace"))
-	items, err := s.kube.ListPods(r.Context(), ns)
+	items, err := s.kube.ListAllPods(r.Context(), ns)
 	if err != nil {
 		errorJSON(w, 502, err.Error())
 		return

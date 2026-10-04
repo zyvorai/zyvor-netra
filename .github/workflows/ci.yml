@@ -109,6 +109,14 @@ jobs:
       # the controller carry-forward. The real-kernel half runs in the `ebpf` job.
       # Same command locally: ./scripts/ci-bpfattach-unit.sh
       run: ./scripts/ci-bpfattach-unit.sh
+    - name: Metrics platform unit + race (scripted)
+      # Per-second metrics: tiered Gorilla store, collectors against /proc and /sys
+      # fixtures (process groups never read cmdline/environ), app collectors against
+      # fake endpoints, host-netns discovery, workload RED, the agent stream, ML
+      # anomalies, metric alerts, exporters, and the query/evidence/fleet/AI APIs.
+      # The real-kernel half runs in `metrics-veth-smoke`.
+      # Same command locally: ./scripts/ci-metrics-unit.sh
+      run: ./scripts/ci-metrics-unit.sh
     - name: Deploy guards (scripted)
       # deploy-remote.sh imports images under a fixed tag and kubelet's image GC can
       # remove one before its pod starts (ImagePullBackOff, helm still "succeeds").
@@ -647,6 +655,21 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y iperf3 iproute2
     - name: Flow observe veth + iperf3 smoke
       run: sudo -E env "PATH=$PATH" "HOME=$HOME" "GOPATH=${GOPATH:-$HOME/go}" "GOMODCACHE=${GOMODCACHE:-}" "GOCACHE=${GOCACHE:-}" ./scripts/ci-flow-observe-veth.sh
+  metrics-veth-smoke:
+    # Privileged Linux smoke for the per-second metrics platform: the real host
+    # collectors, anomaly detector and stream sender feed a real netrad; iperf3
+    # load on a veth must move net.net and TCP series, get flagged as anomalous
+    # after a quiet training phase, and fire a mounted metric alert rule. No eBPF.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-go@v7
+      with: {go-version: '1.27.1', cache: true}
+    - name: Install iperf3
+      run: sudo apt-get update && sudo apt-get install -y iperf3 iproute2
+    - name: Metrics veth + iperf3 smoke
+      run: sudo -E env "PATH=$PATH" "HOME=$HOME" "GOPATH=${GOPATH:-$HOME/go}" "GOMODCACHE=${GOMODCACHE:-}" "GOCACHE=${GOCACHE:-}" ./scripts/ci-metrics-veth.sh
   netlink-veth-smoke:
     # Privileged Linux smoke for the read-only RTNL change recorder. Runs the
     # real recorder against a real kernel inside a throwaway network namespace:

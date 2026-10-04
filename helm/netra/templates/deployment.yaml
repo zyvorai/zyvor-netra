@@ -397,8 +397,68 @@ spec:
           value: {{ .Values.alerting.autoCapture.maxSessionMb | quote }}
         {{- end }}
         {{- end }}
+        {{- with .Values.metricsPlatform }}
+        - name: NETRA_METRICS_ENABLED
+          value: {{ .enabled | quote }}
+        {{- if .dir }}
+        - name: NETRA_METRICS_DIR
+          value: {{ .dir | quote }}
+        {{- end }}
+        - name: NETRA_METRICS_TIER0_RETENTION
+          value: {{ .tier0Retention | quote }}
+        - name: NETRA_METRICS_TIER1_RETENTION
+          value: {{ .tier1Retention | quote }}
+        - name: NETRA_METRICS_TIER2_RETENTION
+          value: {{ .tier2Retention | quote }}
+        - name: NETRA_METRICS_DISK_QUOTA_MB
+          value: {{ .diskQuotaMb | quote }}
+        - name: NETRA_METRICS_MAX_SERIES
+          value: {{ .maxSeries | quote }}
+        - name: NETRA_METRICS_MAX_NODES
+          value: {{ .maxNodes | quote }}
+        - name: NETRA_METRICS_PARENT_ML
+          value: {{ .parentMl | quote }}
+        - name: NETRA_METRICALERT_ENABLED
+          value: {{ .alerts.enabled | quote }}
+        - name: NETRA_METRICALERT_DEFAULTS
+          value: {{ .alerts.defaults | quote }}
+        {{- with .export }}
+        {{- if or .prometheusRemoteWriteUrl .otlpEndpoint .graphiteAddr }}
+        - name: NETRA_EXPORT_RESOLUTION
+          value: {{ .resolution | quote }}
+        - name: NETRA_EXPORT_CONTEXTS
+          value: {{ .contexts | quote }}
+        - name: NETRA_EXPORT_EXCLUDE
+          value: {{ .exclude | quote }}
+        - name: NETRA_EXPORT_PREFIX
+          value: {{ .prefix | quote }}
+        {{- end }}
+        {{- if .prometheusRemoteWriteUrl }}
+        - name: NETRA_EXPORT_PROMETHEUS_RW_URL
+          value: {{ .prometheusRemoteWriteUrl | quote }}
+        {{- if .existingSecret }}
+        - name: NETRA_EXPORT_PROMETHEUS_RW_HEADERS
+          valueFrom:
+            secretKeyRef: {name: {{ .existingSecret | quote }}, key: prometheus-rw-headers, optional: true}
+        {{- end }}
+        {{- end }}
+        {{- if .otlpEndpoint }}
+        - name: NETRA_EXPORT_OTLP_ENDPOINT
+          value: {{ .otlpEndpoint | quote }}
+        {{- if .existingSecret }}
+        - name: NETRA_EXPORT_OTLP_HEADERS
+          valueFrom:
+            secretKeyRef: {name: {{ .existingSecret | quote }}, key: otlp-headers, optional: true}
+        {{- end }}
+        {{- end }}
+        {{- if .graphiteAddr }}
+        - name: NETRA_EXPORT_GRAPHITE_ADDR
+          value: {{ .graphiteAddr | quote }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
         resources: {{- toYaml .Values.resources | nindent 10 }}
-        {{- if or .Values.tls.enabled .Values.persistence.enabled .Values.gitops.enabled .Values.alerting.autoCapture.enabled }}
+        {{- if or .Values.tls.enabled .Values.persistence.enabled .Values.gitops.enabled .Values.alerting.autoCapture.enabled .Values.metricsPlatform.alerts.rules }}
         volumeMounts:
         {{- if .Values.tls.enabled }}
         - {name: tls-certs, mountPath: /certs, readOnly: true}
@@ -417,6 +477,11 @@ spec:
         {{- if .Values.gitops.enabled }}
         - name: gitops-manifests
           mountPath: {{ .Values.gitops.dir | quote }}
+          readOnly: true
+        {{- end }}
+        {{- if .Values.metricsPlatform.alerts.rules }}
+        - name: metricalert-rules
+          mountPath: /etc/netra/metricalert.d
           readOnly: true
         {{- end }}
         {{- end }}
@@ -454,7 +519,7 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 10
           timeoutSeconds: 5
-      {{- if or .Values.tls.enabled .Values.persistence.enabled .Values.gitops.enabled .Values.alerting.autoCapture.enabled }}
+      {{- if or .Values.tls.enabled .Values.persistence.enabled .Values.gitops.enabled .Values.alerting.autoCapture.enabled .Values.metricsPlatform.alerts.rules }}
       volumes:
       {{- if .Values.tls.enabled }}
       - {name: tls-certs, emptyDir: {}}
@@ -482,5 +547,10 @@ spec:
       # keeps this directory in sync with a Git ref. netrad only ever reads
       # from it (readOnly mount above); the chart stays Git-agnostic.
       - {name: gitops-manifests, emptyDir: {}}
+      {{- end }}
+      {{- if .Values.metricsPlatform.alerts.rules }}
+      - name: metricalert-rules
+        configMap:
+          name: netra-metricalert
       {{- end }}
       {{- end }}

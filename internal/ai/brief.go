@@ -41,10 +41,11 @@ func BuildBrief(snap Snapshot) Brief {
 }
 
 func collectFindings(snap Snapshot) []Finding {
-	out := make([]Finding, 0, len(snap.Anomalies)+len(snap.Drift)+len(snap.Exposure)+4)
+	out := make([]Finding, 0, len(snap.Anomalies)+len(snap.Drift)+len(snap.Exposure)+len(snap.Metrics)+4)
 	out = append(out, snap.Anomalies...)
 	out = append(out, snap.Drift...)
 	out = append(out, snap.Exposure...)
+	out = append(out, snap.Metrics...)
 	if snap.AgentsStale > 0 {
 		out = append(out, Finding{
 			Severity: "warning",

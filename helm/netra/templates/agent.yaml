@@ -15,14 +15,15 @@ spec:
       serviceAccountName: netra-agent
       automountServiceAccountToken: false
       hostNetwork: true
-      {{- if or .Values.agent.procMetaEnabled (and .Values.agent.tlsUprobes (ne (.Values.agent.tlsUprobes | toString) "off")) }}
+      {{- if or .Values.agent.procMetaEnabled (and .Values.agent.tlsUprobes (ne (.Values.agent.tlsUprobes | toString) "off")) .Values.metricsPlatform.apps.discovery }}
       # Required for internal/procmeta to resolve a host PID's /proc entry
       # from inside the agent container. This is a real expansion of what
       # the already-privileged agent can see (every host process's /proc,
       # not just what eBPF hooks already surface) — see
       # docs/process-metadata.md. Off unless agent.procMetaEnabled is set. TLS
       # plaintext sampling (agent.tlsUprobes) needs it too, to find the libssl
-      # every other workload maps (docs/tls-plaintext.md).
+      # every other workload maps (docs/tls-plaintext.md). App discovery
+      # (metricsPlatform.apps.discovery) matches host listeners to comm.
       hostPID: true
       {{- end }}
       dnsPolicy: ClusterFirstWithHostNet
@@ -103,6 +104,28 @@ spec:
         - name: NETRA_L7_SAMPLE_GAP
           value: {{ .Values.agent.l7SampleGap | quote }}
         {{- end }}
+        {{- with .Values.metricsPlatform }}
+        - name: NETRA_METRICS_ENABLED
+          value: {{ .enabled | quote }}
+        - name: NETRA_METRICS_ML
+          value: {{ .agent.ml | quote }}
+        - name: NETRA_METRICS_TIER0_RETENTION
+          value: {{ .agent.tier0Retention | quote }}
+        - name: NETRA_METRICS_MAX_SERIES
+          value: {{ .agent.maxSeries | quote }}
+        - name: NETRA_METRICS_PROCESS_GROUPS
+          value: {{ .agent.processGroups | quote }}
+        - name: NETRA_METRICS_PROCESS_GROUPS_MAX
+          value: {{ .agent.processGroupsMax | quote }}
+        - name: NETRA_METRICS_CGROUP_CONTAINERS
+          value: {{ .agent.cgroupContainers | default false | quote }}
+        - name: NETRA_APPS_DISCOVERY
+          value: {{ .apps.discovery | quote }}
+        - name: NETRA_APPS_EVERY
+          value: {{ .apps.every | quote }}
+        - name: NETRA_APPS_CONFIG
+          value: /etc/netra/apps/apps.yaml
+        {{- end }}
         - name: NODE_NAME
           valueFrom:
             fieldRef:
@@ -112,7 +135,17 @@ spec:
             secretKeyRef:
               name: {{ include "netra.authSecretName" . }}
               key: agent-key
+        {{- with .Values.metricsPlatform.apps.existingSecret }}
+        envFrom:
+        - secretRef:
+            name: {{ . | quote }}
+        {{- end }}
         volumeMounts:
+        {{- if .Values.metricsPlatform.apps.config }}
+        - name: apps-config
+          mountPath: /etc/netra/apps
+          readOnly: true
+        {{- end }}
         - name: bpffs
           mountPath: /sys/fs/bpf
           mountPropagation: Bidirectional
@@ -133,6 +166,11 @@ spec:
           readOnly: true
         {{- end }}
       volumes:
+      {{- if .Values.metricsPlatform.apps.config }}
+      - name: apps-config
+        configMap:
+          name: netra-apps
+      {{- end }}
       - name: bpffs
         hostPath:
           path: /sys/fs/bpf

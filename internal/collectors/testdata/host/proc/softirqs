@@ -1,0 +1,5 @@
+                    CPU0       CPU1
+          HI:          1          2
+       TIMER:        100        200
+      NET_TX:         10         20
+      NET_RX:       1000       2000

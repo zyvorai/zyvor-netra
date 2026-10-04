@@ -51,7 +51,11 @@ type Snapshot struct {
 	Anomalies       []Finding    `json:"anomalies,omitempty"`
 	Drift           []Finding    `json:"drift,omitempty"`
 	Exposure        []Finding    `json:"exposure,omitempty"`
-	SuggestedNext   []string     `json:"suggestedNext,omitempty"`
+	// Metrics are raised metric alerts (Kind "metric-alert", Subject the
+	// rule name) and the most anomalous per-second metrics (Kind
+	// "metric-anomaly") from the metrics platform, when netrad runs it.
+	Metrics       []Finding `json:"metrics,omitempty"`
+	SuggestedNext []string  `json:"suggestedNext,omitempty"`
 }
 
 // NamedCount is a compact label/value pair used in top-N lists.

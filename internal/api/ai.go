@@ -291,6 +291,8 @@ func (s *Server) aiSnapshot(r *http.Request) (ai.Snapshot, error) {
 		})
 	}
 
+	snap.Metrics = s.metricFindings(now)
+
 	graph, err := s.dependencyGraph(r, 2000)
 	if err == nil {
 		external := 0

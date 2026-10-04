@@ -108,7 +108,13 @@ func main() {
 	scanDet, scanInterval, scanEnabled := buildScanDetect()
 	autoEng, autoEnabled := buildAutoMitigate(log, st, scanDet)
 	wobs := buildWorkloadObs(log)
-	handler := api.New(log, k, h, st).WithOIDC(buildOIDC(log)).WithWorkloadObs(wobs).WithGitOps(gr).WithDNSDetect(dnsDet).WithScanDetect(scanDet).WithAutoMitigate(autoEng).WithArtifacts(artifacts).Handler()
+	metrics := buildMetrics(log, stateFile, dispatcher)
+	handler := api.New(log, k, h, st).WithOIDC(buildOIDC(log)).WithWorkloadObs(wobs).WithGitOps(gr).WithDNSDetect(dnsDet).WithScanDetect(scanDet).WithAutoMitigate(autoEng).WithArtifacts(artifacts).WithMetrics(metrics.hubOrNil()).WithMetricAlerts(metrics.alertsOrNil()).WithMetricExporters(metrics.exporterStatus).Handler()
+	var metricsWG sync.WaitGroup
+	if stop := metrics.start(ctx, &metricsWG); stop != nil {
+		defer metricsWG.Wait()
+		defer stop()
+	}
 
 	if shouldRunAlertPoller(dispatcher) {
 		var pollerWG sync.WaitGroup
@@ -840,12 +846,19 @@ func electionLoop(
 	var scanDetectWG sync.WaitGroup
 	var autoMitigateCancel func()
 	var autoMitigateWG sync.WaitGroup
+	var metricsCancel func()
+	var metricsWG sync.WaitGroup
 
 	demote := func(reason string) {
 		if !gate.IsLeader() {
 			return
 		}
 		gate.Demote()
+		if metricsCancel != nil {
+			metricsCancel()
+			metricsWG.Wait()
+			metricsCancel = nil
+		}
 		if pollerCancel != nil {
 			pollerCancel()
 			pollerWG.Wait()
@@ -950,7 +963,11 @@ func electionLoop(
 		scanDet, scanInterval, scanEnabled := buildScanDetect()
 		autoEng, autoEnabled := buildAutoMitigate(log, st, scanDet)
 		wobs := buildWorkloadObs(log)
-		apiHandler := api.New(log, k, h, st).WithOIDC(buildOIDC(log)).WithWorkloadObs(wobs).WithGitOps(gr).WithDNSDetect(dnsDet).WithScanDetect(scanDet).WithAutoMitigate(autoEng).WithArtifacts(artifacts).Handler()
+		metrics := buildMetrics(log, stateFile, dispatcher)
+		apiHandler := api.New(log, k, h, st).WithOIDC(buildOIDC(log)).WithWorkloadObs(wobs).WithGitOps(gr).WithDNSDetect(dnsDet).WithScanDetect(scanDet).WithAutoMitigate(autoEng).WithArtifacts(artifacts).WithMetrics(metrics.hubOrNil()).WithMetricAlerts(metrics.alertsOrNil()).WithMetricExporters(metrics.exporterStatus).Handler()
+		if stop := metrics.start(ctx, &metricsWG); stop != nil {
+			metricsCancel = stop
+		}
 		gate.Promote(apiHandler)
 		if shouldRunAlertPoller(dispatcher) {
 			pctx, cancel := context.WithCancel(ctx)

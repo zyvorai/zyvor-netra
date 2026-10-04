@@ -43,7 +43,7 @@ func TestListWorkloads(t *testing.T) {
 		if !strings.HasPrefix(r.URL.Path, "/api/v1/pods") {
 			t.Fatalf("path=%s", r.URL.Path)
 		}
-		if got := r.URL.Query().Get("fieldSelector"); got != "spec.nodeName=node-a" {
+		if got := r.URL.Query().Get("fieldSelector"); got != "spec.nodeName=node-a,"+activePodsSelector {
 			t.Fatalf("selector=%q", got)
 		}
 		w.Header().Set("Content-Type", "application/json")

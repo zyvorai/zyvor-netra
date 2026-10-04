@@ -170,6 +170,18 @@ A Congestion Map finding to a live, decoded, color-coded capture on the offendin
 
 More: [DNS, ICMP, behavior and rate insights](docs/diagnostics-overview.md).
 
+## Monitor
+
+**Per-second metrics, zero config.** Every node streams host, network stack, conntrack, cgroup, process-group, eBPF datapath and per-workload RED series to the controller, kept at 1 s for an hour, 1 min for two weeks and 1 h for a year. The **Metrics** page charts every context live, with an anomaly ribbon on each chart. [Metrics →](docs/metrics.md)
+
+- **Anomaly detection** on every dimension (unsupervised k-means, stdlib Go), plus "what changed here" ranking for any time range you drag across. [Anomalies →](docs/anomaly-detection.md)
+- **Metric alerts** with Netdata-style rules and hysteresis, over 40 built in (CPU, memory, disk, interfaces, TCP, conntrack, workload RED, eBPF drops), sent through your existing Slack, webhook or PagerDuty channels. [Alerts →](docs/metric-alerts.md)
+- **Evidence behind every chart**: a spike links straight to the flows, drop reasons, TCP/DNS/HTTP boards and captures from the same window. Metrics and packets in one place.
+- **App collectors** for nginx, Apache, HAProxy, Redis, memcached, Envoy, CoreDNS, etcd and any Prometheus endpoint, with optional discovery. [Apps →](docs/app-collectors.md)
+- **Export** to Prometheus remote write, OTLP or Graphite, and a read-only fleet roll-up across clusters.
+
+Collectors are read-only, process groups use the kernel comm only (never argv or environment), and alerts never touch enforcement.
+
 ## Contain
 
 Deny by IP, CIDR, port, DNS name, TLS SNI, UID or process, scoped to a namespace, pod, owner or label. Preview the blast radius first. Policy apply stays plan-token + risk confirm. [Firewall page →](docs/firewall.md)
@@ -203,7 +215,7 @@ Details: [Architecture and visibility boundaries](docs/architecture.md) · [Safe
 - **`netractl`** — the operator CLI. [Docs →](docs/netractl.md)
 - **MCP server** — 180 stdio tools (120 read, 60 opt-in mutating) for AI agents. [Docs →](docs/mcp-integration.md)
 - **Built-in AI briefs** — heuristic by default, optional OpenAI-compatible rewrite, read-only. [Docs →](docs/ai.md)
-- **Export** — SIEM (CEF, syslog, JSONL, OTLP), Prometheus, Grafana, Loki, Slack and Teams ChatOps.
+- **Export** — SIEM (CEF, syslog, JSONL, OTLP), Prometheus (scrape and remote write), Grafana, Loki, Graphite, Slack and Teams ChatOps.
 
 ## Netra or PacketWolf?
 
@@ -222,6 +234,7 @@ Rules: [docs/packetwolf.md](docs/packetwolf.md) · [Suite placement](https://zyv
 |---|---|
 | See everything Netra observes and controls | [Capabilities](docs/capabilities.md) · [Feature catalog](docs/p0-p5-surfaces.md) |
 | Understand diagnostics | [Diagnostics overview](docs/diagnostics-overview.md) |
+| Monitor nodes and workloads per second | [Metrics](docs/metrics.md) · [Metric alerts](docs/metric-alerts.md) · [Anomaly detection](docs/anomaly-detection.md) · [App collectors](docs/app-collectors.md) |
 | Understand the hooks and architecture | [Architecture](docs/architecture.md) · [Standalone eBPF](docs/standalone-ebpf.md) |
 | Install and configure | [Install guide](docs/install.md) · [Helm/manifests](deploy/README.md) · [Host readiness](docs/host-readiness.md) |
 | Operate it | [netractl](docs/netractl.md) · [High availability](docs/high-availability.md) |

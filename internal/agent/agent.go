@@ -232,6 +232,8 @@ type Agent struct {
 	// tlsErr is a NETRA_CA_FILE / NETRA_CLIENT_CERT problem found in New; Run
 	// returns it rather than starting an agent the controller would reject.
 	tlsErr error
+	// metrics is the per-second metrics pipeline; nil when disabled.
+	metrics *agentMetrics
 }
 
 func New(log *slog.Logger) *Agent {
@@ -294,6 +296,7 @@ func (a *Agent) Run(ctx context.Context) error {
 		a.startRTNLActor(ctx, a.netlinkWatch)
 	}
 	a.startBPFAttach()
+	a.startMetrics(ctx)
 	if a.l7Sampler != nil {
 		go a.l7Sampler.Run(ctx, a.l7Counters.Observe)
 	}
@@ -1228,7 +1231,7 @@ func (a *Agent) syncAndReport(ctx context.Context) error {
 	tlsSample := a.readTLSSample()
 	netlinkReport, commitNetlink := a.readNetlink()
 	bpfAttachReport, commitBPFAttach := a.readBPFAttach(time.Now().UTC())
-	if err := a.report(ctx, models.AgentReport{
+	rep := models.AgentReport{
 		Node: a.node, Mode: cfg.Mode, Interfaces: a.interfaces, XDPInterfaces: a.xdpInterfaces,
 		Hooks: append([]string(nil), a.hooks...), CgroupPath: a.cgroupPath, Standalone: true,
 		Stats: stats, TCPHealth: tcpHealth, TCPPressure: tcpPressure, ConnectLatency: connectLatency,
@@ -1247,7 +1250,9 @@ func (a *Agent) syncAndReport(ctx context.Context) error {
 		HostProcesses:      hostProcesses,
 		StackSamples:       stackSamplesFor(a.node, hostProcesses),
 		KernelNotes:        kernelNotes(a.node),
-	}); err != nil {
+	}
+	a.metrics.setLatest(&rep)
+	if err := a.report(ctx, rep); err != nil {
 		return err
 	}
 	commitNetlink()

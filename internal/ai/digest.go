@@ -57,6 +57,7 @@ type fingerprintComponents struct {
 	AnomalyKinds     []string
 	DriftKinds       []string
 	ExposureSeverity []string
+	MetricAlerts     []string
 }
 
 func fingerprintComponentsOf(snap Snapshot, sev string) fingerprintComponents {
@@ -77,7 +78,20 @@ func fingerprintComponentsOf(snap Snapshot, sev string) fingerprintComponents {
 	for _, f := range snap.Exposure {
 		c.ExposureSeverity = append(c.ExposureSeverity, strings.ToLower(f.Severity))
 	}
+	c.MetricAlerts = metricAlertRules(snap)
 	return c
+}
+
+// metricAlertRules lists raised metric alert rules for the fingerprint.
+// Metric anomalies are left out: their ranking moves every scrape.
+func metricAlertRules(snap Snapshot) []string {
+	var out []string
+	for _, f := range snap.Metrics {
+		if f.Kind == "metric-alert" {
+			out = append(out, strings.ToLower(f.Subject))
+		}
+	}
+	return out
 }
 
 var (
@@ -146,6 +160,9 @@ func Fingerprint(snap Snapshot, sev string) string {
 	for _, f := range snap.Exposure {
 		parts = append(parts, "e:"+strings.ToLower(f.Severity))
 	}
+	for _, r := range metricAlertRules(snap) {
+		parts = append(parts, "m:"+r)
+	}
 	sum := sha256.Sum256([]byte(strings.Join(parts, "|")))
 	return hex.EncodeToString(sum[:])[:12]
 }
@@ -165,6 +182,9 @@ func Suggestions(snap Snapshot) []string {
 	}
 	if snap.Blocked > 0 || len(snap.BlockReasons) > 0 {
 		out = append(out, "Why are packets being dropped?")
+	}
+	if hasKind(snap.Metrics, "metric-") {
+		out = append(out, "Which metrics are alerting or anomalous, and what explains them?")
 	}
 	if snap.HighExposure > 0 || snap.ExternalEdges > 0 {
 		out = append(out, "What is newly exposed outside the cluster?")
@@ -264,6 +284,12 @@ func explainFingerprintChange(prev, cur fingerprintComponents) []string {
 	}
 	for _, k := range setAdded(cur.ExposureSeverity, prev.ExposureSeverity) {
 		out = append(out, "exposure severity resolved: "+k)
+	}
+	for _, k := range setAdded(prev.MetricAlerts, cur.MetricAlerts) {
+		out = append(out, "metric alert raised: "+k)
+	}
+	for _, k := range setAdded(cur.MetricAlerts, prev.MetricAlerts) {
+		out = append(out, "metric alert cleared: "+k)
 	}
 	return out
 }

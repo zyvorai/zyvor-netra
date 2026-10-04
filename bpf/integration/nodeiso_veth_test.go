@@ -40,6 +40,11 @@ func TestNodeIsolationVethAttach(t *testing.T) {
 	run("link", "add", host, "type", "veth", "peer", "name", peer)
 	t.Cleanup(func() { _ = exec.Command("ip", "link", "del", host).Run() })
 	run("link", "set", peer, "netns", ns)
+	// IPv6 MLD/RS packets the kernel sends on a fresh link would land in the
+	// enforce counters (default deny) and make the totals racy.
+	if err := os.WriteFile("/proc/sys/net/ipv6/conf/"+host+"/disable_ipv6", []byte("1"), 0o644); err != nil {
+		t.Logf("disable IPv6 on %s: %v", host, err)
+	}
 	run("addr", "add", "10.250.77.1/30", "dev", host)
 	run("link", "set", host, "up")
 	run("-n", ns, "addr", "add", "10.250.77.2/30", "dev", peer)

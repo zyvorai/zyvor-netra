@@ -1,0 +1,6 @@
+anon 52428800
+file 41943040
+kernel 1048576
+sock 0
+pgfault 1000
+pgmajfault 10

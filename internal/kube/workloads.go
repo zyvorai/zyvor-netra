@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -49,37 +50,51 @@ func podStartAndRestarts(statuses []containerStatusJSON) (*time.Time, int) {
 	return started, restarts
 }
 
+// activePodsSelector skips pods that can no longer own traffic or a cgroup
+// (Evicted, Completed, failed Jobs). Clusters accumulate these by the
+// thousand, and their stale pod IPs may already belong to a new pod.
+const activePodsSelector = "status.phase!=Failed,status.phase!=Succeeded"
+
+// ListPods lists pods that are pending or running. ns empty means all
+// namespaces.
 func (c *Client) ListPods(ctx context.Context, ns string) ([]models.PodInfo, error) {
+	return c.listPods(ctx, ns, true)
+}
+
+// ListAllPods also includes terminated pods.
+func (c *Client) ListAllPods(ctx context.Context, ns string) ([]models.PodInfo, error) {
+	return c.listPods(ctx, ns, false)
+}
+
+func (c *Client) listPods(ctx context.Context, ns string, activeOnly bool) ([]models.PodInfo, error) {
 	p := "/api/v1/pods"
 	if strings.TrimSpace(ns) != "" {
 		p = "/api/v1/namespaces/" + esc(ns) + "/pods"
 	}
-	b, err := c.do(ctx, "GET", p, nil, "")
+	if activeOnly {
+		p += "?fieldSelector=" + url.QueryEscape(activePodsSelector)
+	}
+	type podItem struct {
+		Metadata struct {
+			Name, Namespace string
+			Labels          map[string]string             `json:"labels"`
+			OwnerReferences []struct{ Kind, Name string } `json:"ownerReferences"`
+		} `json:"metadata"`
+		Spec struct {
+			NodeName           string `json:"nodeName"`
+			ServiceAccountName string `json:"serviceAccountName"`
+		} `json:"spec"`
+		Status struct {
+			Phase, PodIP      string
+			ContainerStatuses []containerStatusJSON `json:"containerStatuses"`
+		} `json:"status"`
+	}
+	items, err := listItems[podItem](ctx, c, p)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list pods: %w", err)
 	}
-	var list struct {
-		Items []struct {
-			Metadata struct {
-				Name, Namespace string
-				Labels          map[string]string             `json:"labels"`
-				OwnerReferences []struct{ Kind, Name string } `json:"ownerReferences"`
-			} `json:"metadata"`
-			Spec struct {
-				NodeName           string `json:"nodeName"`
-				ServiceAccountName string `json:"serviceAccountName"`
-			} `json:"spec"`
-			Status struct {
-				Phase, PodIP      string
-				ContainerStatuses []containerStatusJSON `json:"containerStatuses"`
-			} `json:"status"`
-		} `json:"items"`
-	}
-	if err := json.Unmarshal(b, &list); err != nil {
-		return nil, fmt.Errorf("decode pods: %w", err)
-	}
-	out := make([]models.PodInfo, 0, len(list.Items))
-	for _, it := range list.Items {
+	out := make([]models.PodInfo, 0, len(items))
+	for _, it := range items {
 		ready := false
 		for _, cs := range it.Status.ContainerStatuses {
 			if cs.Ready {
