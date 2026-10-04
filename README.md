@@ -1,13 +1,13 @@
 # Netra
 
-[![CI](https://github.com/zyvorai/netra/actions/workflows/ci.yml/badge.svg)](https://github.com/zyvorai/netra/actions/workflows/ci.yml)
+[![CI](https://github.com/zyvorai/zyvor-netra/actions/workflows/ci.yml/badge.svg)](https://github.com/zyvorai/zyvor-netra/actions/workflows/ci.yml)
 [![License: Zyvor Production v1.0](https://img.shields.io/badge/License-Zyvor%20Production%20v1.0-orange.svg)](LICENSE)
-[![Version](https://img.shields.io/github/v/release/zyvorai/netra?label=version&color=informational)](CHANGELOG.md)
+[![Version](https://img.shields.io/github/v/release/zyvorai/zyvor-netra?label=version&color=informational)](CHANGELOG.md)
 
 [![Book a demo](https://img.shields.io/badge/Book_a_demo-0071e3?style=for-the-badge)](https://zyvor.dev/schedule?utm_source=github&utm_medium=netra&utm_campaign=readme_hero)
 [![30-day PoC](https://img.shields.io/badge/30--day_PoC-1d1d1f?style=for-the-badge)](https://zyvor.dev/poc?utm_source=github&utm_medium=netra&utm_campaign=readme_hero)
 
-![Netra — standalone eBPF network observability and emergency network control](docs/social/netra-share-card.png)
+![Netra — standalone eBPF network observability and emergency network control](docs/social/netra-hero-dark.jpg)
 
 ### See every packet's story. Contain the bad ones. Let go automatically.
 
@@ -15,7 +15,7 @@
 
 **Observe-first** · **Lease-bounded, fails open** · **No CNI required** · **No payload collection**
 
-📖 **[Read the full docs](https://zyvorai.github.io/netra/)** — quickstart, architecture, security model, and a product tour.
+📖 **[Read the full docs](https://zyvorai.github.io/zyvor-netra/)** — quickstart, architecture, security model, and a product tour.
 
 ![Netra dashboard — Overview](docs/ux/00-overview.png)
 
@@ -131,7 +131,7 @@ Netra and **PacketWolf** cover the same eBPF territory from opposite directions.
 | CNI-independent observe + leased emergency kill-switch | Cilium is already the CNI of record |
 | Path/Drop/Congestion diagnostics without a full platform | Full AutoPolicy / healer / operator stack |
 
-Rules: [docs/packetwolf.md](docs/packetwolf.md) · [Suite placement](https://zyvorai.github.io/netra/docs/core-concepts/packetwolf).
+Rules: [docs/packetwolf.md](docs/packetwolf.md) · [Suite placement](https://zyvorai.github.io/zyvor-netra/docs/core-concepts/packetwolf).
 
 ## Documentation map
 
@@ -143,7 +143,7 @@ Rules: [docs/packetwolf.md](docs/packetwolf.md) · [Suite placement](https://zyv
 | Install and configure | [Install guide](docs/install.md) · [Helm/manifests](deploy/README.md) · [Host readiness](docs/host-readiness.md) |
 | Operate it | [netractl](docs/netractl.md) · [High availability](docs/high-availability.md) |
 | Browse the code | [Repository layout](docs/repository-layout.md) · [CI](docs/ci.md) |
-| Evaluate it as a buyer | [Buyers guide](docs/sales/buyers-guide.md) · [Brochure and PDFs](docs/sales/) · [Resources](https://zyvorai.github.io/netra/resources) |
+| Evaluate it as a buyer | [Buyers guide](docs/sales/buyers-guide.md) · [Brochure and PDFs](docs/sales/) · [Resources](https://zyvorai.github.io/zyvor-netra/resources) |
 
 ## License
 
