@@ -55,7 +55,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'netra-share-card.png',
+    image: 'netra-hero-dark.jpg',
     colorMode: {
       defaultMode: 'dark',
       respectPrefersColorScheme: false,

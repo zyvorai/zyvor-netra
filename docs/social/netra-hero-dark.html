@@ -5,70 +5,267 @@
 <title>Netra hero card</title>
 <!--
   1200x630 dark hero card: README hero and GitHub social preview.
+  The eye is hand-drawn SVG. The code rain is generated from a fixed seed so every render matches.
+  One rain column, right of the eye, reads 4D 45 4B 48 41: "MEKHA" in ASCII hex.
   Build: ./docs/social/build-hero-dark.sh  ->  netra-hero-dark.jpg (2400x1260)
 -->
 <style>
-  :root { --blue:#0071e3; --signal:#2997ff; --cyan:#64d2ff; --green:#30d158; --amber:#ff9f0a;
+  :root { --blue:#0071e3; --signal:#2997ff; --cyan:#64d2ff; --green:#30d158;
     --sans:'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif; --mono:'SF Mono',Menlo,Consolas,monospace; }
   * { box-sizing:border-box; }
   html,body { margin:0; padding:0; }
   body { width:1200px; height:630px; overflow:hidden; color:#f5f5f7; font-family:var(--sans); position:relative; background:#000; }
-  .aurora { position:absolute; inset:0;
-    background:radial-gradient(720px 460px at 80% 16%, rgba(41,151,255,.40), transparent 62%),
-               radial-gradient(600px 420px at 104% 98%, rgba(100,210,255,.20), transparent 60%),
-               radial-gradient(520px 380px at 6% 110%, rgba(0,113,227,.28), transparent 60%); }
-  .grid { position:absolute; inset:0; opacity:.09;
-    background-image:linear-gradient(rgba(120,180,255,.9) 1px,transparent 1px),linear-gradient(90deg,rgba(120,180,255,.9) 1px,transparent 1px);
-    background-size:44px 44px; -webkit-mask-image:radial-gradient(900px 520px at 72% 42%, #000 18%, transparent 75%); }
-  .left { position:absolute; left:60px; top:52px; width:560px; z-index:3; }
+  #rain { position:absolute; left:470px; top:0; width:730px; height:630px; overflow:hidden;
+    -webkit-mask-image:radial-gradient(460px 330px at 58% 50%, rgba(0,0,0,1) 30%, rgba(0,0,0,.55) 62%, transparent 100%); }
+  .col { position:absolute; top:0; width:16px; font-family:var(--mono); font-size:15px; line-height:17px; text-align:center; white-space:pre; }
+  .col span { display:block; }
+  .col .h { color:#e8fff0; text-shadow:0 0 8px #7dffb0, 0 0 16px var(--green); }
+  .mk { z-index:6; }
+  #mekha { left:1170px; top:22px; }
+  .mk span { color:#bff1ff; text-shadow:0 0 6px var(--cyan), 0 0 14px var(--cyan), 0 0 26px var(--signal); font-weight:700; }
+  .mk span.gap { color:transparent; text-shadow:none; }
+  .aurora { position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(520px 360px at 77% 50%, rgba(0,113,227,.30), transparent 65%),
+               radial-gradient(540px 420px at 0% 100%, rgba(0,113,227,.22), transparent 60%),
+               linear-gradient(90deg, #000 0%, #000 38%, rgba(0,0,0,.6) 46%, transparent 56%); }
+  .left { position:absolute; left:60px; top:52px; width:520px; z-index:5; }
   .brand { display:flex; align-items:center; gap:12px; font-family:var(--mono); font-size:14px; letter-spacing:.18em; text-transform:uppercase; color:#a1a1a6; }
   .brand b { color:#fff; }
-  .word { margin:20px 0 0; font-size:112px; line-height:.95; font-weight:800; letter-spacing:-.05em; white-space:nowrap;
-    background:linear-gradient(92deg,#fff 0%,#e3f0ff 38%,var(--signal) 74%,var(--cyan) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; padding-bottom:6px; }
+  .word { margin:20px 0 0; font-size:112px; line-height:.95; font-weight:800; letter-spacing:-.05em; padding-bottom:6px;
+    background:linear-gradient(92deg,#fff 0%,#e3f0ff 38%,var(--signal) 74%,var(--cyan) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .tag { margin:14px 0 0; font-size:31px; line-height:1.15; font-weight:700; letter-spacing:-.02em; }
   .tag em { font-style:normal; color:var(--signal); }
-  .lede { margin:12px 0 0; font-size:18px; line-height:1.45; color:#b8b8bf; width:520px; }
+  .lede { margin:12px 0 0; font-size:18px; line-height:1.45; color:#b8b8bf; width:480px; }
   .stats { margin-top:24px; display:flex; gap:32px; }
   .stat b { display:block; font-size:34px; font-weight:800; letter-spacing:-.03em; color:#fff; }
   .stat span { font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:#8e8e93; }
-  .pill { position:absolute; left:60px; bottom:40px; display:flex; gap:10px; z-index:3; }
-  .pill span { font-family:var(--mono); font-size:13.5px; font-weight:700; padding:7px 13px; border-radius:18px; border:1.5px solid rgba(255,255,255,.2); color:#e5e5ea; background:rgba(255,255,255,.04); }
+  .pill { position:absolute; left:60px; bottom:40px; display:flex; gap:10px; z-index:5; }
+  .pill span { font-family:var(--mono); font-size:13.5px; font-weight:700; padding:7px 13px; border-radius:18px; border:1.5px solid rgba(255,255,255,.2); color:#e5e5ea; background:rgba(0,0,0,.6); }
   .pill span.b { background:var(--blue); border-color:var(--blue); color:#fff; box-shadow:0 0 24px rgba(0,113,227,.55); }
-
-  .right { position:absolute; left:652px; top:96px; width:560px; z-index:2; }
-  .win { position:relative; width:560px; border-radius:16px; overflow:hidden; z-index:2;
-    background:linear-gradient(180deg, rgba(22,24,30,.94), rgba(10,11,14,.96));
-    box-shadow:0 50px 100px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.14), 0 0 90px rgba(41,151,255,.22);
-    transform:perspective(1600px) rotateY(-14deg) rotateX(4deg); transform-origin:left center; }
-  .bar { height:34px; display:flex; align-items:center; gap:8px; padding:0 14px; background:rgba(255,255,255,.05); border-bottom:1px solid rgba(255,255,255,.07); }
-  .bar i { width:11px; height:11px; border-radius:50%; background:#ff5f57; } .bar i:nth-child(2){background:#febc2e} .bar i:nth-child(3){background:#28c840}
-  .bar em { margin-left:auto; margin-right:auto; font-style:normal; font-family:var(--mono); font-size:12px; color:#8e8e93; transform:translateX(-24px); }
-  .term { min-height:214px; padding:20px 22px 24px; font-family:var(--mono); font-size:15.5px; line-height:1.75; }
-  .l { white-space:pre; overflow:hidden; text-overflow:ellipsis; color:#f5f5f7; }
-  .l .p { color:var(--signal); font-weight:700; }
-  .l.out { color:#a1a1a6; }
-  .l.cm { color:#6e6e73; }
-  .l.ok { color:#d1f7dc; } .l.ok span { color:var(--green); font-weight:700; }
-  .l.warn { color:#ffe1b0; } .l.warn span { color:var(--amber); font-weight:700; }
-  .cur { display:inline-block; width:9px; height:18px; background:var(--signal); vertical-align:-3px; box-shadow:0 0 12px var(--signal); }
-  .chips { margin:34px 0 0 38px; width:480px; display:flex; flex-wrap:wrap; gap:10px; position:relative; z-index:3; }
-  .chips span { font-family:var(--mono); font-size:13px; font-weight:700; letter-spacing:.04em; padding:7px 12px; border-radius:14px;
-    color:#cfe6ff; background:rgba(10,20,35,.82); border:1px solid rgba(41,151,255,.45); box-shadow:0 0 18px rgba(41,151,255,.18); }
+  #eye { position:absolute; left:600px; top:95px; width:640px; height:440px; z-index:4; }
+  .lbl { font-family:'SF Mono',Menlo,monospace; font-size:13px; font-weight:700; letter-spacing:.08em; fill:#cfe6ff; }
 </style>
 </head>
 <body>
+<div id="rain"></div>
 <div class="aurora"></div>
-<div class="grid"></div>
+<div id="mekha" class="col mk"></div>
+
+<svg id="eye" viewBox="0 0 640 440" aria-hidden="true">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#2997ff" stop-opacity=".55"/>
+      <stop offset=".55" stop-color="#0071e3" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#0071e3" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sclera" cx="50%" cy="46%" r="60%">
+      <stop offset="0" stop-color="#e6eef8"/>
+      <stop offset=".55" stop-color="#b4c4d8"/>
+      <stop offset=".85" stop-color="#5d6f8a"/>
+      <stop offset="1" stop-color="#2a3650"/>
+    </radialGradient>
+    <radialGradient id="iris" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#9ef0ff"/>
+      <stop offset=".28" stop-color="#64d2ff"/>
+      <stop offset=".55" stop-color="#2997ff"/>
+      <stop offset=".82" stop-color="#0058c4"/>
+      <stop offset="1" stop-color="#001a44"/>
+    </radialGradient>
+    <radialGradient id="pupil" cx="45%" cy="42%" r="60%">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#000"/>
+    </radialGradient>
+    <linearGradient id="lidShade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000" stop-opacity=".55"/>
+      <stop offset=".45" stop-color="#000" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="eyeClip">
+      <path d="M150,236 C200,170 270,145 335,145 C400,145 462,162 515,196 C468,268 405,306 335,308 C262,308 200,282 150,236 Z"/>
+    </clipPath>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.2"/></filter>
+    <filter id="bloom" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+
+  <!-- hook connectors and labels -->
+  <g stroke="#2997ff" stroke-opacity=".55" stroke-width="1.2" fill="none">
+    <line x1="330" y1="40" x2="330" y2="110"/>
+    <line x1="330" y1="318" x2="330" y2="400"/>
+    <line x1="150" y1="94" x2="215" y2="150"/>
+    <line x1="510" y1="94" x2="450" y2="148"/>
+    <line x1="140" y1="350" x2="210" y2="290"/>
+    <line x1="520" y1="348" x2="455" y2="282"/>
+  </g>
+  <g fill="#64d2ff">
+    <circle cx="330" cy="40" r="4"/><circle cx="330" cy="400" r="4"/>
+    <circle cx="150" cy="94" r="4"/><circle cx="510" cy="94" r="4"/>
+    <circle cx="140" cy="350" r="4"/><circle cx="520" cy="348" r="4"/>
+  </g>
+  <text class="lbl" x="330" y="26" text-anchor="middle">TCX</text>
+  <text class="lbl" x="330" y="424" text-anchor="middle">TLS SNI</text>
+  <text class="lbl" x="140" y="84" text-anchor="end">CGROUP V2</text>
+  <text class="lbl" x="520" y="84">XDP</text>
+  <text class="lbl" x="128" y="368" text-anchor="end">DNS :53</text>
+  <text class="lbl" x="532" y="366">SOCKOPS</text>
+
+  <!-- glow -->
+  <ellipse cx="330" cy="214" rx="250" ry="150" fill="url(#glow)"/>
+
+  <!-- eyeball -->
+  <g clip-path="url(#eyeClip)">
+    <rect x="140" y="110" width="390" height="210" fill="url(#sclera)"/>
+    <ellipse cx="160" cy="236" rx="10" ry="7" fill="#d9a3b0" opacity=".35" filter="url(#soft)"/>
+    <circle cx="335" cy="214" r="88" fill="#001a44" opacity=".35" filter="url(#soft)"/>
+    <circle cx="335" cy="214" r="80" fill="url(#iris)"/>
+    <g id="fibres" stroke-linecap="round"></g>
+    <circle cx="335" cy="214" r="80" fill="none" stroke="#00102e" stroke-width="7" opacity=".85"/>
+    <circle cx="335" cy="214" r="46" fill="none" stroke="#9ef0ff" stroke-width="1.5" opacity=".35"/>
+    <circle cx="335" cy="214" r="31" fill="url(#pupil)"/>
+    <text x="335" y="262" text-anchor="middle" font-family="SF Mono,Menlo,monospace" font-size="9" fill="#9ef0ff" opacity=".28">0x4E 0x45 0x54 0x52 0x41</text>
+    <ellipse cx="312" cy="190" rx="13" ry="9" fill="#fff" opacity=".92" transform="rotate(-25 312 190)"/>
+    <circle cx="360" cy="236" r="4.5" fill="#fff" opacity=".7"/>
+    <path d="M250,170 C300,150 370,150 420,170" stroke="#fff" stroke-opacity=".12" stroke-width="10" fill="none"/>
+    <rect x="140" y="110" width="390" height="210" fill="url(#lidShade)"/>
+  </g>
+
+  <!-- lids and liner -->
+  <path d="M150,236 C200,170 270,145 335,145 C400,145 462,162 515,196" fill="none" stroke="#e8f4ff" stroke-width="5" stroke-linecap="round"/>
+  <path d="M515,196 C532,188 550,180 572,164" fill="none" stroke="#e8f4ff" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M150,236 C200,282 262,308 335,308 C405,306 468,268 515,196" fill="none" stroke="#9ec9ff" stroke-width="2.2" stroke-opacity=".8"/>
+  <path d="M172,206 C222,132 292,100 342,100 C404,100 460,124 500,160" fill="none" stroke="#9ec9ff" stroke-width="1.4" stroke-opacity=".3"/>
+  <g id="lashes" fill="none" stroke="#e8f4ff" stroke-linecap="round"></g>
+  <g id="lowlashes" fill="none" stroke="#9ec9ff" stroke-linecap="round" stroke-opacity=".6"></g>
+  <path d="M150,236 C200,170 270,145 335,145 C400,145 462,162 515,196" fill="none" stroke="#2997ff" stroke-width="10" opacity=".45" filter="url(#bloom)"/>
+</svg>
+
 <div class="left">
   <div class="brand"><svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><defs><linearGradient id="zb" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ff5a15"/><stop offset="1" stop-color="#cc420a"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#zb)"/><path d="M18.5,20.5 45.5,20.5 18.5,43.5 45.5,43.5" fill="none" stroke="#fff" stroke-width="8.3" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Zyvor</b><span>&middot;</span><span>eBPF network observability</span></div>
   <div class="word">Netra</div>
-  <div class="tag">See every packet&#x27;s story.<br><em>Contain the bad ones.</em></div>
+  <div class="tag">See every packet's story.<br><em>Contain the bad ones.</em></div>
   <div class="lede">Standalone eBPF network observability and leased, fail-open emergency network control for Linux and Kubernetes, on any CNI.</div>
   <div class="stats"><div class="stat"><b>180</b><span>MCP tools</span></div><div class="stat"><b>Any</b><span>CNI</span></div><div class="stat"><b>5.8+</b><span>Linux kernel</span></div></div>
 </div>
 <div class="pill"><span class="b">github.com/zyvorai/zyvor-netra</span><span>Zyvor Production</span></div>
-<div class="right"><div class="win"><div class="bar"><i></i><i></i><i></i><em>netractl</em></div>
-<div class="term"><div class="l"><span class="p">$</span> netractl install --namespace netra-system</div><div class="l"><span class="p">$</span> netractl status</div><div class="l out">Datapath:   standalone-ebpf</div><div class="l out">Lease:      observe (no active lease)</div><div class="l ok"><span>&#10003;</span> Agents:     3 reporting (0 stale)</div><div class="l"><span class="p">$</span> <i class="cur"></i></div></div></div>
-<div class="chips"><span>eBPF</span><span>Go</span><span>Kubernetes</span><span>Cilium/Hubble</span><span>MCP</span><span>Prometheus</span></div></div>
+
+<script>
+(function () {
+  var seed = 20261004;
+  function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+  var NS = 'http://www.w3.org/2000/svg';
+
+  // Iris fibres
+  var fib = document.getElementById('fibres');
+  for (var i = 0; i < 140; i++) {
+    var a = (i / 140) * Math.PI * 2 + rnd() * 0.04;
+    var r0 = 33 + rnd() * 6, r1 = 62 + rnd() * 17;
+    var l = document.createElementNS(NS, 'line');
+    l.setAttribute('x1', 335 + Math.cos(a) * r0); l.setAttribute('y1', 214 + Math.sin(a) * r0);
+    l.setAttribute('x2', 335 + Math.cos(a + (rnd() - .5) * .08) * r1); l.setAttribute('y2', 214 + Math.sin(a + (rnd() - .5) * .08) * r1);
+    var c = rnd() < .5 ? '#bff4ff' : (rnd() < .5 ? '#0a3d8f' : '#64d2ff');
+    l.setAttribute('stroke', c); l.setAttribute('stroke-width', (0.5 + rnd() * 1.1).toFixed(2));
+    l.setAttribute('opacity', (0.25 + rnd() * 0.5).toFixed(2));
+    fib.appendChild(l);
+  }
+
+  // Lashes: tapered, curling outward, longer toward the outer (right) corner
+  function bez(t, p0, p1, p2, p3) { var u = 1 - t; return u*u*u*p0 + 3*u*u*t*p1 + 3*u*t*t*p2 + t*t*t*p3; }
+  var lashes = document.getElementById('lashes');
+  var segs = [[150,236, 200,170, 270,145, 335,145], [335,145, 400,145, 462,162, 515,196]];
+  var N = 36;
+  for (var k = 2; k < N; k++) {
+    var g = k / N, si = g < 0.5 ? 0 : 1, t = si === 0 ? g * 2 : (g - 0.5) * 2;
+    var s0 = segs[si];
+    var x = bez(t, s0[0], s0[2], s0[4], s0[6]), y = bez(t, s0[1], s0[3], s0[5], s0[7]);
+    var len = 16 + Math.pow(g, 1.25) * 50 + rnd() * 5;
+    var ang = (-118 + g * 86 + (rnd() - .5) * 6) * Math.PI / 180;
+    var curl = (0.45 + g * 0.45);
+    var tx = x + Math.cos(ang) * len, ty = y + Math.sin(ang) * len;
+    var ang2 = ang + curl;
+    tx = x + Math.cos(ang) * len * 0.55 + Math.cos(ang2) * len * 0.5;
+    ty = y + Math.sin(ang) * len * 0.55 + Math.sin(ang2) * len * 0.5;
+    var cx = x + Math.cos(ang) * len * 0.62, cy = y + Math.sin(ang) * len * 0.62;
+    var w = 1.8 + g * 1.8;
+    var nx = -Math.sin(ang) * w, ny = Math.cos(ang) * w;
+    var p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', 'M' + (x - nx).toFixed(1) + ',' + (y - ny).toFixed(1) +
+      ' Q' + (cx - nx * .5).toFixed(1) + ',' + (cy - ny * .5).toFixed(1) + ' ' + tx.toFixed(1) + ',' + ty.toFixed(1) +
+      ' Q' + (cx + nx * .5).toFixed(1) + ',' + (cy + ny * .5).toFixed(1) + ' ' + (x + nx).toFixed(1) + ',' + (y + ny).toFixed(1) + ' Z');
+    p.setAttribute('fill', '#eaf4ff'); p.setAttribute('stroke', 'none');
+    p.setAttribute('opacity', (0.75 + rnd() * 0.25).toFixed(2));
+    lashes.appendChild(p);
+  }
+  var low = document.getElementById('lowlashes');
+  var ls = [515,196, 468,268, 405,306, 335,308];
+  for (var k = 1; k <= 9; k++) {
+    var t = k / 12, x = bez(t, ls[0], ls[2], ls[4], ls[6]), y = bez(t, ls[1], ls[3], ls[5], ls[7]);
+    var L = 9 - t * 5;
+    var p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', 'M' + x.toFixed(1) + ',' + y.toFixed(1) + ' q' + (L * .2).toFixed(1) + ',' + (L * .6).toFixed(1) + ' ' + (L * .7).toFixed(1) + ',' + L.toFixed(1));
+    p.setAttribute('stroke-width', '1.3');
+    low.appendChild(p);
+  }
+
+  // Matrix rain: katakana, hex and digits
+  var glyphs = [];
+  for (var cp = 0x30A1; cp <= 0x30F6; cp++) glyphs.push(String.fromCharCode(cp));
+  '0123456789ABCDEF'.split('').forEach(function (ch) { glyphs.push(ch); glyphs.push(ch); });
+  var rain = document.getElementById('rain');
+  var W = 730, colW = 16, cols = Math.floor(W / colW), rows = 38;
+  var mkCol = -1;
+  for (var c = 0; c < cols; c++) {
+    if (470 + c * colW > 1150 && 470 + c * colW < 1192) continue;
+    var col = document.createElement('div');
+    col.className = 'col';
+    col.style.left = (c * colW) + 'px';
+    if (c === mkCol) {
+      col.className = 'col mk';
+      var code = ['4','D',' ','4','5',' ','4','B',' ','4','8',' ','4','1'];
+      var start = 7;
+      for (var r = 0; r < rows; r++) {
+        var s = document.createElement('span');
+        var idx = r - start;
+        if (idx >= 0 && idx < code.length) {
+          s.textContent = code[idx] === ' ' ? '.' : code[idx];
+          if (code[idx] === ' ') s.className = 'gap';
+        } else {
+          s.textContent = glyphs[Math.floor(rnd() * glyphs.length)];
+          s.style.color = 'rgba(100,210,255,' + (r < start ? 0.10 + r * 0.03 : Math.max(0.05, 0.35 - (idx - code.length) * 0.03)).toFixed(2) + ')';
+          s.style.textShadow = 'none'; s.style.fontWeight = '400';
+        }
+        col.appendChild(s);
+      }
+      rain.appendChild(col);
+      continue;
+    }
+    var head = Math.floor(rnd() * (rows + 10)) - 4;
+    var tail = 8 + Math.floor(rnd() * 22);
+    var depth = 0.35 + rnd() * 0.65;
+    for (var r = 0; r < rows; r++) {
+      var s = document.createElement('span');
+      s.textContent = glyphs[Math.floor(rnd() * glyphs.length)];
+      var d = head - r;
+      if (d === 0) { s.className = 'h'; s.style.opacity = depth.toFixed(2); }
+      else if (d > 0 && d < tail) {
+        var f = 1 - d / tail;
+        var mix = r / rows;
+        var g = Math.round(209 + (210 - 209) * mix), rr = Math.round(48 + (100 - 48) * mix), b = Math.round(88 + (255 - 88) * mix);
+        s.style.color = 'rgba(' + rr + ',' + g + ',' + b + ',' + (f * 0.85 * depth).toFixed(2) + ')';
+      } else {
+        s.style.color = 'rgba(48,209,88,' + (0.04 + rnd() * 0.05).toFixed(2) + ')';
+      }
+      col.appendChild(s);
+    }
+    rain.appendChild(col);
+  }
+  var mk = document.getElementById('mekha');
+  var code = ['4','D','','4','5','','4','B','','4','8','','4','1'];
+  for (var r = 0; r < 18; r++) {
+    var sp = document.createElement('span');
+    var idx = r - 2;
+    if (idx >= 0 && idx < code.length) { sp.textContent = code[idx] || '.'; if (!code[idx]) sp.className = 'gap'; }
+    else { sp.textContent = glyphs[Math.floor(rnd() * glyphs.length)]; sp.style.color = 'rgba(100,210,255,' + (r < 2 ? .25 : Math.max(.06, .4 - (idx - code.length) * .12)).toFixed(2) + ')'; sp.style.textShadow = 'none'; sp.style.fontWeight = '400'; }
+    mk.appendChild(sp);
+  }
+})();
+</script>
 </body>
 </html>
