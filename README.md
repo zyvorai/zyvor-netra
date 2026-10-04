@@ -33,6 +33,7 @@ From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.29.0, and on `main`):
 
 | | |
 |---|---|
+| **Per-second metrics** *(on `main`)* | Host, network, cgroup, process-group, eBPF and workload RED series every second, with anomaly detection, metric alerts, app collectors, exporters, and a link from any chart spike to the flows and drops behind it. [Docs →](docs/metrics.md) |
 | **Node isolation** *(on `main`)* | A per-node allow-only egress filter in **shadow** (count what it would block) or **enforce**, as a standalone TCX program. [Docs →](docs/node-isolation.md) |
 | **Netlink change recorder** | Which link, address, route or neighbor changed on a node, and when, across every routing table. [Docs →](docs/netlink-recorder.md) |
 | **Netlink findings and alerts** | Default route removed, gateway unreachable, uplink down, MTU changed, derived from the recorded changes. |
@@ -51,6 +52,7 @@ From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.29.0, and on `main`):
 | You need to act now, but enforcement is scary | Leased deny that reverts by itself, previewed against live traffic first |
 | Your CNI is not Cilium, or you cannot change it | cgroup v2 hooks that work on any CNI, with no kernel module and no app changes |
 | "The network is slow" with no evidence | TCP path diagnostics and a Congestion Map that colors every layer of the Linux network stack by its worst finding |
+| A chart spiked and you need to know why | Per-second metrics with anomaly detection, where every spike links to the flows, drop reasons and captures from that window |
 | You need packets from one node, now | Filtered, time-bounded live capture with a Wireshark-style layered decode, one click from a finding |
 | Your AI agent should investigate without breaking things | An MCP server with 180 tools; mutations stay behind `NETRA_MCP_ALLOW_MUTATIONS` |
 
