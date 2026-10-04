@@ -1,6 +1,6 @@
 # Netra docs site
 
-Built with [Docusaurus](https://docusaurus.io/). Serves the live docs at https://zyvorai.github.io/netra/.
+Built with [Docusaurus](https://docusaurus.io/). Serves the live docs at https://zyvorai.github.io/zyvor-netra/.
 
 ## Local development
 

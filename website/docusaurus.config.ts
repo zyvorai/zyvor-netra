@@ -14,10 +14,10 @@ const config: Config = {
   },
 
   url: 'https://zyvorai.github.io',
-  baseUrl: '/netra/',
+  baseUrl: '/zyvor-netra/',
 
   organizationName: 'zyvorai',
-  projectName: 'netra',
+  projectName: 'zyvor-netra',
 
   onBrokenLinks: 'throw',
 
@@ -44,7 +44,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/zyvorai/netra/tree/main/website/',
+          editUrl: 'https://github.com/zyvorai/zyvor-netra/tree/main/website/',
         },
         blog: false,
         theme: {
@@ -57,7 +57,8 @@ const config: Config = {
   themeConfig: {
     image: 'netra-share-card.png',
     colorMode: {
-      respectPrefersColorScheme: true,
+      defaultMode: 'dark',
+      respectPrefersColorScheme: false,
     },
     navbar: {
       title: 'Netra',
@@ -78,7 +79,7 @@ const config: Config = {
           position: 'left',
         },
         {
-          href: 'https://github.com/zyvorai/netra',
+          href: 'https://github.com/zyvorai/zyvor-netra',
           label: 'GitHub',
           position: 'right',
         },
@@ -104,14 +105,14 @@ const config: Config = {
         {
           title: 'Project',
           items: [
-            {label: 'GitHub', href: 'https://github.com/zyvorai/netra'},
+            {label: 'GitHub', href: 'https://github.com/zyvorai/zyvor-netra'},
             {
               label: 'Changelog',
-              href: 'https://github.com/zyvorai/netra/blob/main/CHANGELOG.md',
+              href: 'https://github.com/zyvorai/zyvor-netra/blob/main/CHANGELOG.md',
             },
             {
               label: 'License',
-              href: 'https://github.com/zyvorai/netra/blob/main/LICENSE',
+              href: 'https://github.com/zyvorai/zyvor-netra/blob/main/LICENSE',
             },
           ],
         },
