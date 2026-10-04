@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type symbol struct {
@@ -24,15 +25,23 @@ type symbol struct {
 }
 
 // Resolver caches resolved addresses. The full table is read only when an
-// address it has not seen appears, and is not retained afterwards: a kernel has
-// ~200k symbols and drop sites are a handful.
+// address it has not seen appears, and is kept only briefly afterwards: a
+// kernel has ~200k symbols and drop sites are a handful.
 type Resolver struct {
 	// Open returns the kallsyms stream. Nil means /proc/kallsyms.
 	Open func() (io.ReadCloser, error)
 
-	mu    sync.Mutex
-	cache map[uint64]string
+	mu     sync.Mutex
+	cache  map[uint64]string
+	table  []symbol // kept for keepTable after a read, then released
+	loaded time.Time
+	now    func() time.Time // nil means time.Now
 }
+
+// keepTable is how long a read table answers new addresses before it is
+// released. A read parses ~200k lines (~150 ms on a busy node); without this a
+// host whose drop sites trickle in pays it on most snapshots.
+const keepTable = 30 * time.Second
 
 // Unresolved is returned for an address that has no symbol, or for every
 // address when the kernel hides them (kernel.kptr_restrict, no CAP_SYSLOG).
@@ -60,17 +69,30 @@ func (r *Resolver) Resolve(addrs []uint64) map[uint64]string {
 			missing = append(missing, a)
 		}
 	}
+	now := time.Now
+	if r.now != nil {
+		now = r.now
+	}
+	if r.table != nil && now().Sub(r.loaded) >= keepTable {
+		r.table = nil
+	}
 	if len(missing) == 0 {
 		return out
 	}
-	table, _ := r.load()
+	// Names from a kept table are not cached: a module loaded since the read
+	// is missing from it, so the next fresh read settles them.
+	fresh := r.table == nil
+	if fresh {
+		r.table, _ = r.load()
+		r.loaded = now()
+	}
 	for _, a := range missing {
-		name := lookup(table, a)
+		name := lookup(r.table, a)
 		if name == "" {
 			name = Unresolved(a)
 		}
 		out[a] = name
-		if len(r.cache) < maxCache {
+		if fresh && len(r.cache) < maxCache {
 			r.cache[a] = name
 		}
 	}

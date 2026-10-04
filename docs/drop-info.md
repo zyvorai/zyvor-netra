@@ -89,10 +89,14 @@ updates per packet, not a ring buffer's worth of events.
   lowered by it. The per-reason breakdown is summed from the (reason, location) table, which
   would lose a site only after 2 048 distinct pairs, far more than a kernel has. An event
   that cannot get a slot at all is counted in `mapFull`.
-- **Top-N in reports:** 50 flows and 30 sites per node. Building them reads every entry of the
-  flow table once per report (two syscalls per entry). Measured with 12 000 flows in the table:
-  about 16 ms per snapshot on a 4-vCPU VM and 36 ms on a shared CI runner (55 ms for the TCP-event
-  table). On a real node with the table nearly full (15 600
+- **Top-N in reports:** 50 flows and 30 sites per node. Building them reads the flow table in
+  batches of 1024 entries (per-entry iteration on kernels without batch lookup for the map
+  type) and ranks the rows before formatting, so only the reported 50 are resolved and
+  formatted. A drop location the resolver has not seen re-reads `/proc/kallsyms` (~150 ms on a
+  busy node); the parsed table is kept for 30 s so sites that trickle in after a read do not
+  pay that again. Measured with 12 000 flows in the table: about 10 ms per snapshot on a
+  12-core node at load average 20 (150–250 ms before batching and the kept table), 16 ms on a
+  4-vCPU VM. On a real node with the table nearly full (15 600
   entries) and the sensors running, tracing 40 s of the agent's `bpf()` calls showed this sensor
   and the TCP-event sensor together made about 7% of them; the rest are the agent's older flow
   maps. `TestDropInfoSnapshotCostWithAFullFlowTable` bounds the cost in CI.

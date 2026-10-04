@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 const table = `ffffffff81000000 T _stext
@@ -76,14 +77,44 @@ func TestHiddenAddressesLeaveEveryAddressUnresolved(t *testing.T) {
 func TestTheTableIsReadOnlyForAddressesNotYetSeen(t *testing.T) {
 	var n atomic.Int32
 	r := resolver(&n, table)
+	clock := time.Unix(1000, 0)
+	r.now = func() time.Time { return clock }
 	r.Resolve([]uint64{0xffffffff81001abc})
 	r.Resolve([]uint64{0xffffffff81001abc, 0xffffffff81001abc})
 	if n.Load() != 1 {
 		t.Fatalf("kallsyms read %d times, want 1", n.Load())
 	}
+	clock = clock.Add(keepTable)
 	r.Resolve([]uint64{0xffffffff81002abc})
 	if n.Load() != 2 {
 		t.Fatalf("a new address should trigger one more read, got %d", n.Load())
+	}
+}
+
+func TestNewAddressesSoonAfterAReadUseTheKeptTable(t *testing.T) {
+	var n atomic.Int32
+	r := resolver(&n, table)
+	clock := time.Unix(1000, 0)
+	r.now = func() time.Time { return clock }
+	r.Resolve([]uint64{0xffffffff81001abc})
+	clock = clock.Add(keepTable - time.Second)
+	got := r.Resolve([]uint64{0xffffffff81001abc, 0xffffffff81002abc})
+	if n.Load() != 1 {
+		t.Fatalf("kallsyms read %d times inside the window, want 1", n.Load())
+	}
+	if got[0xffffffff81002abc] != "nf_hook_slow" {
+		t.Fatalf("a new address is named from the kept table, got %q", got[0xffffffff81002abc])
+	}
+	clock = clock.Add(time.Second)
+	if got := r.Resolve([]uint64{0xffffffff81002abc}); got[0xffffffff81002abc] != "nf_hook_slow" {
+		t.Fatalf("got %q", got[0xffffffff81002abc])
+	}
+	if n.Load() != 2 {
+		t.Fatalf("a name from a kept table is provisional and re-read once it expires; reads = %d, want 2", n.Load())
+	}
+	r.Resolve([]uint64{0xffffffff81002abc})
+	if n.Load() != 2 {
+		t.Fatalf("after a fresh read the name is cached; reads = %d, want 2", n.Load())
 	}
 }
 

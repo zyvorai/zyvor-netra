@@ -16,6 +16,7 @@ import (
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"
+	"golang.org/x/sys/unix"
 
 	"github.com/zyvorai/netra/internal/ksym"
 	"github.com/zyvorai/netra/internal/tpformat"
@@ -159,6 +160,50 @@ type dropVal struct {
 	Count, Location, LastNS uint64
 }
 
+type rawFlow struct {
+	k dropKey
+	v dropVal
+}
+
+// flowBatch is the number of drop_flows entries read per batch syscall.
+const flowBatch = 1024
+
+// readFlows reads drop_flows with batch lookups, one syscall per flowBatch
+// entries, and falls back to per-key iteration on kernels without batch
+// support for the map type.
+func readFlows(m *ebpf.Map) ([]rawFlow, error) {
+	var out []rawFlow
+	var cursor ebpf.MapBatchCursor
+	keys := make([]dropKey, flowBatch)
+	vals := make([]dropVal, flowBatch)
+	for {
+		n, err := m.BatchLookup(&cursor, keys, vals, nil)
+		for i := 0; i < n; i++ {
+			out = append(out, rawFlow{keys[i], vals[i]})
+		}
+		if errors.Is(err, ebpf.ErrKeyNotExist) {
+			return out, nil
+		}
+		if err != nil {
+			if len(out) == 0 && (errors.Is(err, ebpf.ErrNotSupported) || errors.Is(err, unix.EINVAL)) {
+				return iterateFlows(m)
+			}
+			return nil, err
+		}
+	}
+}
+
+func iterateFlows(m *ebpf.Map) ([]rawFlow, error) {
+	var out []rawFlow
+	var k dropKey
+	var v dropVal
+	it := m.Iterate()
+	for it.Next(&k, &v) {
+		out = append(out, rawFlow{k, v})
+	}
+	return out, it.Err()
+}
+
 type siteKey struct {
 	Reason uint32
 	_      uint32
@@ -232,21 +277,24 @@ func (s *Sensor) Snapshot(topFlows, topSites int) (*Snapshot, error) {
 	}
 
 	// Collect raw rows first so every location is resolved in one batch.
-	type rawFlow struct {
-		k dropKey
-		v dropVal
-	}
 	var flows []rawFlow
 	if m := s.coll.Maps["drop_flows"]; m != nil {
-		var k dropKey
-		var v dropVal
-		it := m.Iterate()
-		for it.Next(&k, &v) {
-			flows = append(flows, rawFlow{k, v})
-		}
-		if err := it.Err(); err != nil {
+		var err error
+		if flows, err = readFlows(m); err != nil {
 			return nil, fmt.Errorf("read drop_flows: %w", err)
 		}
+	}
+	// Only the busiest flows are reported, so rank the raw rows and drop the
+	// rest before resolving locations and formatting addresses.
+	sort.Slice(flows, func(i, j int) bool {
+		a, b := flows[i].v, flows[j].v
+		if a.Count != b.Count {
+			return a.Count > b.Count
+		}
+		return a.LastNS > b.LastNS
+	})
+	if len(flows) > topFlows {
+		flows = flows[:topFlows]
 	}
 	type rawSite struct {
 		k siteKey
@@ -322,16 +370,6 @@ func (s *Sensor) Snapshot(topFlows, topSites int) (*Snapshot, error) {
 			f.Proto = protoName(rf.k.Proto)
 		}
 		out.Flows = append(out.Flows, f)
-	}
-	sort.Slice(out.Flows, func(i, j int) bool {
-		a, b := out.Flows[i], out.Flows[j]
-		if a.Count != b.Count {
-			return a.Count > b.Count
-		}
-		return a.LastSeenNS > b.LastSeenNS
-	})
-	if len(out.Flows) > topFlows {
-		out.Flows = out.Flows[:topFlows]
 	}
 	if len(out.Reasons) == 0 {
 		out.Reasons = nil
