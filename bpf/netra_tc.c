@@ -75,6 +75,7 @@ static __u64 (*bpf_get_current_pid_tgid)(void) = (void *)BPF_FUNC_get_current_pi
 static __u64 (*bpf_get_current_uid_gid)(void) = (void *)BPF_FUNC_get_current_uid_gid;
 static long (*bpf_get_current_comm)(void *buf, __u32 size) = (void *)BPF_FUNC_get_current_comm;
 static __u64 (*bpf_get_current_cgroup_id)(void) = (void *)BPF_FUNC_get_current_cgroup_id;
+static __u64 (*bpf_skb_cgroup_id)(void *skb) = (void *)BPF_FUNC_skb_cgroup_id;
 static __u64 (*bpf_get_socket_cookie)(void *ctx) = (void *)BPF_FUNC_get_socket_cookie;
 static long (*bpf_skb_load_bytes)(const void *skb, __u32 offset, void *to, __u32 len) = (void *)BPF_FUNC_skb_load_bytes;
 static int (*bpf_sock_ops_cb_flags_set)(struct bpf_sock_ops *skops, int flags) = (void *)BPF_FUNC_sock_ops_cb_flags_set;
@@ -1023,6 +1024,7 @@ struct netra_pkt_scratch {
     struct dns_pending_value dnspv;
     struct connect_attempt_key cak;
     struct connect_attempt_value cav;
+    struct netra_l7_work l7;
 };
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
@@ -1855,7 +1857,7 @@ static __always_inline void dns_query_track(__u64 cgroup_id, __u8 family, const 
 static __always_inline void dns_response_track(__u64 cgroup_id, __u8 family, const __u8 server[16],
                                                 __u16 client_port, void *payload, void *data_end,
                                                 __u32 ifindex, __u32 len,
-                                                const __u8 src[16], const __u8 dst[16])
+                                                const __u8 src[16], const __u8 dst[16], int pn)
 {
     unsigned char *p = payload;
     if (!cgroup_id || (void *)(p + 12) > data_end) return;
@@ -1888,7 +1890,7 @@ static __always_inline void dns_response_track(__u64 cgroup_id, __u8 family, con
         if (latency_us > hv->max_latency_us) hv->max_latency_us = latency_us;
         hv->last_ns = now;
     }
-    __u16 qtype = netra_l7_dns_qtype(payload, data_end);
+    __u16 qtype = pn > 0 ? netra_l7_dns_qtype(&sc->l7) : 0;
     struct obs_event *e = new_event(family, DIR_INGRESS, HOOK_CGROUP, IPPROTO_UDP, ACT_ALLOW, EVT_DNS_RESPONSE, REASON_NONE);
     if (e) {
         e->cgroup_id = cgroup_id;
@@ -2169,6 +2171,36 @@ SEC("cgroup_skb/ingress") int netra_cgroup_ingress(struct __sk_buff *skb){ retur
  * record_policy_drop call.
  */
 
+/* Copies up to NETRA_L7_BUF_LEN payload bytes starting at payload into
+ * sc->l7 for the DNS/SNI/Host parsers; returns how many were copied. */
+static __always_inline int l7_load_payload(struct __sk_buff *skb, void *data, void *payload,
+                                           struct netra_pkt_scratch *sc)
+{
+    /* 64-bit throughout: a 32-bit n gets zero-extended into a copy for the
+     * checks while the unchecked register is passed to the helper. */
+    __u64 off = (__u64)((long)payload - (long)data);
+    __u64 len = skb->len;
+    sc->l7.n = 0;
+    if (off >= len) return 0;
+    __u64 n = len - off;
+    if (n > NETRA_L7_BUF_LEN) n = NETRA_L7_BUF_LEN;
+    /* Keeps clang from folding both checks into one (n - 1) compare,
+     * which leaves the verifier unable to prove n >= 1. */
+    asm volatile("" : "+r"(n));
+    if (n == 0) return 0;
+    if (bpf_skb_load_bytes(skb, off, sc->l7.buf, n) < 0) return 0;
+    sc->l7.n = (int)n;
+    return (int)n;
+}
+
+/* Ingress runs in softirq, where the current task is whatever was
+ * interrupted; the receiving socket's cgroup is the one that sent the
+ * matching query. Egress runs in the sending task. */
+static __always_inline __u64 l7_cgroup_id(struct __sk_buff *skb, __u8 direction)
+{
+    return direction == DIR_INGRESS ? bpf_skb_cgroup_id(skb) : bpf_get_current_cgroup_id();
+}
+
 static __always_inline int l7_handle_v4(struct __sk_buff *skb, __u8 direction)
 {
     struct netra_pkt_scratch *sc = netra_scratch();
@@ -2197,19 +2229,20 @@ static __always_inline int l7_handle_v4(struct __sk_buff *skb, __u8 direction)
         return 1;
     }
     copy4(sc->src, ip->saddr); copy4(sc->dst, ip->daddr);
-    __u64 cgroup_id = bpf_get_current_cgroup_id();
+    __u64 cgroup_id = l7_cgroup_id(skb, direction);
     if (!cgroup_id) return 1;
 
     if (direction == DIR_INGRESS) {
         if (proto == IPPROTO_UDP && sport == __builtin_bswap16(53) && payload)
-            dns_response_track(cgroup_id, FAMILY_V4, sc->src, dport, payload, data_end, ifindex, len, sc->src, sc->dst);
+            dns_response_track(cgroup_id, FAMILY_V4, sc->src, dport, payload, data_end, ifindex, len, sc->src, sc->dst,
+                               l7_load_payload(skb, data, payload, sc));
         return 1;
     }
 
     int blocked = 0; __u8 reason = 0; int dns_len = 0;
 
     if (proto == IPPROTO_UDP && dport == __builtin_bswap16(53) && payload) {
-        dns_len = netra_l7_dns_qname(payload, data_end, sc->dns_name);
+        dns_len = l7_load_payload(skb, data, payload, sc) > 0 ? netra_l7_dns_qname(&sc->l7, sc->dns_name) : 0;
         if (dns_len > 0) {
             if (enforcing() && scope_allows(cgroup_id)) {
                 __builtin_memset(&sc->name_key, 0, sizeof(sc->name_key));
@@ -2224,7 +2257,8 @@ static __always_inline int l7_handle_v4(struct __sk_buff *skb, __u8 direction)
     }
 
     if (proto == IPPROTO_TCP && payload) {
-        int sni_len = netra_l7_tls_sni(payload, data_end, sc->sni);
+        int pn = l7_load_payload(skb, data, payload, sc);
+        int sni_len = pn > 0 ? netra_l7_tls_sni(&sc->l7, sc->sni) : 0;
         if (sni_len > 0) {
             if (!blocked && enforcing() && scope_allows(cgroup_id)) {
                 __builtin_memset(&sc->name_key, 0, sizeof(sc->name_key));
@@ -2233,7 +2267,7 @@ static __always_inline int l7_handle_v4(struct __sk_buff *skb, __u8 direction)
             }
             track_tls(cgroup_id, sc->sni, blocked && reason == REASON_SNI);
         }
-        if (netra_l7_http_method(payload, data_end, sc->http_m) > 0 && netra_l7_http_host(payload, data_end, sc->http_h) > 0)
+        if (pn > 0 && netra_l7_http_method(sc->l7.buf, pn, sc->http_m) > 0 && netra_l7_http_host(&sc->l7, sc->http_h) > 0)
             track_http(cgroup_id, sc->http_m, sc->http_h);
     }
 
@@ -2277,19 +2311,20 @@ static __always_inline int l7_handle_v6(struct __sk_buff *skb, __u8 direction)
     }
     if (!l4_ok) return 1;
     copy16(sc->src, &ip6->saddr); copy16(sc->dst, &ip6->daddr);
-    __u64 cgroup_id = bpf_get_current_cgroup_id();
+    __u64 cgroup_id = l7_cgroup_id(skb, direction);
     if (!cgroup_id) return 1;
 
     if (direction == DIR_INGRESS) {
         if (proto == IPPROTO_UDP && sport == __builtin_bswap16(53) && payload)
-            dns_response_track(cgroup_id, FAMILY_V6, sc->src, dport, payload, data_end, ifindex, len, sc->src, sc->dst);
+            dns_response_track(cgroup_id, FAMILY_V6, sc->src, dport, payload, data_end, ifindex, len, sc->src, sc->dst,
+                               l7_load_payload(skb, data, payload, sc));
         return 1;
     }
 
     int blocked = 0; __u8 reason = 0; int dns_len = 0;
 
     if (proto == IPPROTO_UDP && dport == __builtin_bswap16(53) && payload) {
-        dns_len = netra_l7_dns_qname(payload, data_end, sc->dns_name);
+        dns_len = l7_load_payload(skb, data, payload, sc) > 0 ? netra_l7_dns_qname(&sc->l7, sc->dns_name) : 0;
         if (dns_len > 0) {
             if (enforcing() && scope_allows(cgroup_id)) {
                 __builtin_memset(&sc->name_key, 0, sizeof(sc->name_key));
@@ -2304,7 +2339,8 @@ static __always_inline int l7_handle_v6(struct __sk_buff *skb, __u8 direction)
     }
 
     if (proto == IPPROTO_TCP && payload) {
-        int sni_len = netra_l7_tls_sni(payload, data_end, sc->sni);
+        int pn = l7_load_payload(skb, data, payload, sc);
+        int sni_len = pn > 0 ? netra_l7_tls_sni(&sc->l7, sc->sni) : 0;
         if (sni_len > 0) {
             if (!blocked && enforcing() && scope_allows(cgroup_id)) {
                 __builtin_memset(&sc->name_key, 0, sizeof(sc->name_key));
@@ -2313,7 +2349,7 @@ static __always_inline int l7_handle_v6(struct __sk_buff *skb, __u8 direction)
             }
             track_tls(cgroup_id, sc->sni, blocked && reason == REASON_SNI);
         }
-        if (netra_l7_http_method(payload, data_end, sc->http_m) > 0 && netra_l7_http_host(payload, data_end, sc->http_h) > 0)
+        if (pn > 0 && netra_l7_http_method(sc->l7.buf, pn, sc->http_m) > 0 && netra_l7_http_host(&sc->l7, sc->http_h) > 0)
             track_http(cgroup_id, sc->http_m, sc->http_h);
     }
 

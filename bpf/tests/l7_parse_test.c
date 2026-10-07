@@ -8,6 +8,19 @@
 
 #include "../netra_l7.h"
 
+static struct netra_l7_work wk;
+
+// work copies len payload bytes into the parser work area the way the
+// datapath does: at most NETRA_L7_BUF_LEN of them.
+static struct netra_l7_work *work(const void *p, size_t len)
+{
+    memset(&wk, 0, sizeof(wk));
+    if (len > NETRA_L7_BUF_LEN) len = NETRA_L7_BUF_LEN;
+    memcpy(wk.buf, p, len);
+    wk.n = (int)len;
+    return &wk;
+}
+
 // ---- DNS qname -------------------------------------------------------
 
 static void dns_qname_multi_label(void)
@@ -20,7 +33,7 @@ static void dns_qname_multi_label(void)
     *q++ = 3; memcpy(q, "com", 3); q += 3;
     *q++ = 0;
     char out[96] = {0};
-    int n = netra_l7_dns_qname(p, p + sizeof(p), out);
+    int n = netra_l7_dns_qname(work(p, sizeof(p)), out);
     assert(n == 15);
     assert(strcmp(out, "www.example.com") == 0);
 }
@@ -32,7 +45,7 @@ static void dns_qname_uppercase_is_lowercased(void)
     *q++ = 3; memcpy(q, "FOO", 3); q += 3;
     *q++ = 0;
     char out[96] = {0};
-    int n = netra_l7_dns_qname(p, p + sizeof(p), out);
+    int n = netra_l7_dns_qname(work(p, sizeof(p)), out);
     assert(n == 3);
     assert(strcmp(out, "foo") == 0);
 }
@@ -47,7 +60,7 @@ static void dns_qname_truncated_mid_label(void)
     p[12] = 5;
     p[13] = 'h';
     char out[96] = {0};
-    int n = netra_l7_dns_qname(p, p + sizeof(p), out);
+    int n = netra_l7_dns_qname(work(p, sizeof(p)), out);
     assert(n == 1);
     assert(strcmp(out, "h") == 0);
 }
@@ -60,7 +73,7 @@ static void dns_qname_compression_pointer_is_rejected(void)
     p[12] = 0xC0;
     p[13] = 0x0C;
     char out[96] = {0};
-    int n = netra_l7_dns_qname(p, p + sizeof(p), out);
+    int n = netra_l7_dns_qname(work(p, sizeof(p)), out);
     assert(n == 0);
 }
 
@@ -68,7 +81,7 @@ static void dns_qname_empty_buffer(void)
 {
     unsigned char p[8] = {0}; // shorter than the 12-byte header
     char out[96] = {0};
-    assert(netra_l7_dns_qname(p, p + sizeof(p), out) == 0);
+    assert(netra_l7_dns_qname(work(p, sizeof(p)), out) == 0);
 }
 
 // ---- TLS ClientHello SNI ----------------------------------------------
@@ -99,7 +112,7 @@ static void tls_sni_found(void)
     write_client_hello_header(p);
     write_sni(p, 43, "example.com");
     char out[96] = {0};
-    int n = netra_l7_tls_sni(p, p + sizeof(p), out);
+    int n = netra_l7_tls_sni(work(p, sizeof(p)), out);
     assert(n == 11);
     assert(strcmp(out, "example.com") == 0);
 }
@@ -110,7 +123,7 @@ static void tls_sni_uppercase_is_lowercased(void)
     write_client_hello_header(p);
     write_sni(p, 43, "Example.COM");
     char out[96] = {0};
-    int n = netra_l7_tls_sni(p, p + sizeof(p), out);
+    int n = netra_l7_tls_sni(work(p, sizeof(p)), out);
     assert(n == 11);
     assert(strcmp(out, "example.com") == 0);
 }
@@ -123,7 +136,7 @@ static void tls_sni_no_extension_present(void)
     unsigned char p[160] = {0};
     write_client_hello_header(p);
     char out[96] = {0};
-    assert(netra_l7_tls_sni(p, p + sizeof(p), out) == 0);
+    assert(netra_l7_tls_sni(work(p, sizeof(p)), out) == 0);
 }
 
 static void tls_sni_wrong_record_type_is_rejected(void)
@@ -133,7 +146,7 @@ static void tls_sni_wrong_record_type_is_rejected(void)
     write_sni(p, 43, "example.com");
     p[0] = 0x17; // not a handshake record
     char out[96] = {0};
-    assert(netra_l7_tls_sni(p, p + sizeof(p), out) == 0);
+    assert(netra_l7_tls_sni(work(p, sizeof(p)), out) == 0);
 }
 
 static void tls_sni_within_scan_window_is_found(void)
@@ -145,7 +158,7 @@ static void tls_sni_within_scan_window_is_found(void)
     write_client_hello_header(p);
     write_sni(p, 500, "example.com");
     char out[96] = {0};
-    int n = netra_l7_tls_sni(p, p + sizeof(p), out);
+    int n = netra_l7_tls_sni(work(p, sizeof(p)), out);
     assert(n == 11);
     assert(strcmp(out, "example.com") == 0);
 }
@@ -159,7 +172,21 @@ static void tls_sni_past_scan_window_is_not_found(void)
     write_client_hello_header(p);
     write_sni(p, 512, "example.com");
     char out[96] = {0};
-    assert(netra_l7_tls_sni(p, p + sizeof(p), out) == 0);
+    assert(netra_l7_tls_sni(work(p, sizeof(p)), out) == 0);
+}
+
+static void tls_sni_invalid_candidate_keeps_searching(void)
+{
+    // A header-shaped match whose name holds a non-hostname byte is skipped,
+    // and the real extension further on is still found.
+    unsigned char p[300] = {0};
+    write_client_hello_header(p);
+    write_sni(p, 43, "bad name");
+    write_sni(p, 120, "example.com");
+    char out[96] = {0};
+    int n = netra_l7_tls_sni(work(p, sizeof(p)), out);
+    assert(n == 11);
+    assert(strcmp(out, "example.com") == 0);
 }
 
 // ---- HTTP method/host ---------------------------------------------------
@@ -168,7 +195,7 @@ static void http_method_get(void)
 {
     const char *req = "GET / HTTP/1.1\r\n";
     char out[8] = {0};
-    int n = netra_l7_http_method((void *)req, (void *)(req + strlen(req)), out);
+    int n = netra_l7_http_method((const unsigned char *)req, (int)strlen(req), out);
     assert(n == 3);
     assert(strcmp(out, "GET") == 0);
 }
@@ -177,14 +204,14 @@ static void http_method_unrecognized_returns_zero(void)
 {
     const char *req = "TRACE / HTTP/1.1\r\n";
     char out[8] = {0};
-    assert(netra_l7_http_method((void *)req, (void *)(req + strlen(req)), out) == 0);
+    assert(netra_l7_http_method((const unsigned char *)req, (int)strlen(req), out) == 0);
 }
 
 static void http_host_found(void)
 {
     const char *req = "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n";
     char out[96] = {0};
-    int n = netra_l7_http_host((void *)req, (void *)(req + strlen(req)), out);
+    int n = netra_l7_http_host(work(req, strlen(req)), out);
     assert(n == 11);
     assert(strcmp(out, "example.com") == 0);
 }
@@ -193,7 +220,7 @@ static void http_host_case_insensitive_header_name(void)
 {
     const char *req = "GET / HTTP/1.1\r\nhOsT: example.com\r\n\r\n";
     char out[96] = {0};
-    int n = netra_l7_http_host((void *)req, (void *)(req + strlen(req)), out);
+    int n = netra_l7_http_host(work(req, strlen(req)), out);
     assert(n == 11);
     assert(strcmp(out, "example.com") == 0);
 }
@@ -205,14 +232,43 @@ static void http_host_with_control_byte_is_rejected(void)
     // entirely (return 0) rather than emit a partial/garbled name.
     const char req[] = "GET / HTTP/1.1\r\nHost: exa\x01mple.com\r\n\r\n";
     char out[96] = {0};
-    assert(netra_l7_http_host((void *)req, (void *)(req + sizeof(req) - 1), out) == 0);
+    assert(netra_l7_http_host(work(req, sizeof(req) - 1), out) == 0);
 }
 
 static void http_host_missing_returns_zero(void)
 {
     const char *req = "GET / HTTP/1.1\r\nAccept: */*\r\n\r\n";
     char out[96] = {0};
-    assert(netra_l7_http_host((void *)req, (void *)(req + strlen(req)), out) == 0);
+    assert(netra_l7_http_host(work(req, strlen(req)), out) == 0);
+}
+
+static void http_host_after_other_headers_with_whitespace(void)
+{
+    const char *req = "GET / HTTP/1.1\r\nAccept: */*\r\nX-Host: no\r\nHost:\t  Api.Example.com:8080\r\n\r\n";
+    char out[96] = {0};
+    int n = netra_l7_http_host(work(req, strlen(req)), out);
+    assert(n == 20);
+    assert(strcmp(out, "api.example.com:8080") == 0);
+}
+
+static void http_host_value_at_end_of_payload(void)
+{
+    const char *req = "GET / HTTP/1.1\r\nHost: example.com";
+    char out[96] = {0};
+    int n = netra_l7_http_host(work(req, strlen(req)), out);
+    assert(n == 11);
+    assert(strcmp(out, "example.com") == 0);
+}
+
+static void dns_qname_stops_at_compression_after_label(void)
+{
+    unsigned char p[12 + 1 + 3 + 2] = {0};
+    p[12] = 3; memcpy(p + 13, "www", 3);
+    p[16] = 0xC0; p[17] = 0x0C;
+    char out[96] = {0};
+    int n = netra_l7_dns_qname(work(p, sizeof(p)), out);
+    assert(n == 3);
+    assert(strcmp(out, "www") == 0);
 }
 
 static void http_status_ok(void)
@@ -238,15 +294,15 @@ static void http_status_short_rejected(void)
 static void dns_qtype_complete_and_bounded(void)
 {
     unsigned char p[] = {0,1,0x81,0x80,0,1,0,0,0,0,0,0,3,'w','w','w',0,0,16,0,1};
-    assert(netra_l7_dns_qtype(p,p+sizeof(p)) == 16);
-    for (size_t n=0;n<sizeof(p);n++) assert(netra_l7_dns_qtype(p,p+n)==0);
-    p[18]=1;assert(netra_l7_dns_qtype(p,p+sizeof(p))==1);
-    p[5]=2;assert(netra_l7_dns_qtype(p,p+sizeof(p))==0);p[5]=1;
-    p[12]=0xc0;assert(netra_l7_dns_qtype(p,p+sizeof(p))==0);p[12]=3;
-    p[20]=3;assert(netra_l7_dns_qtype(p,p+sizeof(p))==0);
+    assert(netra_l7_dns_qtype(work(p,sizeof(p))) == 16);
+    for (size_t n=0;n<sizeof(p);n++) assert(netra_l7_dns_qtype(work(p,n))==0);
+    p[18]=1;assert(netra_l7_dns_qtype(work(p,sizeof(p)))==1);
+    p[5]=2;assert(netra_l7_dns_qtype(work(p,sizeof(p)))==0);p[5]=1;
+    p[12]=0xc0;assert(netra_l7_dns_qtype(work(p,sizeof(p)))==0);p[12]=3;
+    p[20]=3;assert(netra_l7_dns_qtype(work(p,sizeof(p)))==0);
     unsigned char longname[120]={0};longname[5]=1;longname[12]=63;memset(longname+13,'a',63);longname[76]=32;memset(longname+77,'b',32);
     longname[111]=16;longname[113]=1;
-    assert(netra_l7_dns_qtype(longname,longname+sizeof(longname))==0);
+    assert(netra_l7_dns_qtype(work(longname,sizeof(longname)))==0);
 }
 
 int main(void)
@@ -257,6 +313,7 @@ int main(void)
     dns_qname_truncated_mid_label();
     dns_qname_compression_pointer_is_rejected();
     dns_qname_empty_buffer();
+    dns_qname_stops_at_compression_after_label();
 
     tls_sni_found();
     tls_sni_uppercase_is_lowercased();
@@ -264,6 +321,7 @@ int main(void)
     tls_sni_wrong_record_type_is_rejected();
     tls_sni_within_scan_window_is_found();
     tls_sni_past_scan_window_is_not_found();
+    tls_sni_invalid_candidate_keeps_searching();
 
     http_method_get();
     http_method_unrecognized_returns_zero();
@@ -271,6 +329,8 @@ int main(void)
     http_host_case_insensitive_header_name();
     http_host_with_control_byte_is_rejected();
     http_host_missing_returns_zero();
+    http_host_after_other_headers_with_whitespace();
+    http_host_value_at_end_of_payload();
     http_status_ok();
     http_status_http2_rejected();
     http_status_short_rejected();

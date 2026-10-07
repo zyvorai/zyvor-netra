@@ -88,7 +88,8 @@ v0.8 limitations: no IPv6 extension-header walk, no TCP DNS parser, no DoH/DoT i
 - `tls_hello_events` / `tls_hello_rate` (additive, **standalone**
   `bpf/netra_tlsfp.c`): rate-limited ClientHello samples via
   `bpf_skb_load_bytes` + per-CPU scratch for userspace JA3/JA4. Own
-  verifier budget — attaches even when `netra_l7_*` is rejected. See
+  verifier budget — attaches even when `netra_l7_*` is rejected (kernels
+  before 5.17 lack `bpf_loop`). See
   `docs/tls-fingerprints.md`. CI: `scripts/ci-tlsfp-smoke.sh`.
 
 TLS and HTTP parsing is metadata-only and best-effort on a single skb. Netra does not reassemble TCP streams or export payload bytes. SNI-specific enforcement applies only when an ordinary ClientHello hostname is fully parsed; fragmented ClientHello, ECH and QUIC traffic fail open for the SNI rule.

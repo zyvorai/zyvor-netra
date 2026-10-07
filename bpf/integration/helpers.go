@@ -140,17 +140,13 @@ func testObjectPath() string {
 // unconditionally at entry (bpf/netra_tc.c:1908-1909) and every map
 // reference across programs in the same object only resolves correctly
 // when the whole spec is loaded together.
-// l7Programs are the two cgroup_skb SNI/HTTP-Host scan programs with a
-// documented, standing kernel-verifier rejection on some kernels ("bad
-// address, hit verifier bug") — see docs/l7-metadata.md. Confirmed live on
-// the GitHub Actions ubuntu-latest runner too: the first CI run of this
-// package failed outright on this exact rejection because loadCollection
-// didn't yet replicate the fallback internal/agent.loadAndAttach already
-// uses on a real node (strip the L7 programs from the spec and retry, so
-// a verifier rejection degrades to "no L7 observability" instead of
-// failing the whole collection load). None of the tests in this package
-// exercise L7/DNS behavior, so dropping these two programs never affects
-// what's under test here.
+// l7Programs are the two cgroup_skb DNS/SNI/HTTP-Host programs. They need
+// bpf_loop (Linux 5.17+); a kernel that rejects them is handled the way
+// internal/agent.loadAndAttach does on a real node: strip them from the
+// spec and retry, so a rejection degrades to "no L7 observability" instead
+// of failing the whole collection load. See docs/l7-metadata.md. None of
+// the tests in this package exercise L7/DNS behavior, so dropping these two
+// programs never affects what's under test here.
 var l7Programs = []string{"netra_l7_cgroup_egress", "netra_l7_cgroup_ingress"}
 
 func loadCollection(t *testing.T) *ebpf.Collection {
@@ -162,7 +158,7 @@ func loadCollection(t *testing.T) *ebpf.Collection {
 	}
 	coll, err := ebpf.NewCollectionWithOptions(spec, ebpf.CollectionOptions{})
 	if err != nil && mentionsAny(err.Error(), l7Programs) {
-		t.Logf("L7/DNS cgroup programs failed verifier load on this kernel (documented, standing issue — see docs/l7-metadata.md); retrying without them: %v", err)
+		t.Logf("L7/DNS cgroup programs failed verifier load on this kernel (they need Linux 5.17+, see docs/l7-metadata.md); retrying without them: %v", err)
 		for _, p := range l7Programs {
 			delete(spec.Programs, p)
 		}
