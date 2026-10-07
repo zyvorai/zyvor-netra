@@ -19,7 +19,7 @@
 
 **Standalone eBPF network observability and emergency network control for Linux/Kubernetes — with optional Cilium + Hubble enrichment.** Kernel drop attribution, path and congestion diagnostics, live packet capture, and leased deny rules that return to observe on their own, on any CNI.
 
-**Observe-first** · **Lease-bounded, fails open** · **No CNI required** · **No payload collection** · **183 MCP tools**
+**Observe-first** · **Lease-bounded, fails open** · **No CNI required** · **No payload collection** · **189 MCP tools**
 
 📖 **[Read the full docs](https://zyvorai.github.io/zyvor-netra/)** — quickstart, architecture, security model, and a product tour.
 
@@ -29,12 +29,14 @@
 
 ## What's new
 
-From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.29.0, and on `main`):
+From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.30.0):
 
 | | |
 |---|---|
-| **Per-second metrics** *(on `main`)* | Host, network, cgroup, process-group, eBPF and workload RED series every second, with anomaly detection, metric alerts, app collectors, exporters, and a link from any chart spike to the flows and drops behind it. [Docs →](docs/metrics.md) |
-| **Node isolation** *(on `main`)* | A per-node allow-only egress filter in **shadow** (count what it would block) or **enforce**, as a standalone TCX program. [Docs →](docs/node-isolation.md) |
+| **Per-second metrics** *(0.30.0)* | Host, network, cgroup, process-group, eBPF and workload RED series every second, with anomaly detection, metric alerts, app collectors, exporters, and a link from any chart spike to the flows and drops behind it. [Docs →](docs/metrics.md) |
+| **Node isolation** *(0.30.0)* | A per-node allow-only egress filter in **shadow** (count what it would block) or **enforce**, as a standalone TCX program. [Docs →](docs/node-isolation.md) |
+| **Security review** *(0.30.0)* | DNS query types, versioned threat feeds with expiry, rollback and optional HTTPS refresh, deny-predicate overlap review and exact-workload incident correlation. [Docs →](docs/security-review.md) |
+| **L7 metadata on current kernels** *(0.30.0)* | TLS SNI, HTTP Host and DNS names load again on Linux 6.8+ (they were rejected by the verifier), using `bpf_loop` on Linux 5.17+. [Docs →](docs/l7-metadata.md) |
 | **Netlink change recorder** | Which link, address, route or neighbor changed on a node, and when, across every routing table. [Docs →](docs/netlink-recorder.md) |
 | **Netlink findings and alerts** | Default route removed, gateway unreachable, uplink down, MTU changed, derived from the recorded changes. |
 | **Who made the change** | An `fentry` on `rtnetlink_rcv_msg` attributes each modifying netlink request to the process that sent it. |
@@ -54,7 +56,7 @@ From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.29.0, and on `main`):
 | "The network is slow" with no evidence | TCP path diagnostics and a Congestion Map that colors every layer of the Linux network stack by its worst finding |
 | A chart spiked and you need to know why | Per-second metrics with anomaly detection, where every spike links to the flows, drop reasons and captures from that window |
 | You need packets from one node, now | Filtered, time-bounded live capture with a Wireshark-style layered decode, one click from a finding |
-| Your AI agent should investigate without breaking things | An MCP server with 183 tools; mutations stay behind `NETRA_MCP_ALLOW_MUTATIONS` |
+| Your AI agent should investigate without breaking things | An MCP server with 189 tools; mutations stay behind `NETRA_MCP_ALLOW_MUTATIONS` |
 
 Netra does not require Cilium. The node agent owns its own programs and maps below `/sys/fs/bpf/netra`. If Cilium/Hubble exists, Netra can manage `CiliumNetworkPolicy` and display Hubble flows, but both integrations are opt-in.
 
@@ -216,7 +218,7 @@ Details: [Architecture and visibility boundaries](docs/architecture.md) · [Safe
 
 - **`netractl`** — the operator CLI. [Docs →](docs/netractl.md)
 - **Security review** — DNS QTYPE, versioned threat feeds with TTL/rollback and optional HTTPS refresh, flat deny-predicate suggestions, and exact-workload security correlation. [Docs →](docs/security-review.md)
-- **MCP server** — 183 stdio tools (123 read, 60 opt-in mutating) for AI agents. [Docs →](docs/mcp-integration.md)
+- **MCP server** — 189 stdio tools (129 read, 60 opt-in mutating) for AI agents. [Docs →](docs/mcp-integration.md)
 - **Built-in AI briefs** — heuristic by default, optional OpenAI-compatible rewrite, read-only. [Docs →](docs/ai.md)
 - **Export** — SIEM (CEF, syslog, JSONL, OTLP), Prometheus (scrape and remote write), Grafana, Loki, Graphite, Slack and Teams ChatOps.
 
@@ -248,7 +250,7 @@ Rules: [docs/packetwolf.md](docs/packetwolf.md) · [Suite placement](https://zyv
 
 ## Maturity
 
-Netra's latest release is **0.29.0** ([CHANGELOG.md](CHANGELOG.md)); node isolation is on `main`, unreleased. What runs by default and what is opt-in ([architecture](docs/architecture.md)):
+Netra's latest release is **0.30.0** ([CHANGELOG.md](CHANGELOG.md)). What runs by default and what is opt-in ([architecture](docs/architecture.md)):
 
 | Area | Status |
 |---|---|

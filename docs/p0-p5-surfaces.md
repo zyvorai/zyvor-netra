@@ -43,10 +43,11 @@ CI gates: `scripts/ci-p1-p5-unit.sh`, `scripts/ci-tlsfp-unit.sh`,
 |---|---|
 | **Buyer job** | Match operator-loaded bad IP/CIDR/DNS/SNI lists to live flows without standing up an IPS. |
 | **How it works** | Feed stored on controller → agents’ flow/DNS/SNI metadata matched → hits board. Optional `POST /api/v1/intel/apply` imports matched entries as **leased** denies. |
-| **API / CLI** | `PUT/GET/DELETE /api/v1/intel/feed`, `GET /api/v1/intel/hits`, `POST /api/v1/intel/apply`, `POST /api/v1/intel/preview` · `netractl intel …` |
-| **UX** | Surfaces → Threat intel feed; also MCP / ChatOps read paths. |
+| **API / CLI** | `PUT/GET/DELETE /api/v1/intel/feed`, `GET /api/v1/intel/history`, `POST /api/v1/intel/rollback/{revision}`, `GET /api/v1/intel/hits`, `POST /api/v1/intel/apply`, `POST /api/v1/intel/preview` · `netractl intel …` |
+| **Review** | `GET /api/v1/security/optimizer` (deny-predicate overlap) and `GET /api/v1/security/incidents` (exact-workload correlation) · `netractl security …`; read-only, never applies anything. |
+| **UX** | Surfaces → Threat intel feed; Security → Security Review; also MCP / ChatOps read paths. |
 | **Not** | Signature malware sandbox or content DLP. |
-| **Doc** | [`threat-intel.md`](threat-intel.md) |
+| **Doc** | [`threat-intel.md`](threat-intel.md), [`security-review.md`](security-review.md) |
 
 ### AI / MCP SaaS destination awareness
 

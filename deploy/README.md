@@ -43,21 +43,21 @@ to the version of the checkout, so from `main` between releases they can name an
 yet. Install from the tag, not from `main`:
 
 ```bash
-git clone --branch v0.29.0 https://github.com/zyvorai/netra && cd netra
+git clone --branch v0.30.0 https://github.com/zyvorai/netra && cd netra
 ```
 
 **Verify what you pull.** Both images are signed by the release workflow (keyless cosign), and the
 signature names the workflow, the tag and the commit that built them:
 
 ```bash
-cosign verify ghcr.io/zyvorai/netra:0.29.0 \
-  --certificate-identity https://github.com/zyvorai/netra/.github/workflows/release.yml@refs/tags/v0.29.0 \
+cosign verify ghcr.io/zyvorai/netra:0.30.0 \
+  --certificate-identity https://github.com/zyvorai/netra/.github/workflows/release.yml@refs/tags/v0.30.0 \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
 The same command works for `netra-agent`. Compare the pulled images' digests with the
 `imageID` of the running pods (`kubectl -n netra-system get pods -o jsonpath='{..imageID}'`)
-&mdash; see `ghcr.io/zyvorai/netra` and `ghcr.io/zyvorai/netra-agent` for the `0.29.0` digests once
+&mdash; see `ghcr.io/zyvorai/netra` and `ghcr.io/zyvorai/netra-agent` for the `0.30.0` digests once
 the release is verified.
 
 **Plain manifests:** `kubectl apply -k deploy/` from the tag pulls the released images as written.
@@ -67,7 +67,7 @@ losing its settings or keys, keep the values and change only the tags:
 
 ```bash
 helm upgrade netra ./helm/netra -n netra-system --reset-then-reuse-values \
-  --set image.tag=0.29.0 --set agentImage.tag=0.29.0
+  --set image.tag=0.30.0 --set agentImage.tag=0.30.0
 ```
 
 `--reset-then-reuse-values` (Helm 3.14+) takes the new chart's defaults for values you never set, which a

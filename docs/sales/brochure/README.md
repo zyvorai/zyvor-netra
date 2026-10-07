@@ -29,7 +29,7 @@ Re-check these when the product changes; a number in the brochure that is not in
 |---|---|
 | 28 dashboard pages | `Page` type in `web/src/components/Nav.tsx` |
 | 8 eBPF objects, hooks, defaults, kernel needs (ring buffer 5.8+, batch reads 5.6+, TCX 6.6+, BTF only for drop attribution) | `bpf/netra_*.c`, `docs/standalone-ebpf.md`, `docs/edge-tcp-intel.md`, `docs/tcp-events.md`, `docs/drop-info.md`, `docs/l7-sampling.md`, `docs/tls-plaintext.md` |
-| 180 MCP tools (120 read, 60 mutating, off by default) | the real server's `tools/list`; `scripts/ci-mcp-live.sh` |
+| 189 MCP tools (129 read, 60 mutating, off by default) | the real server's `tools/list`; `scripts/ci-mcp-live.sh` |
 | Reason numbers differ by kernel (`NETFILTER_DROP` 8 on 6.8, 12 on 6.17); attribution card examples | `docs/drop-info.md` |
 | Alert poller 30 s; triggers (softnet drops, drop-rate spike > 3x average and >= 50, critical from 200, critical Congestion Map); 5 min dedup | `internal/alert/poller.go`, `docs/drop-diagnostics.md` |
 | Auto-capture opt-in; 10 min per-node cooldown; 5 concurrent; 60 s and 1000 pps defaults; store 50 files / 1 GB | `internal/alert/autocapture.go`, `internal/capture/artifact.go`, `docs/capture.md` |

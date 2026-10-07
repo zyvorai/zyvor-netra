@@ -49,7 +49,7 @@ Each line you type after startup should produce one corresponding JSON-RPC respo
 | `NETRA_API_KEY` | unset | Bearer token; must match the controller's `NETRA_API_KEY`. If the controller has no API key configured, leave this unset too |
 | `NETRA_TLS_INSECURE` | `false` | Set `true` to skip TLS verification against a local/self-signed controller. Never set this against a controller reachable over an untrusted network |
 | `NETRA_MCP_ACTOR` | `mcp:hermes` | Recorded as `X-Netra-Actor` on every call, so mutations show up distinctly from human `netractl` use in `netra_audit`. Set a more specific value (e.g. `mcp:hermes:oncall-bot`) if you run several agent identities against the same controller |
-| `NETRA_MCP_ALLOW_MUTATIONS` | `false` | When unset/false, only read tools and pure-generator tools are registered — the **52** mutating tool *names* do not exist in the running process at all. Set `true` (case-insensitive) to also register them |
+| `NETRA_MCP_ALLOW_MUTATIONS` | `false` | When unset/false, only read tools and pure-generator tools are registered — the **60** mutating tool *names* do not exist in the running process at all. Set `true` (case-insensitive) to also register them |
 
 Example:
 
@@ -80,7 +80,7 @@ Then, from a Hermes session:
 hermes mcp test netra
 ```
 
-should report a successful handshake and list the **123** read tools. Run `/reload-mcp` inside a chat session after changing `config.yaml` to pick up changes without restarting Hermes entirely.
+should report a successful handshake and list the **129** read tools. Run `/reload-mcp` inside a chat session after changing `config.yaml` to pick up changes without restarting Hermes entirely.
 
 Mutations stay off by default even with this config — `NETRA_MCP_ALLOW_MUTATIONS` must be added explicitly on the `netra-mcp` process's own environment, not just in Hermes's config. A conservative read-only-by-convention setup, worth keeping even once mutations are enabled server-side, restricts which tools Hermes is allowed to call at all via `tools.include`:
 

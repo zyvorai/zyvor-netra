@@ -17,7 +17,7 @@ spec:
       tolerations: [{operator: Exists}]
       containers:
       - name: agent
-        image: ghcr.io/zyvorai/netra-agent:0.29.0
+        image: ghcr.io/zyvorai/netra-agent:0.30.0
         securityContext: {privileged: true}
         env:
         - {name: NETRA_SERVER, value: https://netra.netra-system.svc:30870}
