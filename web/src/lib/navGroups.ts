@@ -52,6 +52,7 @@ export const navGroups: NavGroup[] = [
   {
     label: 'Security',
     children: [
+      { page: 'security-review', label: 'Security Review', blurb: 'Threat feed lifecycle, deny predicate review, and exact-workload security evidence.' },
       { page: 'incidents', label: 'Incidents', blurb: 'Health, drift, exposure, drops, and audit signals joined by shared source.' },
       { page: 'surfaces', label: 'Surfaces', blurb: 'JA3 risk, ECH blindness, DNS intel, exfil/lateral drafts, compliance — observe-only.' },
       { page: 'ebpf', label: 'Firewall', blurb: 'Deny lists, DDoS shield, NetPol, and emergency controls in one place.' },

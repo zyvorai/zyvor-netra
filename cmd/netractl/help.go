@@ -55,6 +55,8 @@ func helpSections() []helpSection {
 				{"netlink state|events|findings …", "Route, link, address and neighbor changes + what is wrong now"},
 				{"metrics nodes|contexts|query|top|anomalies|alerts", "Per-second host, network, workload and app metrics"},
 				{"metrics ack|silence|unsilence", "Acknowledge or silence metric alerts (notifications only)"},
+				{"security optimizer|incidents", "Review deny predicates and exact-workload security correlation"},
+				{"intel history|rollback REVISION", "Inspect or restore a retained threat-feed revision"},
 				{"ebpf sysctl-audit | dns-findings | scan-findings", "Hardening + detectors"},
 				{"ebpf coverage | census | maps | capabilities", "Hook coverage + map inventory"},
 				{"drops [explain]", "Drop explain from policy + kernel"},

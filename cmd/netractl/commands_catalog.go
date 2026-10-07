@@ -34,6 +34,10 @@ func allCLICommands() []cliCommand {
 		{Name: "status-json", Args: []string{"status", "--json"}},
 		{Name: "features-list", Args: []string{"features", "list", "--json"}},
 
+		{Name: "security-optimizer", Args: []string{"security", "optimizer"}},
+		{Name: "security-incidents", Args: []string{"security", "incidents"}},
+		{Name: "intel-history", Args: []string{"intel", "history"}},
+		{Name: "intel-rollback", Args: []string{"intel", "rollback", "1"}, Mutating: true},
 		{Name: "audit", Args: []string{"audit"}},
 		{Name: "audit-summary", Args: []string{"audit", "summary"}},
 

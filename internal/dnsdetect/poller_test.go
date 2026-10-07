@@ -126,3 +126,31 @@ func TestRunWatermarkPreventsReobservationAcrossTicks(t *testing.T) {
 		t.Fatalf("QueriesSeen = %d, want 1 (the same event must not be re-observed on later ticks)", snap.QueriesSeen)
 	}
 }
+
+func TestRunQTypeActivatesTXTSignal(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.MaxUniqueSubdomains = 3
+	cfg.MinAvgLabelLen = 0
+	cfg.MinEntropy = 0
+	d := New(cfg)
+	now := time.Now()
+	events := []models.FastPathEvent{}
+	for i, name := range []string{"one.example.com", "two.example.com", "three.example.com"} {
+		e := dnsResponseEvent(uint64(i+1), now, name, 0)
+		e.DNSQType = QTypeTXT
+		events = append(events, e)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	d.Run(ctx, time.Hour, func() []models.AgentStatus {
+		cancel()
+		return []models.AgentStatus{{AgentReport: models.AgentReport{Node: "n", Events: events}}}
+	})
+	for _, f := range d.Findings() {
+		for _, signal := range f.Signals {
+			if signal == "txt-heavy" {
+				return
+			}
+		}
+	}
+	t.Fatal("TXT QTYPE did not reach detector")
+}

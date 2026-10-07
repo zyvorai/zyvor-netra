@@ -2449,7 +2449,7 @@ func (a *Agent) readEvents(ctx context.Context) {
 			src = net.IP(b[32:48]).String()
 			dst = net.IP(b[48:64]).String()
 		}
-		e := models.FastPathEvent{TimestampNS: native.Uint64(b[0:8]), CgroupID: native.Uint64(b[8:16]), PID: native.Uint32(b[16:20]), UID: native.Uint32(b[20:24]), InterfaceIndex: native.Uint32(b[24:28]), Length: native.Uint32(b[28:32]), SourceIP: src, DestinationIP: dst, SourcePort: binary.BigEndian.Uint16(b[64:66]), DestinationPort: binary.BigEndian.Uint16(b[66:68]), Family: familyName(family), Protocol: protoName(b[69]), Direction: dirName(b[70]), Hook: hookName(b[71]), Action: actionName(b[72]), Type: eventName(b[73]), TCPFlags: b[74], Reason: reasonName(b[75]), Comm: cString(b[76:92]), DNSQuery: cString(b[92:188]), LatencyUS: native.Uint32(b[188:192]), DNSRcode: b[192], ObservedAt: time.Now().UTC()}
+		e := models.FastPathEvent{TimestampNS: native.Uint64(b[0:8]), CgroupID: native.Uint64(b[8:16]), PID: native.Uint32(b[16:20]), UID: native.Uint32(b[20:24]), InterfaceIndex: native.Uint32(b[24:28]), Length: native.Uint32(b[28:32]), SourceIP: src, DestinationIP: dst, SourcePort: binary.BigEndian.Uint16(b[64:66]), DestinationPort: binary.BigEndian.Uint16(b[66:68]), Family: familyName(family), Protocol: protoName(b[69]), Direction: dirName(b[70]), Hook: hookName(b[71]), Action: actionName(b[72]), Type: eventName(b[73]), TCPFlags: b[74], Reason: reasonName(b[75]), Comm: cString(b[76:92]), DNSQuery: cString(b[92:188]), LatencyUS: native.Uint32(b[188:192]), DNSRcode: b[192], DNSQType: native.Uint16(b[194:196]), ObservedAt: time.Now().UTC()}
 		a.enrichEvent(&e)
 		select {
 		case a.events <- e:

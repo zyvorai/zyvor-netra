@@ -11,6 +11,7 @@ import (
 
 	"github.com/zyvorai/netra/internal/ainet"
 	"github.com/zyvorai/netra/internal/intel"
+	"github.com/zyvorai/netra/internal/models"
 	"github.com/zyvorai/netra/internal/watchlist"
 )
 
@@ -23,9 +24,13 @@ func (s *Server) intelFeedGet(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) intelFeedPut(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20+1))
 	if err != nil {
 		errorJSON(w, 400, err.Error())
+		return
+	}
+	if len(body) > 1<<20 {
+		errorJSON(w, http.StatusRequestEntityTooLarge, "intel feed exceeds 1 MiB")
 		return
 	}
 	preview, err := intel.Parse(string(body))
@@ -38,17 +43,51 @@ func (s *Server) intelFeedPut(w http.ResponseWriter, r *http.Request) {
 		source = "operator"
 	}
 	note := strings.TrimSpace(r.URL.Query().Get("note"))
-	st := s.intelFeed.Set(preview, source, note)
+	if len(source) > 512 || len(note) > 1024 {
+		errorJSON(w, 400, "intel source/note too long")
+		return
+	}
+	expected, err := intelExpected(r)
+	if err != nil {
+		errorJSON(w, 400, err.Error())
+		return
+	}
+	ttl := time.Duration(0)
+	if v := r.URL.Query().Get("ttl"); v != "" {
+		ttl, err = time.ParseDuration(v)
+		if err != nil || ttl < 0 || ttl > 720*time.Hour {
+			errorJSON(w, 400, "ttl must be 0..720h")
+			return
+		}
+	}
+	st, err := s.intelFeed.Put(preview, source, note, ttl, expected)
+	if err != nil {
+		intelWriteError(w, err)
+		return
+	}
+	recorded := s.store.AddAudit(models.AuditEvent{At: time.Now().UTC(), Actor: actor(r), Action: "intel.put", Target: strconv.FormatUint(st.Revision, 10)}) == nil
 	writeJSON(w, 200, map[string]any{
-		"feed":        st,
-		"preview":     preview,
-		"autoApplied": false,
-		"applyHint":   "POST /api/v1/intel/apply with X-Netra-Confirm-Risk: high while mode=enforce (leased)",
+		"feed":          st,
+		"preview":       preview,
+		"auditRecorded": recorded,
+		"autoApplied":   false,
+		"applyHint":     "POST /api/v1/intel/apply with X-Netra-Confirm-Risk: high while mode=enforce (leased)",
 	})
 }
 
-func (s *Server) intelFeedDelete(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, 200, map[string]any{"feed": s.intelFeed.Clear()})
+func (s *Server) intelFeedDelete(w http.ResponseWriter, r *http.Request) {
+	expected, err := intelExpected(r)
+	if err != nil {
+		errorJSON(w, 400, err.Error())
+		return
+	}
+	st, err := s.intelFeed.Put(intel.Preview{}, "operator", "cleared", 0, expected)
+	if err != nil {
+		intelWriteError(w, err)
+		return
+	}
+	recorded := s.store.AddAudit(models.AuditEvent{At: time.Now().UTC(), Actor: actor(r), Action: "intel.clear", Target: strconv.FormatUint(st.Revision, 10)}) == nil
+	writeJSON(w, 200, map[string]any{"feed": st, "autoApplied": false, "auditRecorded": recorded})
 }
 
 func (s *Server) intelHits(w http.ResponseWriter, r *http.Request) {

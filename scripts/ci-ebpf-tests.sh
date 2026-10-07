@@ -48,6 +48,9 @@ cc -std=c11 -O2 -Wall -Wextra -Werror -Ibpf bpf/tests/l7_parse_test.c -o "${OUT}
 cc -std=c11 -O2 -Wall -Wextra -Werror bpf/tests/abi_layout_test.c -o "${OUT}/netra-abi-layout-test"
 "${OUT}/netra-abi-layout-test"
 
+cc -std=c11 -O2 -Wall -Wextra -Werror bpf/tests/dns_event_abi_test.c -o "${OUT}/netra-dns-event-abi-test"
+"${OUT}/netra-dns-event-abi-test"
+
 echo "==> compile BPF objects → ${OUT}"
 # Every bpf/netra_*.c is compiled, so a new sensor cannot be added and forgotten
 # here. netra_tc.c alone needs the larger stack estimate (see Dockerfile.agent).

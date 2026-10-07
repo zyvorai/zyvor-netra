@@ -83,6 +83,9 @@ func parseLines(raw string) Preview {
 		}
 		pending = append(pending, e)
 	}
+	if err := sc.Err(); err != nil {
+		skipped = append(skipped, Issue{Line: line + 1, Message: "input line too long"})
+	}
 	out := normalize(pending)
 	out.Skipped = append(skipped, out.Skipped...)
 	out.Dropped = len(out.Skipped)
@@ -139,8 +142,13 @@ func looksDNS(s string) bool {
 	if strings.Contains(s, "://") || strings.ContainsAny(s, " /\\") {
 		return false
 	}
-	if !strings.Contains(s, ".") {
+	if len(s) > 253 || !strings.Contains(s, ".") {
 		return false
+	}
+	for _, label := range strings.Split(s, ".") {
+		if len(label) == 0 || len(label) > 63 || strings.HasPrefix(label, "-") || strings.HasSuffix(label, "-") {
+			return false
+		}
 	}
 	for _, c := range s {
 		if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-' || c == '.' || c == '_') {
@@ -183,7 +191,7 @@ func normalize(in []Entry) Preview {
 			continue
 		}
 		if e.Type == "ip" {
-			if _, err := netip.ParseAddr(e.Value); err != nil {
+			if addr, err := netip.ParseAddr(e.Value); err != nil || addr.Zone() != "" {
 				out.Skipped = append(out.Skipped, Issue{Line: i + 1, Message: "invalid IP"})
 				continue
 			}
@@ -193,6 +201,20 @@ func normalize(in []Entry) Preview {
 				out.Skipped = append(out.Skipped, Issue{Line: i + 1, Message: "invalid CIDR"})
 				continue
 			}
+		}
+		switch e.Type {
+		case "ip":
+			addr, _ := netip.ParseAddr(e.Value)
+			e.Value = addr.Unmap().String()
+		case "cidr":
+			pfx, _ := netip.ParsePrefix(e.Value)
+			e.Value = pfx.Masked().String()
+		case "dns", "sni":
+			if !looksDNS(e.Value) {
+				out.Skipped = append(out.Skipped, Issue{Line: i + 1, Message: "invalid hostname"})
+				continue
+			}
+			e.Value = strings.ToLower(strings.TrimSuffix(e.Value, "."))
 		}
 		key := e.Type + "|" + e.Value + "|" + e.Direction
 		if seen[key] {

@@ -102,7 +102,11 @@ func New(log *slog.Logger, k *kube.Client, h *hubble.Client, st *store.Store) *S
 	requirePreflight := !strings.EqualFold(strings.TrimSpace(os.Getenv("NETRA_REQUIRE_PREFLIGHT")), "false")
 	ciliumEnabled := strings.EqualFold(strings.TrimSpace(os.Getenv("NETRA_CILIUM_ENABLED")), "true")
 	consoleEnabled := strings.EqualFold(strings.TrimSpace(os.Getenv("NETRA_WORKLOAD_CONSOLE")), "true")
-	s := &Server{log: log, kube: k, hubble: h, store: st, apiKey: os.Getenv("NETRA_API_KEY"), agentKey: os.Getenv("NETRA_AGENT_KEY"), webDir: os.Getenv("NETRA_WEB_DIR"), agentStaleAfter: staleAfter, requirePreflight: requirePreflight, ciliumEnabled: ciliumEnabled, consoleEnabled: consoleEnabled, metricsData: &telemetry{}, captureHub: newCaptureHub(), intelFeed: &intel.Feed{}, tlsFP: tlsfp.NewDetector(2048), workloadInventory: newWorkloadInventoryCache()}
+	feed, feedErr := intel.Open(strings.TrimSpace(os.Getenv("NETRA_INTEL_STATE_PATH")))
+	if feedErr != nil {
+		log.Warn("intel journal unavailable", "error", feedErr)
+	}
+	s := &Server{log: log, kube: k, hubble: h, store: st, apiKey: os.Getenv("NETRA_API_KEY"), agentKey: os.Getenv("NETRA_AGENT_KEY"), webDir: os.Getenv("NETRA_WEB_DIR"), agentStaleAfter: staleAfter, requirePreflight: requirePreflight, ciliumEnabled: ciliumEnabled, consoleEnabled: consoleEnabled, metricsData: &telemetry{}, captureHub: newCaptureHub(), intelFeed: feed, tlsFP: tlsfp.NewDetector(2048), workloadInventory: newWorkloadInventoryCache()}
 
 	// netrad refuses to start on a bad NETRA_AGENT_MTLS; if this runs anyway, fail
 	// closed rather than quietly turning a security setting off.
@@ -392,6 +396,10 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/v1/playbooks", s.auth(http.HandlerFunc(s.playbooks)))
 	mux.Handle("GET /api/v1/audit/summary", s.auth(http.HandlerFunc(s.auditSummary)))
 	mux.Handle("POST /api/v1/intel/preview", s.auth(http.HandlerFunc(s.intelPreview)))
+	mux.Handle("GET /api/v1/security/optimizer", s.auth(http.HandlerFunc(s.securityOptimizer)))
+	mux.Handle("GET /api/v1/security/incidents", s.auth(http.HandlerFunc(s.securityIncidents)))
+	mux.Handle("GET /api/v1/intel/history", s.auth(http.HandlerFunc(s.intelHistory)))
+	mux.Handle("POST /api/v1/intel/rollback/{revision}", s.auth(http.HandlerFunc(s.intelRollback)))
 	mux.Handle("GET /api/v1/intel/feed", s.auth(http.HandlerFunc(s.intelFeedGet)))
 	mux.Handle("PUT /api/v1/intel/feed", s.auth(http.HandlerFunc(s.intelFeedPut)))
 	mux.Handle("DELETE /api/v1/intel/feed", s.auth(http.HandlerFunc(s.intelFeedDelete)))

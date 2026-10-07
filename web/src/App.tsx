@@ -10,6 +10,7 @@ import Drops from './pages/Drops';
 import Insights from './pages/Insights';
 import Topology from './pages/Topology';
 import Incidents from './pages/Incidents';
+import SecurityReview from './pages/SecurityReview';
 import L7 from './pages/L7';
 import Policies from './pages/Policies';
 import Flows from './pages/Flows';
@@ -129,6 +130,7 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     lede: 'The same observed-traffic dependency graph, live and force-directed — drift, rate-drift, and exposure findings overlaid as node color.',
     tint: 'purple',
   },
+  'security-review': { eyebrow: 'Security', title: 'Review the evidence.', lede: 'Threat feed history, deny-rule suggestions and recent security signals on the same workload. Observe only.', tint: 'red' },
   incidents: {
     eyebrow: 'Incidents',
     title: 'When signals agree.',
@@ -296,6 +298,7 @@ export default function App() {
     insights: <Insights />,
     topology: <Topology />,
     incidents: <Incidents />,
+    'security-review': <SecurityReview />,
     policies: <Policies />,
     flows: <Flows />,
     ebpf: <EBPF />,

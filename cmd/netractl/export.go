@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -112,7 +113,7 @@ func playbooksCmd(args []string) error {
 
 func intelCmd(args []string) error {
 	if len(args) < 1 {
-		return fmt.Errorf("intel preview|feed|hits|dns-hits|apply|clear [FILE] [--matched-only]")
+		return fmt.Errorf("intel preview|feed|hits|dns-hits|history|rollback|apply|clear [FILE] [--matched-only]")
 	}
 	switch args[0] {
 	case "preview":
@@ -135,6 +136,17 @@ func intelCmd(args []string) error {
 		return request("PUT", "/api/v1/intel/feed", body)
 	case "hits":
 		return request("GET", "/api/v1/intel/hits", nil)
+	case "history":
+		return request("GET", "/api/v1/intel/history", nil)
+	case "rollback":
+		if len(args) != 2 {
+			return fmt.Errorf("intel rollback REVISION")
+		}
+		rev, err := strconv.ParseUint(args[1], 10, 64)
+		if err != nil || rev == 0 {
+			return fmt.Errorf("revision must be a positive integer")
+		}
+		return request("POST", "/api/v1/intel/rollback/"+strconv.FormatUint(rev, 10), nil)
 	case "dns-hits":
 		return request("GET", "/api/v1/intel/dns-hits", nil)
 	case "clear":
@@ -148,7 +160,7 @@ func intelCmd(args []string) error {
 		}
 		return requestHeaders("POST", path, nil, map[string]string{"X-Netra-Confirm-Risk": "high"})
 	default:
-		return fmt.Errorf("intel preview|feed|hits|dns-hits|apply|clear [FILE] [--matched-only]")
+		return fmt.Errorf("intel preview|feed|hits|dns-hits|history|rollback|apply|clear [FILE] [--matched-only]")
 	}
 }
 

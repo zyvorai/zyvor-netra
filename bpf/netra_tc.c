@@ -764,31 +764,7 @@ struct {
     __type(value, struct ipv6_ext_value);
 } ipv6_ext_stats SEC(".maps");
 
-struct obs_event {
-    __u64 ts_ns;
-    __u64 cgroup_id;
-    __u32 pid;
-    __u32 uid;
-    __u32 ifindex;
-    __u32 length;
-    __u8 src_addr[16];
-    __u8 dst_addr[16];
-    __u16 src_port;
-    __u16 dst_port;
-    __u8 family;
-    __u8 protocol;
-    __u8 direction;
-    __u8 hook;
-    __u8 action;
-    __u8 event_type;
-    __u8 tcp_flags;
-    __u8 reason;
-    char comm[16];
-    char dns[96];
-    __u32 latency_us;
-    __u8 dns_rcode;
-    __u8 pad_event[3];
-} __attribute__((packed));
+#include "netra_event.h"
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
     __uint(max_entries, 1 << 22);
@@ -1912,6 +1888,7 @@ static __always_inline void dns_response_track(__u64 cgroup_id, __u8 family, con
         if (latency_us > hv->max_latency_us) hv->max_latency_us = latency_us;
         hv->last_ns = now;
     }
+    __u16 qtype = netra_l7_dns_qtype(payload, data_end);
     struct obs_event *e = new_event(family, DIR_INGRESS, HOOK_CGROUP, IPPROTO_UDP, ACT_ALLOW, EVT_DNS_RESPONSE, REASON_NONE);
     if (e) {
         e->cgroup_id = cgroup_id;
@@ -1921,6 +1898,7 @@ static __always_inline void dns_response_track(__u64 cgroup_id, __u8 family, con
         e->dst_port = client_port;
         e->latency_us = (__u32)(latency_us > 0xffffffffULL ? 0xffffffffULL : latency_us);
         e->dns_rcode = rcode;
+        e->dns_qtype = qtype;
         __builtin_memcpy(e->src_addr, src, 16);
         __builtin_memcpy(e->dst_addr, dst, 16);
         __builtin_memcpy(e->dns, pv->name, 96);

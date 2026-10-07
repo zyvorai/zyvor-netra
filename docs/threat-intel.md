@@ -33,3 +33,7 @@ Fails open when the lease expires (same as every other deny).
 
 See also: [competitive-quantum.md](competitive-quantum.md), [firewall.md](firewall.md),
 [buyers guide](sales/buyers-guide.md).
+
+## Feed history, expiry and refresh
+
+Feed imports now support canonical indicators, optional TTL and revision guards, retained history and rollback, optional persistent journaling and leader-owned HTTPS refresh. See [Security intelligence and review](security-review.md) for environment variables, API routes and failure/expiry behavior. Feed updates never apply deny entries.

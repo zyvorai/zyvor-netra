@@ -31,14 +31,14 @@ filtering to the matched DNS-response leg — the same precise filter
 (`Type=="dns-response" && Action=="observed" && Protocol=="UDP" &&
 Hook=="cgroup" && Direction=="ingress" && SourcePort==53`) — so a query
 and its response are never double-counted, and every observed query
-carries a real RCODE. Only the query name, RCODE, and attribution
+carries a real RCODE. Only the query name, QTYPE, RCODE, and attribution
 (namespace/pod/workload/comm) are used; no payload, no answer records.
 
-**Known gap, not a fabricated signal:** the agent's fast-path event
-decoder does not currently carry a QTYPE field, so the detector's
-"TXT-heavy" tunneling signal can never fire from live data today —
-tunneling detection still works from subdomain-count, label-length, and
-entropy signals alone.
+**QTYPE telemetry:** matched ordinary UDP/53 responses now carry the complete
+first question's type. This enables the existing TXT-heavy signal from live
+data. Compressed, truncated or oversized questions return zero (unknown).
+The event ABI remains 196 bytes; no payload or answer records are retained.
+See [Security intelligence and review](security-review.md).
 
 ## Why this is stateful
 
@@ -146,7 +146,7 @@ MCP tool: `netra_ebpf_dns_findings` (read-only).
   on entropy/length/digit-ratio signals — tune the thresholds above for
   your environment's actual DNS traffic mix before trusting default
   values in a noisy environment.
-- **No QTYPE data today** — see **Sources** above.
+- **QTYPE is best-effort** — compressed/truncated questions, TCP DNS and encrypted DNS remain unknown; see **Sources** above.
 - **In-memory only.** A `netrad` restart or HA failover resets all
   detector state (LRU, findings, counters) to zero, the same posture
   `docs/snowflake-export.md` already documents for the audit-log

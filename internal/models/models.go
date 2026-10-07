@@ -349,6 +349,7 @@ type FastPathEvent struct {
 	Comm            string    `json:"comm,omitempty"`
 	DNSQuery        string    `json:"dnsQuery,omitempty"`
 	LatencyUS       uint32    `json:"latencyUs,omitempty"`
+	DNSQType        uint16    `json:"dnsQType,omitempty"`
 	DNSRcode        uint8     `json:"dnsRcode,omitempty"`
 	Namespace       string    `json:"namespace,omitempty"`
 	Pod             string    `json:"pod,omitempty"`

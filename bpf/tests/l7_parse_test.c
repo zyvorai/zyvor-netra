@@ -235,8 +235,23 @@ static void http_status_short_rejected(void)
     assert(netra_l7_http_status((void *)resp, (void *)(resp + strlen(resp))) == 0);
 }
 
+static void dns_qtype_complete_and_bounded(void)
+{
+    unsigned char p[] = {0,1,0x81,0x80,0,1,0,0,0,0,0,0,3,'w','w','w',0,0,16,0,1};
+    assert(netra_l7_dns_qtype(p,p+sizeof(p)) == 16);
+    for (size_t n=0;n<sizeof(p);n++) assert(netra_l7_dns_qtype(p,p+n)==0);
+    p[18]=1;assert(netra_l7_dns_qtype(p,p+sizeof(p))==1);
+    p[5]=2;assert(netra_l7_dns_qtype(p,p+sizeof(p))==0);p[5]=1;
+    p[12]=0xc0;assert(netra_l7_dns_qtype(p,p+sizeof(p))==0);p[12]=3;
+    p[20]=3;assert(netra_l7_dns_qtype(p,p+sizeof(p))==0);
+    unsigned char longname[120]={0};longname[5]=1;longname[12]=63;memset(longname+13,'a',63);longname[76]=32;memset(longname+77,'b',32);
+    longname[111]=16;longname[113]=1;
+    assert(netra_l7_dns_qtype(longname,longname+sizeof(longname))==0);
+}
+
 int main(void)
 {
+    dns_qtype_complete_and_bounded();
     dns_qname_multi_label();
     dns_qname_uppercase_is_lowercased();
     dns_qname_truncated_mid_label();

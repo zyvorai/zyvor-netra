@@ -22,6 +22,9 @@ import (
 // the same underlying Hubble flows) is the tool-shaped equivalent.
 func registerReadTools(srv *mcpserver.Server, c *client) error {
 	tools := []endpointTool{
+		{name: "netra_security_optimizer", method: "GET", path: "/api/v1/security/optimizer", description: "Read-only review of flat deny predicates. Sampled matches are not rule-hit counters; never applies changes.", schema: emptySchema()},
+		{name: "netra_security_incidents", method: "GET", path: "/api/v1/security/incidents", description: "Correlate recent DNS, scan and IP/CIDR intel evidence by exact node/namespace/pod. No attack or causal verdict and no enforcement.", schema: emptySchema()},
+		{name: "netra_intel_history", method: "GET", path: "/api/v1/intel/history", description: "Read retained threat-feed revisions, expiry and status. No rollback or mutation.", schema: emptySchema()},
 		{
 			name: "netra_status", method: "GET", path: "/api/v1/status",
 			description: "Overall Netra controller status: fast-path config, agent counts/staleness, baseline and rate-baseline capture state, Hubble status, HA/Cilium flags.",

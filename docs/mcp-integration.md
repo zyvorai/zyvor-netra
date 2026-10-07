@@ -80,7 +80,7 @@ Then, from a Hermes session:
 hermes mcp test netra
 ```
 
-should report a successful handshake and list the **120** read tools. Run `/reload-mcp` inside a chat session after changing `config.yaml` to pick up changes without restarting Hermes entirely.
+should report a successful handshake and list the **123** read tools. Run `/reload-mcp` inside a chat session after changing `config.yaml` to pick up changes without restarting Hermes entirely.
 
 Mutations stay off by default even with this config — `NETRA_MCP_ALLOW_MUTATIONS` must be added explicitly on the `netra-mcp` process's own environment, not just in Hermes's config. A conservative read-only-by-convention setup, worth keeping even once mutations are enabled server-side, restricts which tools Hermes is allowed to call at all via `tools.include`:
 
@@ -391,3 +391,13 @@ is listed and calling one is refused as unknown, a wrong API key is a tool error
 malformed input gets a parse error while the server keeps serving. With `NETRA_MCP_ALLOW_MUTATIONS=true`
 exactly the source-defined mutating set is added, a deny rule added through MCP reaches the controller
 and the audit log names the MCP actor (`NETRA_MCP_ACTOR`), and bad arguments change nothing.
+
+### Security review tools
+
+| Tool | Endpoint | Behavior |
+|---|---|---|
+| `netra_security_optimizer` | `GET /api/v1/security/optimizer` | Review flat deny predicates and sampled matching events; no apply |
+| `netra_security_incidents` | `GET /api/v1/security/incidents` | Exact-workload temporal correlation; no attack verdict |
+| `netra_intel_history` | `GET /api/v1/intel/history` | Read retained feed snapshots and expiry; no rollback |
+
+See [Security intelligence and review](security-review.md). These three tools remain available with mutations disabled.

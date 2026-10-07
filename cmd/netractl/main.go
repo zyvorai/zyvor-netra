@@ -175,6 +175,11 @@ func run(args []string) error {
 		return reportCmd(args[1:])
 	case "playbooks", "playbook":
 		return playbooksCmd(args[1:])
+	case "security":
+		if len(args) != 2 || (args[1] != "optimizer" && args[1] != "incidents") {
+			return fmt.Errorf("security optimizer|incidents")
+		}
+		return request("GET", "/api/v1/security/"+args[1], nil)
 	case "intel":
 		return intelCmd(args[1:])
 	case "watchlist":

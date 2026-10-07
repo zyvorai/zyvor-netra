@@ -57,6 +57,30 @@ netra_l7_dns_qname(void *payload, void *data_end, char out[96])
     return oi;
 }
 
+// Read QTYPE only from a complete, uncompressed first question. Unknown,
+// oversized, compressed or truncated questions return zero; never guess.
+static __inline__ __attribute__((always_inline)) unsigned short
+netra_l7_dns_qtype(void *payload, void *data_end)
+{
+    unsigned char *p = payload;
+    if ((void *)(p + 12) > data_end || p[4] != 0 || p[5] != 1) return 0;
+    p += 12;
+    int remaining = 0;
+    NETRA_L7_UNROLL
+    for (int i = 0; i < 96; i++) {
+        if ((void *)(p + 1) > data_end) return 0;
+        unsigned char c = *p++;
+        if (remaining) { remaining--; continue; }
+        if (c == 0) {
+            if ((void *)(p + 4) > data_end || p[2] != 0 || p[3] != 1) return 0;
+            return ((unsigned short)p[0] << 8) | p[1];
+        }
+        if (c > 63) return 0;
+        remaining = c;
+    }
+    return 0;
+}
+
 // netra_l7_tls_sni_value copies and validates the name_len bytes at p[i+9:]
 // once the SNI extension header at position i has already been validated by
 // the caller.

@@ -109,7 +109,14 @@ func main() {
 	autoEng, autoEnabled := buildAutoMitigate(log, st, scanDet)
 	wobs := buildWorkloadObs(log)
 	metrics := buildMetrics(log, stateFile, dispatcher)
-	handler := api.New(log, k, h, st).WithOIDC(buildOIDC(log)).WithWorkloadObs(wobs).WithGitOps(gr).WithDNSDetect(dnsDet).WithScanDetect(scanDet).WithAutoMitigate(autoEng).WithArtifacts(artifacts).WithMetrics(metrics.hubOrNil()).WithMetricAlerts(metrics.alertsOrNil()).WithMetricExporters(metrics.exporterStatus).Handler()
+	apiServer := api.New(log, k, h, st).WithOIDC(buildOIDC(log)).WithWorkloadObs(wobs).WithGitOps(gr).WithDNSDetect(dnsDet).WithScanDetect(scanDet).WithAutoMitigate(autoEng).WithArtifacts(artifacts).WithMetrics(metrics.hubOrNil()).WithMetricAlerts(metrics.alertsOrNil()).WithMetricExporters(metrics.exporterStatus)
+	handler := apiServer.Handler()
+	refreshCtx, refreshCancel := context.WithCancel(ctx)
+	var refreshWG sync.WaitGroup
+	refreshWG.Add(1)
+	go func() { defer refreshWG.Done(); apiServer.RunIntelRefresh(refreshCtx) }()
+	defer refreshWG.Wait()
+	defer refreshCancel()
 	var metricsWG sync.WaitGroup
 	if stop := metrics.start(ctx, &metricsWG); stop != nil {
 		defer metricsWG.Wait()
@@ -846,6 +853,8 @@ func electionLoop(
 	var scanDetectWG sync.WaitGroup
 	var autoMitigateCancel func()
 	var autoMitigateWG sync.WaitGroup
+	var intelRefreshCancel func()
+	var intelRefreshWG sync.WaitGroup
 	var metricsCancel func()
 	var metricsWG sync.WaitGroup
 
@@ -854,6 +863,11 @@ func electionLoop(
 			return
 		}
 		gate.Demote()
+		if intelRefreshCancel != nil {
+			intelRefreshCancel()
+			intelRefreshWG.Wait()
+			intelRefreshCancel = nil
+		}
 		if metricsCancel != nil {
 			metricsCancel()
 			metricsWG.Wait()
@@ -964,11 +978,16 @@ func electionLoop(
 		autoEng, autoEnabled := buildAutoMitigate(log, st, scanDet)
 		wobs := buildWorkloadObs(log)
 		metrics := buildMetrics(log, stateFile, dispatcher)
-		apiHandler := api.New(log, k, h, st).WithOIDC(buildOIDC(log)).WithWorkloadObs(wobs).WithGitOps(gr).WithDNSDetect(dnsDet).WithScanDetect(scanDet).WithAutoMitigate(autoEng).WithArtifacts(artifacts).WithMetrics(metrics.hubOrNil()).WithMetricAlerts(metrics.alertsOrNil()).WithMetricExporters(metrics.exporterStatus).Handler()
+		apiServer := api.New(log, k, h, st).WithOIDC(buildOIDC(log)).WithWorkloadObs(wobs).WithGitOps(gr).WithDNSDetect(dnsDet).WithScanDetect(scanDet).WithAutoMitigate(autoEng).WithArtifacts(artifacts).WithMetrics(metrics.hubOrNil()).WithMetricAlerts(metrics.alertsOrNil()).WithMetricExporters(metrics.exporterStatus)
+		apiHandler := apiServer.Handler()
 		if stop := metrics.start(ctx, &metricsWG); stop != nil {
 			metricsCancel = stop
 		}
 		gate.Promote(apiHandler)
+		refreshCtx, cancel := context.WithCancel(ctx)
+		intelRefreshCancel = cancel
+		intelRefreshWG.Add(1)
+		go func() { defer intelRefreshWG.Done(); apiServer.RunIntelRefresh(refreshCtx) }()
 		if shouldRunAlertPoller(dispatcher) {
 			pctx, cancel := context.WithCancel(ctx)
 			pollerCancel = cancel

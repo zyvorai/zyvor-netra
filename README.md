@@ -19,7 +19,7 @@
 
 **Standalone eBPF network observability and emergency network control for Linux/Kubernetes — with optional Cilium + Hubble enrichment.** Kernel drop attribution, path and congestion diagnostics, live packet capture, and leased deny rules that return to observe on their own, on any CNI.
 
-**Observe-first** · **Lease-bounded, fails open** · **No CNI required** · **No payload collection** · **180 MCP tools**
+**Observe-first** · **Lease-bounded, fails open** · **No CNI required** · **No payload collection** · **183 MCP tools**
 
 📖 **[Read the full docs](https://zyvorai.github.io/zyvor-netra/)** — quickstart, architecture, security model, and a product tour.
 
@@ -54,7 +54,7 @@ From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.29.0, and on `main`):
 | "The network is slow" with no evidence | TCP path diagnostics and a Congestion Map that colors every layer of the Linux network stack by its worst finding |
 | A chart spiked and you need to know why | Per-second metrics with anomaly detection, where every spike links to the flows, drop reasons and captures from that window |
 | You need packets from one node, now | Filtered, time-bounded live capture with a Wireshark-style layered decode, one click from a finding |
-| Your AI agent should investigate without breaking things | An MCP server with 180 tools; mutations stay behind `NETRA_MCP_ALLOW_MUTATIONS` |
+| Your AI agent should investigate without breaking things | An MCP server with 183 tools; mutations stay behind `NETRA_MCP_ALLOW_MUTATIONS` |
 
 Netra does not require Cilium. The node agent owns its own programs and maps below `/sys/fs/bpf/netra`. If Cilium/Hubble exists, Netra can manage `CiliumNetworkPolicy` and display Hubble flows, but both integrations are opt-in.
 
@@ -215,7 +215,8 @@ Details: [Architecture and visibility boundaries](docs/architecture.md) · [Safe
 ## For AI agents and operators
 
 - **`netractl`** — the operator CLI. [Docs →](docs/netractl.md)
-- **MCP server** — 180 stdio tools (120 read, 60 opt-in mutating) for AI agents. [Docs →](docs/mcp-integration.md)
+- **Security review** — DNS QTYPE, versioned threat feeds with TTL/rollback and optional HTTPS refresh, flat deny-predicate suggestions, and exact-workload security correlation. [Docs →](docs/security-review.md)
+- **MCP server** — 183 stdio tools (123 read, 60 opt-in mutating) for AI agents. [Docs →](docs/mcp-integration.md)
 - **Built-in AI briefs** — heuristic by default, optional OpenAI-compatible rewrite, read-only. [Docs →](docs/ai.md)
 - **Export** — SIEM (CEF, syslog, JSONL, OTLP), Prometheus (scrape and remote write), Grafana, Loki, Graphite, Slack and Teams ChatOps.
 

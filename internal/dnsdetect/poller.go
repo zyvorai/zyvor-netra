@@ -50,6 +50,7 @@ func (d *Detector) Run(ctx context.Context, interval time.Duration, fetch func()
 				}
 				d.Observe(Query{
 					Name:      ev.DNSQuery,
+					QType:     ev.DNSQType,
 					RCode:     ev.DNSRcode,
 					Timestamp: ev.ObservedAt,
 					Namespace: ev.Namespace,
@@ -87,11 +88,8 @@ func (d *Detector) Run(ctx context.Context, interval time.Duration, fetch func()
 // answered/failed verdict rather than the query leg's always-zero
 // placeholder.
 //
-// There is currently no QTYPE field decoded anywhere in the agent's
-// fast-path event stream, so Query.QType is always left at its zero value
-// by Run above — the "txt-heavy" tunneling signal in evaluateLocked can
-// therefore never fire from live data today. This is an honest gap, not
-// a fabricated one: it degrades gracefully rather than guessing.
+// QType comes from the complete first ordinary DNS question; zero means
+// unavailable. Compressed/truncated questions and encrypted DNS stay unknown.
 func isDNSResponse(e models.FastPathEvent) bool {
 	return e.Type == "dns-response" && e.Action == "observed" && e.Protocol == "UDP" &&
 		e.Hook == "cgroup" && e.Direction == "ingress" && e.SourcePort == 53 &&
