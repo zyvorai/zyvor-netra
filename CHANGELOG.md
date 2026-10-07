@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Image signature check names the renamed repository.** Release images are signed by `zyvorai/zyvor-netra`'s workflow since the repository rename, so the `cosign verify` command in `deploy/README.md` (which named `zyvorai/netra`) failed; it now matches the signer.
+
 ## 0.30.0 — 2026-10-07
 
 - **Security intelligence and review.** Matched DNS response events carry the query type (`dnsQType`, two bytes of existing event padding, so the 196-byte event ABI and every earlier offset are unchanged), which turns on the DNS detector's `txt-heavy` signal. The threat feed gains canonical indicators, an optional `?ttl=`, `X-Netra-Intel-Revision` compare-and-set, the last 16 revisions with rollback (`GET /api/v1/intel/history`, `POST /api/v1/intel/rollback/{revision}`, `netractl intel history|rollback`), an optional persistent journal (`NETRA_INTEL_STATE_PATH`) and a leader-only HTTPS refresh (`NETRA_INTEL_SOURCE_URL`) that keeps the last good revision on any bad download. `GET /api/v1/security/optimizer` reports equivalent, covered and overlapping deny predicates, and `GET /api/v1/security/incidents` correlates DNS findings, scan findings and feed hits on the same exact workload within ten minutes (`netractl security optimizer|incidents`, **Security → Security Review**, read-only MCP tools `netra_security_optimizer`, `netra_security_incidents`, `netra_intel_history`). None of it applies a deny, deletes a rule or changes mode; applying a feed still needs a lease and `X-Netra-Confirm-Risk: high`. [Docs](docs/security-review.md)

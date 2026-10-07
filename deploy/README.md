@@ -51,7 +51,7 @@ signature names the workflow, the tag and the commit that built them:
 
 ```bash
 cosign verify ghcr.io/zyvorai/netra:0.30.0 \
-  --certificate-identity https://github.com/zyvorai/netra/.github/workflows/release.yml@refs/tags/v0.30.0 \
+  --certificate-identity https://github.com/zyvorai/zyvor-netra/.github/workflows/release.yml@refs/tags/v0.30.0 \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
