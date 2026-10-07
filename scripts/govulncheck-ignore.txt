@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# Advisories scripts/ci-govulncheck.sh tolerates. One per line: ID, then why.
+# Remove an entry as soon as the advisory is corrected or the dependency fixed.
+GO-2026-6596 Cilium Gateway API HTTPRoute cross-namespace redirect (CVE-2026-56742); real range is v1.17-v1.19 and v1.18<1.18.11, the OSV catch-all entry flags every version of the module; Netra only uses api/v1/flow and api/v1/observer protobuf types

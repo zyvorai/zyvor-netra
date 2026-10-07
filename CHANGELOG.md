@@ -4,6 +4,7 @@
 
 - **Image signature check names the renamed repository.** Release images are signed by `zyvorai/zyvor-netra`'s workflow since the repository rename, so the `cosign verify` command in `deploy/README.md` (which named `zyvorai/netra`) failed; it now matches the signer. Clone commands, Helm chart `home`/`sources`, docs-site and README links point at `zyvorai/zyvor-netra` too (the Go module path is unchanged).
 - **README maturity table covers 0.30.0.** L7 names and query types, per-second metrics, node isolation (loaded but inert until a policy is set) and security review now say what runs by default.
+- **`security` CI job tolerates one misfiled advisory, explicitly.** GO-2026-6596 (Cilium Gateway API HTTPRoutes, CVE-2026-56742) affects Cilium v1.17–v1.19, but its OSV record also carries a catch-all range that flags every version of `github.com/cilium/cilium`, so govulncheck reported Netra's use of the flow protobuf types and no upgrade could clear it. `scripts/ci-govulncheck.sh` now fails on any reachable advisory except those listed with a reason in `scripts/govulncheck-ignore.txt`, and reports stale entries.
 - **`web-e2e` checks every shipped page again.** Its page list lacked `metrics`, `metric-anomalies`, `metric-alerts` and `security-review`, so the job failed on its own consistency check since the metrics platform landed.
 
 ## 0.30.0 — 2026-10-07

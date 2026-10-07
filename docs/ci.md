@@ -27,7 +27,7 @@ shared group even with `cancel-in-progress: false`.
   leaving `go.mod`/`go.sum` unchanged.
 - `golangci-lint` (govet, staticcheck, ineffassign, unused) reporting **only issues a change
   introduces** (`only-new-issues`), so the existing backlog does not block unrelated work.
-- `govulncheck` (pinned version): a known-vulnerable dependency the code can reach fails the job.
+- `govulncheck` (pinned version, `scripts/ci-govulncheck.sh`): a known-vulnerable dependency the code can reach fails the job, unless the advisory is listed with a reason in `scripts/govulncheck-ignore.txt`. Entries that no longer match are reported as stale; remove them.
 - The LangGraph companion's tests (`make test-python`, minimum test count).
 - Dependabot opens weekly update PRs (Go, npm for `web/` and `website/`, Actions, Docker, pip). Actions
   arrive as one grouped PR and the `ubuntu` base of the agent image is ignored: a base-image change decides

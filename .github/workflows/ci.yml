@@ -769,8 +769,8 @@ jobs:
     - uses: actions/setup-go@v7
       with: {go-version: '1.27.1', cache: true}
     - name: govulncheck
-      # Same command locally: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
-      run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
+      # Same command locally: ./scripts/ci-govulncheck.sh
+      run: ./scripts/ci-govulncheck.sh
   python:
     # The LangGraph companion (python/netra_langgraph) had tests nothing ran.
     runs-on: ubuntu-latest

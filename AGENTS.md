@@ -116,6 +116,7 @@ CI jobs live in `.github/workflows/ci.yml` (`go`, `web`, `helm`, `ebpf`,
 | `scripts/ci-bpfattach-unit.sh` | `go` — BPF attachment inventory, hook drift, carry-forward, API, metrics |
 | `scripts/ci-netlink-veth.sh` | `netlink-veth-smoke` — real RTNL in a throwaway netns, forced ENOBUFS overrun |
 | `scripts/ci-http-status-smoke.sh` | `http-status-smoke` — agent + cleartext HTTP/1 503 |
+| `scripts/ci-govulncheck.sh` | `security` — reachable vulnerable deps, minus justified `scripts/govulncheck-ignore.txt` entries |
 | `scripts/ci-metrics-unit.sh` | `go` — tsdb, collectors, app collectors, stream, anomalies, metric alerts, exporters, metrics APIs |
 | `scripts/ci-metrics-veth.sh` | `metrics-veth-smoke` — real collectors + netrad, iperf3 on a veth, anomaly flagged, alert fires |
 
