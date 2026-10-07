@@ -18,6 +18,6 @@ Netra and **PacketWolf** are Zyvor suite counterparts covering the same eBPF ter
 
 There is no Netra↔PacketWolf API sync, shared CRD, or required install pair today. SIEM/Prometheus/webhooks export sideways into a third plane if you need a unified view.
 
-Full co-existence rules: repository [`docs/packetwolf.md`](https://github.com/zyvorai/netra/blob/main/docs/packetwolf.md).
+Full co-existence rules: repository [`docs/packetwolf.md`](https://github.com/zyvorai/zyvor-netra/blob/main/docs/packetwolf.md).
 
 **Next:** [Architecture](./architecture.md) · [Security](../security.md) · [zyvor.dev/packetwolf](https://zyvor.dev/packetwolf)

@@ -260,7 +260,10 @@ Netra's latest release is **0.30.0** ([CHANGELOG.md](CHANGELOG.md)). What runs b
 | Sampled L7 and TLS plaintext sensors | Opt-in, off by default |
 | Cilium `CiliumNetworkPolicy` and Hubble integration | Opt-in (`cilium.enabled`, `hubble.enabled`) |
 | MCP mutating tools | Opt-in (`NETRA_MCP_ALLOW_MUTATIONS`) |
-| Node isolation | On `main`, shadow or enforce |
+| TLS SNI, HTTP Host, DNS names and query types | Default (`NETRA_L7=auto`), Linux 5.17+; dropped on older kernels |
+| Per-second metrics, anomalies, metric alerts | Default (`NETRA_METRICS_ENABLED`); alerts only notify |
+| Node isolation | Loaded (`agent.nodeIsolation: auto`), inert until a per-node policy is set; shadow or enforce (leased) |
+| Security review, threat-feed history and rollback | Read-only; HTTPS feed refresh only when `NETRA_INTEL_SOURCE_URL` is set |
 
 ---
 

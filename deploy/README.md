@@ -43,7 +43,7 @@ to the version of the checkout, so from `main` between releases they can name an
 yet. Install from the tag, not from `main`:
 
 ```bash
-git clone --branch v0.30.0 https://github.com/zyvorai/netra && cd netra
+git clone --branch v0.30.0 https://github.com/zyvorai/zyvor-netra && cd zyvor-netra
 ```
 
 **Verify what you pull.** Both images are signed by the release workflow (keyless cosign), and the

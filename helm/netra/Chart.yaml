@@ -4,9 +4,9 @@ description: Standalone eBPF network observability and enforcement with optional
 type: application
 version: 0.30.0
 appVersion: "0.30.0"
-home: https://github.com/zyvorai/netra
+home: https://github.com/zyvorai/zyvor-netra
 sources:
-  - https://github.com/zyvorai/netra
+  - https://github.com/zyvorai/zyvor-netra
 icon: https://raw.githubusercontent.com/zyvorai/netra/main/web/public/zyvor-mark.svg
 maintainers:
   - name: Zyvor

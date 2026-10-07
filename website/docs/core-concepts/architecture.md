@@ -37,7 +37,7 @@ The agent owns its own programs and maps below `/sys/fs/bpf/netra` and attaches 
 
 Operators inspect **desired** map contents (deny/allow/rate/policy) with
 `netractl ebpf maps` / `GET /api/v1/ebpf/maps` — see the repo doc
-[ebpf-maps.md](https://github.com/zyvorai/netra/blob/main/docs/ebpf-maps.md).
+[ebpf-maps.md](https://github.com/zyvorai/zyvor-netra/blob/main/docs/ebpf-maps.md).
 That is the control-plane inventory agents reconcile; it is not a raw
 kernel `bpftool` dump.
 

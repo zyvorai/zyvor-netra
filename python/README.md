@@ -1,6 +1,6 @@
 # netra-langgraph
 
-Optional **LangGraph** companion for [Netra](https://github.com/zyvorai/netra)
+Optional **LangGraph** companion for [Netra](https://github.com/zyvorai/zyvor-netra)
 natural-language triage.
 
 `netrad` stays Go / stdlib-only (`AGENTS.md`). This package is a separate

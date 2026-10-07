@@ -42,7 +42,7 @@ function HomepageHeader() {
               </Link>
               <Link
                 className="button button--outline button--lg button--secondary"
-                to="https://github.com/zyvorai/netra">
+                to="https://github.com/zyvorai/zyvor-netra">
                 View on GitHub
               </Link>
             </div>
@@ -116,7 +116,7 @@ function TrustBand() {
           </div>
           <div className={styles.trustBadges}>
             <img
-              src="https://github.com/zyvorai/netra/actions/workflows/ci.yml/badge.svg"
+              src="https://github.com/zyvorai/zyvor-netra/actions/workflows/ci.yml/badge.svg"
               alt="CI status"
             />
             <img

@@ -30,7 +30,8 @@ fs.mkdirSync(OUT, { recursive: true });
 // Kept in step with web/src/lib/investigation.ts's `pages` const by a check below.
 const PAGES = ['overview', 'connections', 'workloads', 'explain', 'pods', 'vms', 'health', 'path', 'drops', 'l7',
   'insights', 'topology', 'incidents', 'policies', 'flows', 'ebpf', 'audit', 'report', 'scorecard', 'talkers', 'fleet',
-  'surfaces', 'features', 'traffic', 'capture', 'congestion', 'sysctl-audit', 'node-resources'];
+  'surfaces', 'features', 'traffic', 'capture', 'congestion', 'sysctl-audit', 'node-resources', 'security-review',
+  'metrics', 'metric-anomalies', 'metric-alerts'];
 
 const api = async (p, opts = {}) => {
   const r = await fetch(BASE + p, { ...opts, headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json', ...(opts.headers || {}) } });

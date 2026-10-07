@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- **Image signature check names the renamed repository.** Release images are signed by `zyvorai/zyvor-netra`'s workflow since the repository rename, so the `cosign verify` command in `deploy/README.md` (which named `zyvorai/netra`) failed; it now matches the signer.
+- **Image signature check names the renamed repository.** Release images are signed by `zyvorai/zyvor-netra`'s workflow since the repository rename, so the `cosign verify` command in `deploy/README.md` (which named `zyvorai/netra`) failed; it now matches the signer. Clone commands, Helm chart `home`/`sources`, docs-site and README links point at `zyvorai/zyvor-netra` too (the Go module path is unchanged).
+- **README maturity table covers 0.30.0.** L7 names and query types, per-second metrics, node isolation (loaded but inert until a policy is set) and security review now say what runs by default.
+- **`web-e2e` checks every shipped page again.** Its page list lacked `metrics`, `metric-anomalies`, `metric-alerts` and `security-review`, so the job failed on its own consistency check since the metrics platform landed.
 
 ## 0.30.0 — 2026-10-07
 

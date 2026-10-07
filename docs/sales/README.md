@@ -25,4 +25,4 @@ The buyers guide is also downloadable from Resources as `/sales/buyers-guide.md`
 
 ## Browse on GitHub
 
-https://github.com/zyvorai/netra/tree/main/docs/sales
+https://github.com/zyvorai/zyvor-netra/tree/main/docs/sales

@@ -74,11 +74,11 @@ netractl ai brief
 ```
 
 Flow history, RED, traces, stacks, kernel notes, and pod warnings:
-[`docs/flow-log.md`](https://github.com/zyvorai/netra/blob/main/docs/flow-log.md).
+[`docs/flow-log.md`](https://github.com/zyvorai/zyvor-netra/blob/main/docs/flow-log.md).
 
 Map inventory details:
-[`docs/ebpf-maps.md`](https://github.com/zyvorai/netra/blob/main/docs/ebpf-maps.md).
+[`docs/ebpf-maps.md`](https://github.com/zyvorai/zyvor-netra/blob/main/docs/ebpf-maps.md).
 Full feature catalog and dashboard toggles: see the repo doc
-[`docs/features.md`](https://github.com/zyvorai/netra/blob/main/docs/features.md).
+[`docs/features.md`](https://github.com/zyvorai/zyvor-netra/blob/main/docs/features.md).
 Dashboard sign-in: `admin` / `Admin@321` when the API key matches that demo
 token (or paste the real `auth.apiKey` as the password).
