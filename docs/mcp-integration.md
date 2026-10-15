@@ -43,7 +43,7 @@ Each line you type after startup should produce one corresponding JSON-RPC respo
 
 ## Install from the MCP Registry (OCI)
 
-`netra-mcp` is listed in the MCP Registry as `io.github.zyvorai/netra` and ships as the multi-arch, cosign-signed image `ghcr.io/zyvorai/netra-mcp`. Registry entries are published from `server.json` by the `publish-mcp` job in `.github/workflows/release.yml` on every `v*` tag. The image carries the `io.modelcontextprotocol.server.name` label the registry uses to verify ownership.
+`netra-mcp` is listed in the MCP Registry as [`io.github.zyvorai/netra`](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.zyvorai%2Fnetra/versions/latest) (live since v0.30.1) and ships as the multi-arch, cosign-signed image `ghcr.io/zyvorai/netra-mcp`. Registry entries are published from `server.json` by the `publish-mcp` job in `.github/workflows/release.yml` on every `v*` tag. The image carries the `io.modelcontextprotocol.server.name` label the registry uses to verify ownership.
 
 Client configuration (any stdio MCP client):
 
@@ -62,6 +62,24 @@ Client configuration (any stdio MCP client):
 ```
 
 Mutating tools stay disabled unless `NETRA_MCP_ALLOW_MUTATIONS=true` is also passed; policy apply remains plan-token and risk-confirm gated and enforcement stays leased.
+
+## Use it
+
+Needs a running Netra controller and an API key.
+
+Claude Code:
+
+```bash
+claude mcp add netra \
+  -e NETRA_URL=https://<controller>:30870 -e NETRA_API_KEY=<key> \
+  -- docker run -i --rm -e NETRA_URL -e NETRA_API_KEY ghcr.io/zyvorai/netra-mcp:0.30.1
+```
+
+Claude Desktop and other stdio clients use the JSON above. Then ask in plain language ("Why are
+`payments-api` connections timing out?", "Which kernel function is dropping traffic from namespace
+`prod`?", "Draft a containment rule for this IP, but don't apply it."). Inside the container
+`127.0.0.1` is the container, so use the node address or `--network host`; set
+`NETRA_TLS_INSECURE=true` only for a self-signed lab controller.
 
 ## Environment variables
 
