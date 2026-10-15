@@ -54,7 +54,7 @@ Client configuration (any stdio MCP client):
       "command": "docker",
       "args": ["run", "-i", "--rm",
                "-e", "NETRA_URL", "-e", "NETRA_API_KEY",
-               "ghcr.io/zyvorai/netra-mcp:0.30.0"],
+               "ghcr.io/zyvorai/netra-mcp:0.30.1"],
       "env": { "NETRA_URL": "https://netra.example:30870", "NETRA_API_KEY": "..." }
     }
   }
