@@ -1,0 +1,17 @@
+# netra-mcp: the stdio MCP server, packaged for the MCP Registry (server.json).
+# Stdlib-only static binary; it talks to a Netra controller over HTTPS and
+# holds no state. Mutating tools stay off unless NETRA_MCP_ALLOW_MUTATIONS=true.
+FROM golang:1.27-bookworm AS go
+WORKDIR /src
+COPY go.mod ./
+COPY cmd ./cmd
+COPY internal ./internal
+RUN go mod tidy && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/netra-mcp ./cmd/netra-mcp
+
+FROM gcr.io/distroless/static-debian12:nonroot
+# The MCP Registry verifies ownership of an OCI package by this label; it must
+# equal "name" in server.json (scripts/check-version-sync.sh gates that).
+LABEL io.modelcontextprotocol.server.name="io.github.zyvorai/netra"
+LABEL org.opencontainers.image.source="https://github.com/zyvorai/zyvor-netra"
+COPY --from=go /out/netra-mcp /netra-mcp
+ENTRYPOINT ["/netra-mcp"]
