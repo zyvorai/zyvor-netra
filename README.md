@@ -219,6 +219,7 @@ Details: [Architecture and visibility boundaries](docs/architecture.md) · [Safe
 - **`netractl`** — the operator CLI. [Docs →](docs/netractl.md)
 - **Security review** — DNS QTYPE, versioned threat feeds with TTL/rollback and optional HTTPS refresh, flat deny-predicate suggestions, and exact-workload security correlation. [Docs →](docs/security-review.md)
 - **MCP server** — 189 stdio tools (129 read, 60 opt-in mutating) for AI agents. [Docs →](docs/mcp-integration.md)
+  - MCP Registry: `io.github.zyvorai/netra`, image `ghcr.io/zyvorai/netra-mcp:0.30.1`, published from the v0.30.1 release. [Install →](docs/mcp-integration.md#install-from-the-mcp-registry-oci)
 - **Built-in AI briefs** — heuristic by default, optional OpenAI-compatible rewrite, read-only. [Docs →](docs/ai.md)
 - **Export** — SIEM (CEF, syslog, JSONL, OTLP), Prometheus (scrape and remote write), Grafana, Loki, Graphite, Slack and Teams ChatOps.
 
