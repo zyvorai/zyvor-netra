@@ -120,3 +120,4 @@ netractl ai brief                      # heuristic by default, no config needed 
 - [Optional kernel sensors](../core-concepts/sensors) — drop attribution, TCP events, listen queues, and the opt-in sampled-protocol and TLS sensors.
 - [Access control and export](../core-concepts/access-and-export) — OIDC roles, mutual TLS, Prometheus objects, and OTLP/Loki/syslog push.
 - [How Netra is tested](../core-concepts/verification) — what CI proves, including install, upgrade and rollback on a real cluster.
+- [MCP Registry](../core-concepts/mcp-registry) — the `io.github.zyvorai/netra` listing, image and client configuration for AI agents.
