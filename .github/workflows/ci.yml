@@ -957,13 +957,21 @@ jobs:
     # shipped: the agent binary and a BPF object for every bpf/netra_*.c. A
     # sensor added under bpf/ but not to the Dockerfile builds, passes every
     # unit test, and ships an agent that quietly never loads it.
-    runs-on: ubuntu-latest
+    # Heavy and trusted: self-hosted (group zyvor-build) on push to main and dispatch; the
+    # expression keeps every pull_request event, forks included, on a hosted runner.
+    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && '"ubuntu-latest"' || '["self-hosted","zyvor-build","docker"]') }}
     timeout-minutes: 30
+    env:
+      # Per-run tag: the self-hosted Docker daemon is shared by two runners and other workloads.
+      IMAGE_TAG: netra-agent:ci-image-gate-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
     - uses: actions/checkout@v7
     - name: Build the agent image and verify its BPF objects (scripted)
       # Same command locally: ./scripts/ci-agent-image.sh
       run: ./scripts/ci-agent-image.sh
+    - name: Remove this run's image (job-scoped, never a global prune)
+      if: always()
+      run: docker rmi -f "$IMAGE_TAG" || true
   kind-e2e:
     # Real-cluster install of the chart (kind): RBAC, the TLS init container,
     # probes and auth enforcement — things `helm template` cannot catch. The
