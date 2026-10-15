@@ -250,7 +250,7 @@ Rules: [docs/packetwolf.md](docs/packetwolf.md) · [Suite placement](https://zyv
 
 ## Maturity
 
-Netra's latest release is **0.30.0** ([CHANGELOG.md](CHANGELOG.md)). What runs by default and what is opt-in ([architecture](docs/architecture.md)):
+Netra's latest release is **0.30.1** ([CHANGELOG.md](CHANGELOG.md)). What runs by default and what is opt-in ([architecture](docs/architecture.md)):
 
 | Area | Status |
 |---|---|
