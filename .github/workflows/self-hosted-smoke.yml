@@ -1,0 +1,20 @@
+# Proves the zyvor-build self-hosted runners pick up work. Runs only when this
+# file changes (same-repo PRs) or on manual dispatch; never on fork PRs.
+name: Self-hosted smoke
+on:
+  pull_request:
+    paths: ['.github/workflows/self-hosted-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, zyvor-build, docker]
+    timeout-minutes: 10
+    steps:
+    - run: |
+        echo "runner: $RUNNER_NAME on $(uname -srm) as $(id -un)"
+        nproc; free -g | sed -n 2p
+        docker version --format 'docker {{.Server.Version}}'
+        docker run --rm docker.io/library/alpine:3.20 echo "container ok"
