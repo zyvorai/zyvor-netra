@@ -51,6 +51,7 @@ each "deploy image tags"           deploy/controller.yaml      's#.*image: ghcr.
 each "deploy agent image tag"      deploy/agent.yaml           's#.*image: ghcr.io/zyvorai/netra-agent:\(.*\)$#\1#p'
 
 # MCP Registry metadata (server.json) and the image that carries the ownership label.
+each "cmd/netra-mcp/main.go"       cmd/netra-mcp/main.go       's/^const version = "\(.*\)"$/\1/p'
 each "server.json version"         server.json                 's/^  "version": "\([^"]*\)".*/\1/p'
 each "server.json package tag"     server.json                 's#.*"identifier": "ghcr.io/zyvorai/netra-mcp:\([^"]*\)".*#\1#p'
 mcp_name=$(sed -n 's/^  "name": "\([^"]*\)".*/\1/p' server.json)
