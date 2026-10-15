@@ -50,6 +50,21 @@ each "internal/api/server.go"      internal/api/server.go      's/.*"version": "
 each "deploy image tags"           deploy/controller.yaml      's#.*image: ghcr.io/zyvorai/netra:\(.*\)$#\1#p'
 each "deploy agent image tag"      deploy/agent.yaml           's#.*image: ghcr.io/zyvorai/netra-agent:\(.*\)$#\1#p'
 
+# MCP Registry metadata (server.json) and the image that carries the ownership label.
+each "server.json version"         server.json                 's/^  "version": "\([^"]*\)".*/\1/p'
+each "server.json package tag"     server.json                 's#.*"identifier": "ghcr.io/zyvorai/netra-mcp:\([^"]*\)".*#\1#p'
+mcp_name=$(sed -n 's/^  "name": "\([^"]*\)".*/\1/p' server.json)
+mcp_label=$(sed -n 's/^LABEL io.modelcontextprotocol.server.name="\([^"]*\)"$/\1/p' Dockerfile.mcp)
+if [[ -z "$mcp_name" || "$mcp_name" != "$mcp_label" ]]; then
+  echo "MISMATCH  Dockerfile.mcp label '$mcp_label' != server.json name '$mcp_name'" >&2
+  fail=1
+fi
+desc=$(sed -n 's/^  "description": "\(.*\)",$/\1/p' server.json)
+if [[ ${#desc} -gt 100 ]]; then
+  echo "server.json description is ${#desc} chars (registry limit 100)" >&2
+  fail=1
+fi
+
 # CHANGELOG must carry an entry for the reference version (or an Unreleased
 # section that precedes it).
 if ! grep -qE "^## \[?${ref//./\\.}\]?( |$)" CHANGELOG.md; then

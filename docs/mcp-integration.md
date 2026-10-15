@@ -41,6 +41,28 @@ NETRA_URL=https://127.0.0.1:30870 NETRA_API_KEY=... ./bin/netra-mcp
 
 Each line you type after startup should produce one corresponding JSON-RPC response line (the `notifications/initialized` message, if you send it, produces none — see [Response shape](#response-shape)). Press Ctrl-D to close stdin and let the process exit.
 
+## Install from the MCP Registry (OCI)
+
+`netra-mcp` is listed in the MCP Registry as `io.github.zyvorai/netra` and ships as the multi-arch, cosign-signed image `ghcr.io/zyvorai/netra-mcp`. Registry entries are published from `server.json` by the `publish-mcp` job in `.github/workflows/release.yml` on every `v*` tag. The image carries the `io.modelcontextprotocol.server.name` label the registry uses to verify ownership.
+
+Client configuration (any stdio MCP client):
+
+```json
+{
+  "mcpServers": {
+    "netra": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm",
+               "-e", "NETRA_URL", "-e", "NETRA_API_KEY",
+               "ghcr.io/zyvorai/netra-mcp:0.30.0"],
+      "env": { "NETRA_URL": "https://netra.example:30870", "NETRA_API_KEY": "..." }
+    }
+  }
+}
+```
+
+Mutating tools stay disabled unless `NETRA_MCP_ALLOW_MUTATIONS=true` is also passed; policy apply remains plan-token and risk-confirm gated and enforcement stays leased.
+
 ## Environment variables
 
 | Var | Default | Notes |

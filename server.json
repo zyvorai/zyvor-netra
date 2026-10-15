@@ -1,0 +1,42 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.zyvorai/netra",
+  "title": "Netra",
+  "description": "eBPF network observability and safe emergency control for Linux and Kubernetes.",
+  "version": "0.30.0",
+  "repository": {
+    "url": "https://github.com/zyvorai/zyvor-netra",
+    "source": "github"
+  },
+  "websiteUrl": "https://github.com/zyvorai/zyvor-netra",
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/zyvorai/netra-mcp:0.30.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "NETRA_URL",
+          "description": "Base URL of the Netra controller API, e.g. https://netra.example:30870.",
+          "isRequired": true
+        },
+        {
+          "name": "NETRA_API_KEY",
+          "description": "Bearer token for the controller API.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "NETRA_MCP_ALLOW_MUTATIONS",
+          "description": "Set to \"true\" to expose the opt-in mutating tools. Off by default; mutations remain plan-token and lease bounded.",
+          "default": "false"
+        },
+        {
+          "name": "NETRA_MCP_ACTOR",
+          "description": "Actor name recorded in the Netra audit trail for calls made through this server.",
+          "default": "mcp:hermes"
+        }
+      ]
+    }
+  ]
+}
