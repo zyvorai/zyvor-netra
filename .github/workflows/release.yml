@@ -17,7 +17,7 @@ concurrency:
 # This workflow has no pull_request trigger; the guard keeps it that way if one is added.
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && '"ubuntu-latest"' || '["self-hosted","zyvor-build","docker"]') }}
     steps:
     - uses: actions/checkout@v7
     - name: Version files agree
