@@ -42,6 +42,16 @@ The chart renders a `BackendTLSPolicy` for the `netra` Service. If a trusted
 gateway terminates TLS and the hop to the pod is plain HTTP, set
 `tls.enabled=false` and `gateway.backendTLS.enabled=false` instead.
 
+## WebSockets over backend TLS
+
+With `gateway.backendTLS` on, Envoy negotiates HTTP/2 to the pod, and a
+WebSocket upgrade (`/api/v1/metrics/stream`) cannot ride that hop: the client
+sees `502` (`upstream_reset_before_response_started{protocol_error}`). On Envoy
+Gateway, set `gateway.backendTrafficPolicy.enabled=true`; the chart renders a
+`BackendTrafficPolicy` with `useClientProtocol: true`, which keeps the
+upstream hop on the client's HTTP version so the upgrade returns `101`. It is
+Envoy Gateway specific (it needs that project's CRDs), so it is off by default.
+
 ## Streams
 
 Live flow and metric streams are long-lived. `gateway.requestTimeout` defaults

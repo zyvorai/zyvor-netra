@@ -222,6 +222,10 @@ gateway:
     caCertificateRefs: []
     # e.g. [{group: "", kind: ConfigMap, name: netra-ca}]
     wellKnownCACertificates: ""
+  # Envoy Gateway only. Needed for WebSocket streams when backendTLS is on.
+  backendTrafficPolicy:
+    enabled: false
+    useClientProtocol: true
 tls:
   # HTTPS is the default. Init container mints a self-signed P-256 cert into
   # an emptyDir; probes and the Service use scheme/port name https.
