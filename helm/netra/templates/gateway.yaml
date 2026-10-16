@@ -82,7 +82,7 @@ spec:
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: netra
-  useClientProtocol: {{ .useClientProtocol }}
+  useClientProtocol: {{ if hasKey . "useClientProtocol" }}{{ .useClientProtocol }}{{ else }}true{{ end }}
 {{- end }}
 {{- end }}
 {{- end }}
