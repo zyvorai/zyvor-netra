@@ -27,6 +27,14 @@ spec:
       hostPID: true
       {{- end }}
       dnsPolicy: ClusterFirstWithHostNet
+      {{- with .Values.agent.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.agent.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       tolerations:
       - operator: Exists
       containers:

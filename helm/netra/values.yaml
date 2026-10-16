@@ -290,6 +290,10 @@ agent:
   # node with tolerations Exists so it lands on every schedulable node.
   # Set enabled=false only for controller-only installs.
   enabled: true
+  # Keep the privileged agent off nodes where it does not belong (a build
+  # host that shares the cluster, say). Empty means every schedulable node.
+  nodeSelector: {}
+  affinity: {}
   cgroupEnabled: true
   cgroupPath: /sys/fs/cgroup
   cgroupScanInterval: 10s
