@@ -22,6 +22,9 @@ const config: Config = {
   onBrokenLinks: 'throw',
 
   markdown: {
+    // The repo docs are written for GitHub (CommonMark): `.md` stays plain
+    // markdown so literals like <node-ip> are not parsed as JSX.
+    format: 'detect',
     hooks: {
       onBrokenMarkdownLinks: 'warn',
     },
@@ -36,7 +39,38 @@ const config: Config = {
   // duplicating dozens of PNGs/GIFs into website/static — see docs/README.md
   // and the docs overhaul plan for why (single physical copy of each image,
   // referenced by both README and this site).
+  headTags: [
+    {
+      tagName: 'script',
+      attributes: {type: 'application/ld+json'},
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'Netra',
+        applicationCategory: 'DeveloperApplication',
+        operatingSystem: 'Linux, Kubernetes',
+        description:
+          'Standalone eBPF network observability and emergency network control for Linux and Kubernetes.',
+        url: 'https://zyvorai.github.io/zyvor-netra/',
+        codeRepository: 'https://github.com/zyvorai/zyvor-netra',
+      }),
+    },
+  ],
+
   staticDirectories: ['static', '../docs/ux', '../docs/social'],
+
+  themes: [
+    [
+      '@easyops-cn/docusaurus-search-local',
+      {
+        hashed: true,
+        indexDocs: true,
+        indexPages: false,
+        docsRouteBasePath: '/docs',
+        language: ['en'],
+      },
+    ],
+  ],
 
   presets: [
     [
@@ -74,6 +108,12 @@ const config: Config = {
           label: 'Docs',
         },
         {
+          to: '/docs/integrations/mcp-integration',
+          label: 'MCP',
+          position: 'left',
+        },
+        {to: '/gallery', label: 'Gallery', position: 'left'},
+        {
           to: '/resources',
           label: 'Resources',
           position: 'left',
@@ -99,6 +139,7 @@ const config: Config = {
             {label: 'Quickstart', to: '/docs/getting-started/quickstart'},
             {label: 'Architecture', to: '/docs/core-concepts/architecture'},
             {label: 'Security', to: '/docs/security'},
+            {label: 'MCP tool catalog', to: '/docs/reference/mcp-tools'},
             {label: 'Resources (downloads)', to: '/resources'},
           ],
         },
@@ -106,10 +147,7 @@ const config: Config = {
           title: 'Project',
           items: [
             {label: 'GitHub', href: 'https://github.com/zyvorai/zyvor-netra'},
-            {
-              label: 'Changelog',
-              href: 'https://github.com/zyvorai/zyvor-netra/blob/main/CHANGELOG.md',
-            },
+            {label: 'Changelog', to: '/docs/reference/changelog'},
             {
               label: 'License',
               href: 'https://github.com/zyvorai/zyvor-netra/blob/main/LICENSE',

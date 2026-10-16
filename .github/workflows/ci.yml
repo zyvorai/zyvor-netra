@@ -198,7 +198,17 @@ jobs:
     - uses: actions/checkout@v7
     - uses: actions/setup-node@v7
       with: {node-version: '22', cache: npm, cache-dependency-path: website/package-lock.json}
+    - uses: actions/setup-go@v7
+      with: {go-version: '1.27.1', cache: true}
     - run: npm --prefix website ci
+    # The tool catalog, facts and synced docs are generated and committed; the
+    # site must not drift from the code or the repo docs. Regenerate and fail on
+    # any difference (fix with: python3 scripts/gen-site-facts.py && npm --prefix website run sync-docs).
+    - name: Generated docs and facts are current
+      run: |
+        python3 scripts/gen-site-facts.py
+        npm --prefix website run sync-docs
+        git diff --exit-code -- website/docs website/src/data
     - run: npm --prefix website run build
   helm:
     runs-on: ubuntu-latest

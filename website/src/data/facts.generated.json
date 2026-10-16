@@ -1,0 +1,11 @@
+{
+  "version": "0.30.1",
+  "mcpName": "io.github.zyvorai/netra",
+  "mcpImage": "ghcr.io/zyvorai/netra-mcp:0.30.1",
+  "mcpTools": 189,
+  "mcpReadTools": 129,
+  "mcpMutatingTools": 60,
+  "mcpPrompts": 6,
+  "mcpResources": 9,
+  "docPages": 112
+}

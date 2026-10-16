@@ -1,0 +1,8 @@
+{
+  "label": "Metrics and Operations",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Per-second metrics, anomaly detection, alerts, high availability and fleet operation."
+  }
+}
