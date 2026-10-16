@@ -1,0 +1,162 @@
+{
+  "repo": "zyvorai/zyvor-netra",
+  "sections": {
+    "operate": {
+      "label": "Metrics and Operations",
+      "position": 3,
+      "description": "Per-second metrics, anomaly detection, alerts, high availability and fleet operation."
+    },
+    "diagnose": {
+      "label": "Diagnose and Capture",
+      "position": 4,
+      "description": "Why a connection was dropped, what is on the wire, and what the kernel attached."
+    },
+    "contain": {
+      "label": "Contain",
+      "position": 5,
+      "description": "Leased deny rules with preview, auto-mitigation and node isolation. Enforcement is bounded and fails open to observe."
+    },
+    "access-and-security": {
+      "label": "Access and Security Review",
+      "position": 6,
+      "description": "Sign-in, roles, and the read-only security review."
+    },
+    "integrations": {
+      "label": "Integrations",
+      "position": 7,
+      "description": "MCP for AI agents, Envoy in front of the API, and SIEM export."
+    },
+    "reference": {
+      "label": "Reference",
+      "position": 8,
+      "description": "Generated references: the MCP tool catalog and release notes."
+    }
+  },
+  "pages": [
+    {
+      "src": "install.md",
+      "dest": "getting-started/install",
+      "position": 4
+    },
+    {
+      "src": "features.md",
+      "dest": "getting-started/features",
+      "position": 5
+    },
+    {
+      "src": "metrics.md",
+      "dest": "operate/metrics",
+      "position": 1
+    },
+    {
+      "src": "metric-alerts.md",
+      "dest": "operate/metric-alerts",
+      "position": 2
+    },
+    {
+      "src": "anomaly-detection.md",
+      "dest": "operate/anomaly-detection",
+      "position": 3
+    },
+    {
+      "src": "app-collectors.md",
+      "dest": "operate/app-collectors",
+      "position": 4
+    },
+    {
+      "src": "alerting.md",
+      "dest": "operate/alerting",
+      "position": 5
+    },
+    {
+      "src": "high-availability.md",
+      "dest": "operate/high-availability",
+      "position": 6
+    },
+    {
+      "src": "fleet-clusters.md",
+      "dest": "operate/fleet-clusters",
+      "position": 7
+    },
+    {
+      "src": "flow-log.md",
+      "dest": "operate/flow-log",
+      "position": 8
+    },
+    {
+      "src": "drop-diagnostics.md",
+      "dest": "diagnose/drop-diagnostics",
+      "position": 1
+    },
+    {
+      "src": "capture.md",
+      "dest": "diagnose/capture",
+      "position": 2
+    },
+    {
+      "src": "l7-metadata.md",
+      "dest": "diagnose/l7-metadata",
+      "position": 3
+    },
+    {
+      "src": "netlink-recorder.md",
+      "dest": "diagnose/netlink-recorder",
+      "position": 4
+    },
+    {
+      "src": "ebpf-maps.md",
+      "dest": "diagnose/ebpf-maps",
+      "position": 5
+    },
+    {
+      "src": "bpf-attachments.md",
+      "dest": "diagnose/bpf-attachments",
+      "position": 6
+    },
+    {
+      "src": "auto-mitigate.md",
+      "dest": "contain/auto-mitigate",
+      "position": 1
+    },
+    {
+      "src": "deny-preview.md",
+      "dest": "contain/deny-preview",
+      "position": 2
+    },
+    {
+      "src": "node-isolation.md",
+      "dest": "contain/node-isolation",
+      "position": 3
+    },
+    {
+      "src": "auth-oidc-rbac.md",
+      "dest": "access-and-security/auth-oidc-rbac",
+      "position": 1
+    },
+    {
+      "src": "security-review.md",
+      "dest": "access-and-security/security-review",
+      "position": 2
+    },
+    {
+      "src": "siem-export.md",
+      "dest": "integrations/siem-export",
+      "position": 3
+    },
+    {
+      "src": "mcp-integration.md",
+      "dest": "integrations/mcp-integration",
+      "position": 1
+    },
+    {
+      "src": "envoy-gateway.md",
+      "dest": "integrations/envoy-gateway",
+      "position": 2
+    }
+  ],
+  "changelog": {
+    "dest": "reference/changelog",
+    "position": 1,
+    "releases": 20
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "label": "Diagnose and Capture",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Why a connection was dropped, what is on the wire, and what the kernel attached."
+  }
+}
