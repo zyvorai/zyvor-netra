@@ -2,7 +2,7 @@ module github.com/zyvorai/netra
 
 go 1.27.0
 
-toolchain go1.27.1
+toolchain go1.27.2
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
@@ -13,7 +13,7 @@ require (
 	github.com/mdlayher/packet v1.2.0
 	github.com/snowflakedb/gosnowflake v1.19.1
 	github.com/vishvananda/netlink v1.3.2-0.20260831221819-dcee5577542a
-	golang.org/x/net v0.59.0
+	golang.org/x/net v0.60.0
 	golang.org/x/sys v0.49.0
 	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12

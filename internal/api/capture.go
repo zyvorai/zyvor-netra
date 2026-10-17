@@ -42,10 +42,10 @@ type captureSession struct {
 	mu       sync.Mutex
 	browsers map[*websocket.Conn]struct{}
 	// Metadata-only counters for MCP/agent summaries — never stores payloads.
-	frames     uint64
-	bytes      uint64
+	frames      uint64
+	bytes       uint64
 	protoCounts map[string]uint64
-	startedAt  time.Time
+	startedAt   time.Time
 }
 
 func (h *captureHub) session(node string) *captureSession {

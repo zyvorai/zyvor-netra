@@ -21,14 +21,14 @@ func (s *Server) stackHistograms(w http.ResponseWriter, r *http.Request) {
 		Count int    `json:"count"`
 	}
 	type nodeHist struct {
-		Node               string                   `json:"node"`
-		SoftirqNETRX       uint64                   `json:"softirqNetRx,omitempty"`
-		SoftnetDropped     uint64                   `json:"softnetDropped,omitempty"`
-		SoftnetTimeSqueeze uint64                   `json:"softnetTimeSqueeze,omitempty"`
-		ListenDepthBuckets []bucket                 `json:"listenDepthBuckets"`
-		ListenBuckets      map[string]uint64        `json:"listenFillBuckets,omitempty"`
-		ListenOverflows    uint64                   `json:"listenOverflows,omitempty"`
-		ListenDrops        uint64                   `json:"listenDrops,omitempty"`
+		Node               string                    `json:"node"`
+		SoftirqNETRX       uint64                    `json:"softirqNetRx,omitempty"`
+		SoftnetDropped     uint64                    `json:"softnetDropped,omitempty"`
+		SoftnetTimeSqueeze uint64                    `json:"softnetTimeSqueeze,omitempty"`
+		ListenDepthBuckets []bucket                  `json:"listenDepthBuckets"`
+		ListenBuckets      map[string]uint64         `json:"listenFillBuckets,omitempty"`
+		ListenOverflows    uint64                    `json:"listenOverflows,omitempty"`
+		ListenDrops        uint64                    `json:"listenDrops,omitempty"`
 		TopListeners       []models.ListenQueueEntry `json:"topListeners,omitempty"`
 	}
 	var nodes []nodeHist

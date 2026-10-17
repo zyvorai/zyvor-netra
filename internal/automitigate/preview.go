@@ -22,14 +22,14 @@ type Candidate struct {
 
 // PreviewResult is GET /api/v1/ebpf/auto-mitigate/preview.
 type PreviewResult struct {
-	Enabled           bool        `json:"enabled"`
-	LeaseActive       bool        `json:"leaseActive"`
-	Mode              string      `json:"mode,omitempty"`
-	Candidates        []Candidate `json:"candidates"`
-	WouldActCount     int         `json:"wouldActCount"`
-	SkippedRecent     int         `json:"skippedRecent"`
-	Note              string      `json:"note"`
-	Caveat            string      `json:"caveat"`
+	Enabled       bool        `json:"enabled"`
+	LeaseActive   bool        `json:"leaseActive"`
+	Mode          string      `json:"mode,omitempty"`
+	Candidates    []Candidate `json:"candidates"`
+	WouldActCount int         `json:"wouldActCount"`
+	SkippedRecent int         `json:"skippedRecent"`
+	Note          string      `json:"note"`
+	Caveat        string      `json:"caveat"`
 }
 
 const previewCaveat = "Shadow preview only — applies nothing. Candidates are derived from current scan findings and UDP destination packet deltas using the same rules as live auto-mitigate. Metric anomalies never feed this path. Actions still require mode=enforce with an active lease."

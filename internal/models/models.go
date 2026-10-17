@@ -145,8 +145,8 @@ type EBPFFastPathConfig struct {
 	// fails open. Observe half: GET /api/v1/ebpf/exehash.
 	BlockedExeHashes []string   `json:"blockedExeHashes,omitempty"`
 	Revision         uint64     `json:"revision"`
-	EnforceUntil       *time.Time `json:"enforceUntil,omitempty"`
-	LeaseSeconds       int64      `json:"leaseSeconds,omitempty"`
+	EnforceUntil     *time.Time `json:"enforceUntil,omitempty"`
+	LeaseSeconds     int64      `json:"leaseSeconds,omitempty"`
 	// DesiredCapture is the one active packet-capture session for the
 	// specific node that requested this config (see internal/api's
 	// ebpfConfig handler, which injects it the same way it already injects
