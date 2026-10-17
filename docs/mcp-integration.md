@@ -54,7 +54,7 @@ Client configuration (any stdio MCP client):
       "command": "docker",
       "args": ["run", "-i", "--rm",
                "-e", "NETRA_URL", "-e", "NETRA_API_KEY",
-               "ghcr.io/zyvorai/netra-mcp:0.30.1"],
+               "ghcr.io/zyvorai/netra-mcp:0.31.0"],
       "env": { "NETRA_URL": "https://netra.example:30870", "NETRA_API_KEY": "..." }
     }
   }
@@ -72,7 +72,7 @@ Claude Code:
 ```bash
 claude mcp add netra \
   -e NETRA_URL=https://<controller>:30870 -e NETRA_API_KEY=<key> \
-  -- docker run -i --rm -e NETRA_URL -e NETRA_API_KEY ghcr.io/zyvorai/netra-mcp:0.30.1
+  -- docker run -i --rm -e NETRA_URL -e NETRA_API_KEY ghcr.io/zyvorai/netra-mcp:0.31.0
 ```
 
 Claude Desktop and other stdio clients use the JSON above. Then ask in plain language ("Why are

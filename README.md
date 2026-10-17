@@ -219,7 +219,7 @@ Details: [Architecture and visibility boundaries](docs/architecture.md) · [Safe
 - **`netractl`** — the operator CLI. [Docs →](docs/netractl.md)
 - **Security review** — DNS QTYPE, versioned threat feeds with TTL/rollback and optional HTTPS refresh, flat deny-predicate suggestions, and exact-workload security correlation. [Docs →](docs/security-review.md)
 - **MCP server** — 190 stdio tools (130 read, 60 opt-in mutating) for AI agents. [Docs →](docs/mcp-integration.md)
-  - MCP Registry: [`io.github.zyvorai/netra`](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.zyvorai%2Fnetra/versions/latest) (live since v0.30.1), image `ghcr.io/zyvorai/netra-mcp:0.30.1`. [Install and use →](docs/mcp-integration.md#use-it)
+  - MCP Registry: [`io.github.zyvorai/netra`](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.zyvorai%2Fnetra/versions/latest) (live since v0.30.1), image `ghcr.io/zyvorai/netra-mcp:0.31.0`. [Install and use →](docs/mcp-integration.md#use-it)
 - **Built-in AI briefs** — heuristic by default, optional OpenAI-compatible rewrite, read-only. [Docs →](docs/ai.md)
 - **Export** — SIEM (CEF, syslog, JSONL, OTLP), Prometheus (scrape and remote write), Grafana, Loki, Graphite, Slack and Teams ChatOps.
 
@@ -251,7 +251,7 @@ Rules: [docs/packetwolf.md](docs/packetwolf.md) · [Suite placement](https://zyv
 
 ## Maturity
 
-Netra's latest release is **0.30.1** ([CHANGELOG.md](CHANGELOG.md)). Shipped observe and leased-control surfaces are **GA**. The table below says what runs by default versus what stays opt-in for privacy or safety ([architecture](docs/architecture.md)):
+Netra's latest release is **0.31.0** ([CHANGELOG.md](CHANGELOG.md)). Shipped observe and leased-control surfaces are **GA**. The table below says what runs by default versus what stays opt-in for privacy or safety ([architecture](docs/architecture.md)):
 
 | Area | Status |
 |---|---|

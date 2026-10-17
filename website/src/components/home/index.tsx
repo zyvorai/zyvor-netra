@@ -308,9 +308,9 @@ export function Receipts(): ReactNode {
 /* ------------------------------------------------------------ timeline */
 
 const SHIPPED = [
+  {v: '0.31.0', d: '2026-10-17', t: 'Diagnose surfaces and leased exe-hash deny', p: 'Deny Preview, Netlink, BPF Attachments and Detect boards; auto-mitigate shadow preview; detector HA warm-start; stack histograms; Helm agent.server and Envoy Gateway.'},
   {v: '0.30.1', d: '2026-10-15', t: 'Listed in the MCP Registry', p: 'netra-mcp ships as an OCI image and as io.github.zyvorai/netra.'},
   {v: '0.30.0', d: '2026-10-07', t: 'Metrics, node isolation, security review', p: 'Per-second metrics with anomaly detection and alerts, a per-node allow-only egress filter (shadow or enforce), and read-only security intelligence.'},
-  {v: 'main', d: 'unreleased', t: 'Envoy in front', p: 'Optional Gateway API route and backend TLS policy in the Helm chart, tested against Envoy Gateway.'},
 ];
 
 export function Shipped(): ReactNode {

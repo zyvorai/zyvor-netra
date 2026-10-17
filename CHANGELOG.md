@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.31.0 — 2026-10-17
+
 - **Diagnose surfaces for APIs that already existed.** New console pages: Deny Preview (live + flow-history blast radius), Netlink timeline, BPF Attachments / hook drift, and Detect (DNS + scan findings). Overview Detect links to Detect; Needs action ranks detect findings there. MCP adds `netra_netlink`, `netra_netlink_findings`, `netra_ebpf_attachments`, `netra_listen_queues`.
 - **Auto-mitigate shadow preview.** `GET /api/v1/ebpf/auto-mitigate/preview` (MCP `netra_ebpf_auto_mitigate_preview`) lists candidates from scan findings and UDP deltas without mutating store or datapath. Metric anomalies never feed it; live actions still need an enforce lease.
 - **Detector HA warm-start.** DNS/scan finding rings persist beside `NETRA_STATE_FILE` (`.dnsdetect` / `.scandetect`) and reload on leader promote so observe continuity survives failover. Never persists auto-mitigate actions.
@@ -10,6 +12,8 @@
 - **Exe-hash leased deny.** `BlockedExeHashes` + `exehash_pids` (capgate-shaped, procmeta-sourced) with `POST /api/v1/ebpf/exehash-deny` requiring `X-Netra-Confirm-Risk: high`. Enforce only while leased; fails open.
 - **Stack pressure histograms.** `GET /api/v1/ebpf/stack-histograms` (MCP `netra_ebpf_stack_histograms`) buckets softirq/softnet and listen-queue depth from agent reports (not entry→exit softirq latency). Overview adds a notify-only Metrics chapter (anomaly rate + raised alerts).
 - **Helm `agent.server`.** Optional NodePort/host override for `NETRA_SERVER` when hostNetwork agents cannot reliably reach the in-cluster Service.
+- **Helm Envoy Gateway front door and agent scheduling.** Optional Gateway API route with backend TLS policy (tested against Envoy Gateway); `agent.nodeSelector` and `agent.affinity` for DaemonSet placement.
+- **K3s/Cilium bootstrap survives host reuse.** `ensure-cilium-k3s.sh` starts a stopped k3s unit when the binary is already present, and points Cilium at the host apiserver so a LAN route for `10.43.0.0/16` cannot break the install chicken-and-egg with an x509 unknown-authority error.
 - **GA maturity defaults and historical deny preview.** README Maturity labels shipped surfaces as GA (default / optional attach) vs privacy/safety opt-in. Chart defaults turn on observe-only DNS and scan detect, lease-gated auto-mitigate, and bounded auto-capture (`dnsdetect.enabled`, `scandetect.enabled`, `automitigate.enabled`, `alerting.autoCapture.enabled`). Sampled L7, TLS plaintext uprobes, Cilium/Hubble and MCP mutations stay opt-in. Deny preview gains a flow-history path (`POST /api/v1/ebpf/deny/preview-history`, `netractl ebpf deny-preview --since`, MCP `netra_ebpf_deny_preview_history`) wired through `internal/counterfactual` over the existing 7-day `flowlog`. Overview shows compact DNS/scan finding counts and a TLSFP link.
 - **Image signature check names the renamed repository.** Release images are signed by `zyvorai/zyvor-netra`'s workflow since the repository rename, so the `cosign verify` command in `deploy/README.md` (which named `zyvorai/netra`) failed; it now matches the signer. Clone commands, Helm chart `home`/`sources`, docs-site and README links point at `zyvorai/zyvor-netra` too (the Go module path is unchanged).
 - **README maturity table covers 0.30.0.** L7 names and query types, per-second metrics, node isolation (loaded but inert until a policy is set) and security review now say what runs by default.

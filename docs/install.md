@@ -28,8 +28,8 @@ make bpf
 Container images:
 
 ```bash
-docker build -t ghcr.io/zyvorai/netra:0.30.1 .
-docker build -f Dockerfile.agent -t ghcr.io/zyvorai/netra-agent:0.30.1 .
+docker build -t ghcr.io/zyvorai/netra:0.31.0 .
+docker build -f Dockerfile.agent -t ghcr.io/zyvorai/netra-agent:0.31.0 .
 ```
 
 Tagged releases publish both images (`linux/amd64` and `linux/arm64`) to `ghcr.io/zyvorai/netra` and
