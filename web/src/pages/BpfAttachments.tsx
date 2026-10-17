@@ -152,7 +152,7 @@ export default function BpfAttachments() {
                 <span>{a.interface || '—'}</span>
                 <span>{a.cilium ? 'cilium' : a.foreign ? 'foreign' : a.owner || 'netra'}</span>
                 <span>
-                  {a.present === false || (a.expected && a.present === false) ? 'missing' : a.present === false ? 'absent' : 'present'}
+                  {a.present === false ? (a.expected ? 'missing' : 'absent') : 'present'}
                   {a.expected ? ' · expected' : ''}
                 </span>
               </div>
