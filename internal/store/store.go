@@ -1989,6 +1989,7 @@ func cloneConfig(c models.EBPFFastPathConfig) models.EBPFFastPathConfig {
 	c.BlockedDNS = append([]string(nil), c.BlockedDNS...)
 	c.BlockedProcesses = append([]string(nil), c.BlockedProcesses...)
 	c.DeniedCapabilities = append([]string(nil), c.DeniedCapabilities...)
+	c.BlockedExeHashes = append([]string(nil), c.BlockedExeHashes...)
 	c.BlockedSNI = append([]string(nil), c.BlockedSNI...)
 	c.RateLimits = append([]models.EBPFRateLimit(nil), c.RateLimits...)
 	c.WorkloadScopes = cloneScopes(c.WorkloadScopes)

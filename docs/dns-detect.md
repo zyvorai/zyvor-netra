@@ -2,7 +2,8 @@
 
 Metadata-only, behavioral DNS anomaly detection: tunneling, DGA (domain
 generation algorithm) lookups, beaconing, and NXDOMAIN/SERVFAIL storms.
-Off by default (`NETRA_DNSDETECT_ENABLED=true`).
+GA and on by default (`dnsdetect.enabled` / `NETRA_DNSDETECT_ENABLED=true`);
+set `enabled: false` to disable.
 
 This is a different question from
 [DNS response diagnostics](dns-response-diagnostics.md), which explains

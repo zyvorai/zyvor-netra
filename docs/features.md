@@ -33,20 +33,20 @@ enforce mode or apply deny rules.
 
 ## Catalog
 
-| ID | Helm key | Env | Scope |
-|----|----------|-----|-------|
-| `agent` | `agent.enabled` | DaemonSet present | cluster (Helm only) |
-| `cilium` | `cilium.enabled` | `NETRA_CILIUM_ENABLED` | controller |
-| `hubble` | `hubble.enabled` | `NETRA_HUBBLE_ENABLED` | controller |
-| `dns-detect` | `dnsdetect.enabled` | `NETRA_DNSDETECT_ENABLED` | controller |
-| `scan-detect` | `scandetect.enabled` | `NETRA_SCANDETECT_ENABLED` | controller |
-| `automitigate` | `automitigate.enabled` | `NETRA_AUTOMITIGATE_ENABLED` | controller |
-| `tlsfp` | `agent.tlsfp` | `NETRA_TLSFP` (`auto`/`off`/`required`) | agent |
-| `ai` | `ai.enabled` | `NETRA_AI_BASE_URL` | controller |
-| `gitops` | `gitops.enabled` | `NETRA_GITOPS_DIR` | controller |
-| `workload-console` | `workloadConsole.enabled` | `NETRA_WORKLOAD_CONSOLE` | controller |
-| `alerting` | `alerting.enabled` | `NETRA_ALERT_POLL_INTERVAL` | controller |
-| `auto-capture` | `alerting.autoCapture.enabled` | `NETRA_AUTO_CAPTURE` | controller |
+| ID | Helm key | Env | Scope | Chart default |
+|----|----------|-----|-------|---------------|
+| `agent` | `agent.enabled` | DaemonSet present | cluster (Helm only) | on |
+| `cilium` | `cilium.enabled` | `NETRA_CILIUM_ENABLED` | controller | off (opt-in) |
+| `hubble` | `hubble.enabled` | `NETRA_HUBBLE_ENABLED` | controller | off (opt-in) |
+| `dns-detect` | `dnsdetect.enabled` | `NETRA_DNSDETECT_ENABLED` | controller | on (GA) |
+| `scan-detect` | `scandetect.enabled` | `NETRA_SCANDETECT_ENABLED` | controller | on (GA) |
+| `automitigate` | `automitigate.enabled` | `NETRA_AUTOMITIGATE_ENABLED` | controller | on (GA; lease-gated) |
+| `tlsfp` | `agent.tlsfp` | `NETRA_TLSFP` (`auto`/`off`/`required`) | agent | auto (GA) |
+| `ai` | `ai.enabled` | `NETRA_AI_BASE_URL` | controller | off (needs credentials) |
+| `gitops` | `gitops.enabled` | `NETRA_GITOPS_DIR` | controller | off |
+| `workload-console` | `workloadConsole.enabled` | `NETRA_WORKLOAD_CONSOLE` | controller | off |
+| `alerting` | `alerting.enabled` | `NETRA_ALERT_POLL_INTERVAL` | controller | off (channels required) |
+| `auto-capture` | `alerting.autoCapture.enabled` | `NETRA_AUTO_CAPTURE` | controller | on (GA; bounded) |
 
 Shared package: [`internal/features`](../internal/features).
 

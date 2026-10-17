@@ -25,9 +25,8 @@ type Query struct {
 }
 
 // Store is the narrow interface this package needs from a historical
-// flow backend. Netra does not ship a production implementation of this
-// interface as of this writing (see the package doc) — MemoryStore is a
-// reference implementation for tests and small deployments only.
+// flow backend. FlowLogStore adapts the controller flowlog; MemoryStore
+// is the in-memory reference for tests.
 type Store interface {
 	// Query returns flows matching q, ordered by Timestamp ascending.
 	Query(ctx context.Context, q Query) ([]Flow, error)

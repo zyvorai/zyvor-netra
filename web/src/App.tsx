@@ -28,6 +28,10 @@ import Capture from './pages/Capture';
 import CongestionMap from './pages/CongestionMap';
 import SysctlAudit from './pages/SysctlAudit';
 import NodeResources from './pages/NodeResources';
+import DenyPreview from './pages/DenyPreview';
+import Netlink from './pages/Netlink';
+import BpfAttachments from './pages/BpfAttachments';
+import Detect from './pages/Detect';
 import Workloads from './pages/Workloads';
 import Metrics from './pages/Metrics';
 import MetricAnomalies from './pages/MetricAnomalies';
@@ -105,6 +109,30 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     title: 'TLS and cleartext HTTP context.',
     lede: 'Best-effort SNI and HTTP Host from the datapath — evidence for review, not a full proxy. JA3/JA4 and encrypted DNS live under Surfaces.',
     tint: 'amber',
+  },
+  'deny-preview': {
+    eyebrow: 'Deny Preview',
+    title: 'Blast radius before you lease.',
+    lede: 'Review-only match of a proposed emergency deny against live agent counters or retained flow history. Applies nothing.',
+    tint: 'red',
+  },
+  netlink: {
+    eyebrow: 'Netlink',
+    title: 'Routes and links that changed.',
+    lede: 'Read-only RTNL change recorder and findings — default-route loss, uplink down, failed neighbors. Netra never mutates the stack.',
+    tint: 'amber',
+  },
+  'bpf-attachments': {
+    eyebrow: 'BPF Attachments',
+    title: 'What is attached — and what drifted.',
+    lede: 'Inventory of BPF programs the kernel reports. Missing Netra hooks mean restart the agent; Cilium programs are listed and left alone.',
+    tint: 'amber',
+  },
+  detect: {
+    eyebrow: 'Detect',
+    title: 'DNS and scan findings.',
+    lede: 'GA observe-only detectors for DNS anomalies and scan/fan-out patterns. Correlate on Security Review; never auto-enforce from this page.',
+    tint: 'purple',
   },
   surfaces: {
     eyebrow: 'Surfaces',
@@ -293,6 +321,10 @@ export default function App() {
     'sysctl-audit': <SysctlAudit />,
     'node-resources': <NodeResources />,
     l7: <L7 />,
+    'deny-preview': <DenyPreview />,
+    netlink: <Netlink />,
+    'bpf-attachments': <BpfAttachments />,
+    detect: <Detect />,
     surfaces: <Surfaces />,
     features: <Features />,
     insights: <Insights />,

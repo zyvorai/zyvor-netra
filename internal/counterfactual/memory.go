@@ -8,9 +8,8 @@ import (
 	"sync"
 )
 
-// MemoryStore is an in-memory, reference implementation of Store. It is
-// suitable for tests and small deployments; see the package doc for why
-// Netra does not (yet) ship a production Store backend.
+// MemoryStore is an in-memory, reference implementation of Store for
+// tests and small deployments. Production controllers use FlowLogStore.
 //
 // MemoryStore is safe for concurrent use.
 type MemoryStore struct {

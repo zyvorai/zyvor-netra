@@ -1,10 +1,19 @@
-# Deny blast-radius preview (`internal/denysim`)
+# Deny blast-radius preview (`internal/denysim` + `internal/counterfactual`)
 
-Review-only answer to: *if I added this emergency deny and flipped enforce, which observed counters would it have matched?*
+Review-only answer to: *if I added this emergency deny and flipped enforce, which observed traffic would it have matched?*
 
-This is not the multi-hop dependency walk in [`docs/blast-radius.md`](blast-radius.md) and not the CiliumNetworkPolicy review in `insights.PolicyBlastRadius`. It scores a **proposed eBPF deny** against the latest non-stale `AgentReport` aggregates.
+This is not the multi-hop dependency walk in [`docs/blast-radius.md`](blast-radius.md) and not the CiliumNetworkPolicy review in `insights.PolicyBlastRadius`. There are two complementary paths:
 
-## Use it
+| Path | Evidence | Endpoint / CLI |
+|---|---|---|
+| Live | Latest non-stale `AgentReport` aggregates (`internal/denysim`) | `POST /api/v1/ebpf/deny/preview` |
+| History | Bounded flow deltas (`internal/flowlog` via `internal/counterfactual`) | `POST /api/v1/ebpf/deny/preview-history`, or `deny-preview … --since 1h` |
+
+## Console
+
+**Diagnostics → Deny Preview** posts to the same live and history endpoints, always shows the API caveat, and never applies a rule. Prefer live for DNS/SNI/process when historical name fields are empty.
+
+## Live preview
 
 ```bash
 netractl ebpf deny-preview cidr 203.0.113.0/24 egress
@@ -32,17 +41,33 @@ netractl ebpf deny-preview port 445 --protocol TCP
 
 MCP tool: `netra_ebpf_deny_preview` (read-only; available even when `NETRA_MCP_ALLOW_MUTATIONS` is off).
 
+## Historical preview
+
+Uses the controller's flow history (default 7 days / 100000 records; see [`flow-log.md`](flow-log.md)):
+
+```bash
+netractl ebpf deny-preview cidr 203.0.113.0/24 egress --since 1h
+netractl ebpf deny-preview port 445 --protocol TCP --since 24h
+```
+
+`POST /api/v1/ebpf/deny/preview-history` — same body as live preview, plus optional `since` (duration up to `168h` or RFC3339; default `1h`). `process` is rejected (use live preview). DNS/SNI matches need those fields on retained rows; they are often empty today, so prefer live preview for name-based denies.
+
+MCP tool: `netra_ebpf_deny_preview_history` (read-only).
+
 ## Evidence boundaries
 
-- Hits are **cumulative counters from the current agent snapshot**, not a historical per-flow store. `internal/counterfactual` remains unwired for the same reason documented in that package: Netra does not retain queryable individual flows.
-- A miss means Netra did not observe matching traffic in this window. It does not mean the destination is unused, or that enforce would be a no-op.
-- `process` matching uses sampled `FastPathEvent` rows and `comm` only — not a cryptographic workload identity.
-- Stale agents are counted and skipped.
-- `truncated: true` means more groups existed than `limit` (default 50, max 200). Totals still include the truncated groups.
-- Every response carries `denysim.Caveat`. Do not render hits as "would be blocked in production" without that sentence.
+- Live hits are **cumulative counters from the current agent snapshot**.
+- History hits are **retained flow deltas** evaluated by `internal/counterfactual` (`FlowLogStore`). Not a column store; first sample after a restart is a baseline only.
+- A miss means Netra did not observe (or retain) matching traffic in the window. It does not mean the destination is unused, or that enforce would be a no-op.
+- `process` matching (live only) uses sampled `FastPathEvent` rows and `comm` only — not a cryptographic workload identity.
+- Stale agents are counted and skipped on the live path.
+- Live `truncated: true` means more groups existed than `limit` (default 50, max 200). Totals still include the truncated groups.
+- Every response carries a caveat string. Do not render hits as "would be blocked in production" without that sentence.
 
 ## Validation
 
-`internal/denysim/denysim_test.go` covers CIDR matching with stale-agent skip, exact IP + port filters, DNS/SNI name match (case-insensitive), sampled process events, and rejected unknown kinds.
+`internal/denysim/denysim_test.go` covers live CIDR matching with stale-agent skip, exact IP + port filters, DNS/SNI name match (case-insensitive), sampled process events, and rejected unknown kinds.
 
-No kernel/BPF component — standard `go test ./internal/denysim ./internal/api` is sufficient.
+`internal/counterfactual` covers `FlowLogStore` mapping, `PolicyFromEmergencyDeny`, and evaluate-over-history.
+
+No kernel/BPF component — standard `go test ./internal/denysim ./internal/counterfactual ./internal/api` is sufficient.

@@ -29,6 +29,10 @@ gRPC on 443 is labeled https. Nothing in the payload is parsed.
 `comm` and `pid` are copied when TCP health has a live owner for that
 peer and port. Stale ownership is not copied. No cmdline.
 
+`dnsName` and `tlsSni` are best-effort joins from the same agent report
+(DNS events and TLS metadata). Empty means unobserved — never invented.
+Historical deny preview uses these fields when present.
+
 The console Flows page shows the last hour, a RED table, and inferred
 paths.
 

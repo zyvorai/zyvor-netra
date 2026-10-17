@@ -44,7 +44,7 @@ spec:
           privileged: true
         env:
         - name: NETRA_SERVER
-          value: {{ printf "%s://netra.%s.svc:%v" (ternary "https" "http" .Values.tls.enabled) .Release.Namespace .Values.service.port | quote }}
+          value: {{ default (printf "%s://netra.%s.svc:%v" (ternary "https" "http" .Values.tls.enabled) .Release.Namespace .Values.service.port) .Values.agent.server | quote }}
         {{- if and .Values.tls.enabled .Values.tls.agentInsecureSkipVerify }}
         - {name: NETRA_TLS_INSECURE, value: "true"}
         {{- end }}

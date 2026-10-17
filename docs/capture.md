@@ -51,7 +51,8 @@ Everything below is client-side on top of the API/wire format above — none of 
 
 ## Auto-capture on heavy load / packet drops
 
-Opt-in (`NETRA_AUTO_CAPTURE=true` / Helm `alerting.autoCapture.enabled`).
+GA and on by default (`NETRA_AUTO_CAPTURE=true` / Helm
+`alerting.autoCapture.enabled`). Set `enabled: false` to disable.
 When enabled, the alert poller automatically starts a **filtered**,
 time-bounded capture on critical drop/congestion signals:
 
@@ -63,7 +64,7 @@ time-bounded capture on critical drop/congestion signals:
 
 | Env / Helm | Default | Notes |
 |---|---|---|
-| `NETRA_AUTO_CAPTURE` / `alerting.autoCapture.enabled` | off | `true` enables |
+| `NETRA_AUTO_CAPTURE` / `alerting.autoCapture.enabled` | on (GA) | set `false` to disable; PCAPs may include cleartext |
 | `NETRA_AUTO_CAPTURE_DURATION` / `.duration` | `60s` | max 5m |
 | `NETRA_AUTO_CAPTURE_COOLDOWN` / `.cooldown` | `10m` | per-node |
 | `NETRA_AUTO_CAPTURE_PROTOCOL` / `.protocol` | `tcp` | fallback filter; policy spikes may enrich host/port from the top `PolicyDropStat` |

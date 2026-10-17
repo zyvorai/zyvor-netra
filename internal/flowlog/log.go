@@ -42,6 +42,11 @@ type Record struct {
 	SRTTUS       uint64    `json:"srttUs,omitempty"`
 	PID          uint32    `json:"pid,omitempty"`
 	Comm         string    `json:"comm,omitempty"`
+	// DNSName / TLSSNI are best-effort joins from the same agent report
+	// (DNS events and TLS SNI stats). Empty when the report had no name for
+	// that peer — never invented. Enables historical deny-preview for dns/sni.
+	DNSName string `json:"dnsName,omitempty"`
+	TLSSNI  string `json:"tlsSni,omitempty"`
 }
 
 // Query filters history. Zero time means no bound on that side.
@@ -71,6 +76,7 @@ func Limitations() []string {
 		"First sample of a flow sets a baseline and is not emitted, so rates start on the second report.",
 		"App protocol is a well-known-port hint, not a payload decode. HTTP/2 and HTTP/3 are not decoded. Cleartext HTTP/1 status is counted only when the status line starts the packet.",
 		"Process comm and pid are copied from TCP health when the peer and port match. No argv or cmdline.",
+		"DNS qname and TLS SNI are best-effort joins from the same agent report when present; empty means unobserved, never invented.",
 		"No packet payloads. Kernel kfree_skb drops stay reason counts. Application journal is not collected.",
 	}
 }
@@ -125,6 +131,8 @@ func (l *Log) Ingest(now time.Time, r models.AgentReport) {
 	now = now.UTC()
 	tcp := indexTCP(r.TCPHealth)
 	comms := indexComm(r.ProcessMeta)
+	dnsByPeer := indexDNSNames(r.Events)
+	sniByWorkload := indexSNI(r.TLSMetadata)
 
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -170,6 +178,11 @@ func (l *Log) Ingest(now time.Time, r models.AgentReport) {
 		}
 		if rec.Comm == "" && rec.PID != 0 {
 			rec.Comm = comms[rec.PID]
+		}
+		rec.DNSName = dnsByPeer[st.DestinationIP]
+		rec.TLSSNI = sniByWorkload[st.Namespace+"|"+st.Pod]
+		if rec.TLSSNI == "" {
+			rec.TLSSNI = sniByWorkload["|"+st.Pod]
 		}
 		if rec.Packets == 0 && rec.Bytes == 0 && rec.Blocked == 0 && rec.Retrans == 0 && rec.RTOs == 0 {
 			continue
@@ -228,6 +241,39 @@ func indexComm(meta []models.ProcessMetaStat) map[uint32]string {
 	for _, m := range meta {
 		if m.PID != 0 && m.Comm != "" {
 			out[m.PID] = m.Comm
+		}
+	}
+	return out
+}
+
+// indexDNSNames maps destination IP → most recent DNS qname from sampled events.
+func indexDNSNames(events []models.FastPathEvent) map[string]string {
+	out := make(map[string]string)
+	for _, e := range events {
+		if e.DNSQuery == "" || e.DestinationIP == "" {
+			continue
+		}
+		out[e.DestinationIP] = e.DNSQuery
+	}
+	return out
+}
+
+// indexSNI maps "namespace|pod" → SNI from TLS metadata (first non-empty wins).
+func indexSNI(tls []models.TLSMetadataStat) map[string]string {
+	out := make(map[string]string, len(tls))
+	for _, t := range tls {
+		if t.SNI == "" {
+			continue
+		}
+		key := t.Namespace + "|" + t.Pod
+		if _, ok := out[key]; !ok {
+			out[key] = t.SNI
+		}
+		if t.Pod != "" {
+			loose := "|" + t.Pod
+			if _, ok := out[loose]; !ok {
+				out[loose] = t.SNI
+			}
 		}
 	}
 	return out

@@ -138,8 +138,13 @@ type EBPFFastPathConfig struct {
 	// socket() call, cause that connection attempt to be denied — an
 	// agent-sourced, TOCTOU-caveated signal, not a kernel credential read.
 	// See docs/capability-gated-deny.md.
-	DeniedCapabilities []string   `json:"deniedCapabilities,omitempty"`
-	Revision           uint64     `json:"revision"`
+	DeniedCapabilities []string `json:"deniedCapabilities,omitempty"`
+	// BlockedExeHashes are lowercase hex SHA-256 digests of /proc/PID/exe.
+	// When procmeta is on, the agent writes matching PIDs into exehash_pids
+	// (same TOCTOU shape as capgate_pids). Enforce is lease-bounded and
+	// fails open. Observe half: GET /api/v1/ebpf/exehash.
+	BlockedExeHashes []string   `json:"blockedExeHashes,omitempty"`
+	Revision         uint64     `json:"revision"`
 	EnforceUntil       *time.Time `json:"enforceUntil,omitempty"`
 	LeaseSeconds       int64      `json:"leaseSeconds,omitempty"`
 	// DesiredCapture is the one active packet-capture session for the
@@ -299,6 +304,19 @@ type CaptureHistoryEntry struct {
 	// ContextAvailable is true when a drop-incident JSON was written
 	// beside the PCAP. Download: GET /api/v1/capture/artifacts/{id}/context.
 	ContextAvailable bool `json:"contextAvailable,omitempty"`
+	// Summary is bounded metadata for MCP/agents — never packet payloads.
+	Summary *CaptureSessionSummary `json:"summary,omitempty"`
+}
+
+// CaptureSessionSummary is metadata-only evidence about an ended (or active)
+// capture. No frame bytes. Used by GET /api/v1/capture/summaries and history.
+type CaptureSessionSummary struct {
+	Frames           uint64            `json:"frames"`
+	Bytes            uint64            `json:"bytes,omitempty"`
+	DurationSeconds  float64           `json:"durationSeconds,omitempty"`
+	ProtocolCounts   map[string]uint64 `json:"protocolCounts,omitempty"`
+	DroppedByRateCap uint64            `json:"droppedByRateCap,omitempty"`
+	Note             string            `json:"note,omitempty"`
 }
 
 // CaptureHistoryResponse backs GET /api/v1/capture/history.

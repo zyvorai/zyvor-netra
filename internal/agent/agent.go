@@ -340,7 +340,7 @@ var mapNames = []string{
 	"dest_stats", "flow_stats", "workload_flow_stats", "tcp_health", "tcp_pressure", "connect_health", "tcp_signals", "dns_pending", "dns_health", "tls_sni_stats", "http_host_stats", "http_status_stats", "connect_attempts", "socket_owner", "kernel_drops", "ipv6_ext_stats",
 	"conntrack", "policy_drops", "shield_cfg", "shield_protected4", "shield_protected6", "shield_sources", "shield_stats", "netpol_deny4", "netpol_enabled",
 	"netpol_rules4", "netpol_default4", "netpol_v2_enabled",
-	"blocked_v4", "blocked_v6", "allowed_v4", "allowed_v6", "allowed_cidr_v4", "allowed_cidr_v6", "allowed_ports", "allowed_uids", "allowed_comms", "blocked_ingress_v4", "blocked_ingress_v6", "blocked_cidr_v4", "blocked_cidr_v6", "blocked_ports", "blocked_uids", "blocked_dns", "blocked_comms",
+	"blocked_v4", "blocked_v6", "allowed_v4", "allowed_v6", "allowed_cidr_v4", "allowed_cidr_v6", "allowed_ports", "allowed_uids", "allowed_comms", "blocked_ingress_v4", "blocked_ingress_v6", "blocked_cidr_v4", "blocked_cidr_v6", "blocked_ports", "blocked_uids", "blocked_dns", "blocked_comms", "exehash_pids",
 	"rate_v4", "rate_state_v4", "rate_v6", "rate_state_v6", "icmp_type_stats", "icmp6_type_stats", "blocked_sni", "config_map", "scope_config", "enforced_cgroups", "events",
 	"shield_class_stats", "shield_source_hits", "iface_flow_stats", "icmp_errors", "udp_flow_health", "quic_observed",
 	"conn_rate_limits", "conn_rate_state",
@@ -1369,6 +1369,9 @@ func (a *Agent) applyConfig(cfg models.EBPFFastPathConfig) error {
 		return err
 	}
 	if err := a.applyCapabilityGate(cfg); err != nil {
+		return err
+	}
+	if err := a.applyExeHashGate(cfg); err != nil {
 		return err
 	}
 	if err := a.replacePorts(cfg.BlockedPorts); err != nil {

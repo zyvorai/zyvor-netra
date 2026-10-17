@@ -1,12 +1,15 @@
 # Volumetric auto-mitigation
 
-Optional, off-by-default emergency controls when SYN-flood findings or
-UDP amplify packet deltas appear. **Requires an active enforce lease**;
-does nothing in observe mode. Fails open when the lease expires.
+GA emergency controls when SYN-flood findings or UDP amplify packet
+deltas appear. On by default (`automitigate.enabled` /
+`NETRA_AUTOMITIGATE_ENABLED=true`); set `enabled: false` to disable.
+**Requires an active enforce lease**; does nothing in observe mode.
+Fails open when the lease expires.
 
 ```bash
+# Chart default is enabled; override if needed:
 export NETRA_AUTOMITIGATE_ENABLED=true
-# optional:
+# optional thresholds:
 export NETRA_AUTOMITIGATE_INTERVAL=30s
 export NETRA_AUTOMITIGATE_CONN_RATE=10
 export NETRA_AUTOMITIGATE_UDP_DELTA=100000
@@ -16,8 +19,15 @@ export NETRA_AUTOMITIGATE_SHIELD_UDP_PPS=20000
 
 ```text
 GET /api/v1/ebpf/auto-mitigate
+GET /api/v1/ebpf/auto-mitigate/preview
 netractl ebpf auto-mitigate
 ```
+
+`GET …/preview` is a **shadow** evaluation: same scan/UDP rules as a live
+tick, but it never mutates store or datapath. Candidates include a
+`skipped` reason when there is no enforce lease or a 10-minute cooldown
+already applied. Metric anomalies never feed this path. MCP:
+`netra_ebpf_auto_mitigate_preview`.
 
 ## What it does
 
@@ -26,7 +36,7 @@ netractl ebpf auto-mitigate
 | `scandetect` `syn_flood` finding | Conn-rate limit on the workload; optional XDP Shield SYN PPS tighten; best-effort SYN-drop flags on example dests already denied |
 | UDP dest packet delta ≥ threshold across a poll interval | Exact-IP deny + optional Shield UDP PPS tighten |
 
-Needs `NETRA_SCANDETECT_ENABLED=true` for the SYN-flood path.
+Needs scan detect (GA default, `NETRA_SCANDETECT_ENABLED`) for the SYN-flood path.
 
 **UX:** Surfaces → Auto-mitigate. Parent catalog:
 [`p0-p5-surfaces.md`](p0-p5-surfaces.md).

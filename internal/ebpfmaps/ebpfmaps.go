@@ -99,6 +99,7 @@ func Build(cfg models.EBPFFastPathConfig, now time.Time) Report {
 		synDropMap(cfg.SynDrop),
 		synDropCIDRMap(cfg.SynDropCIDR),
 		strMap("capgate", "Capability-gated deny", "capability", "capgate_pids (via deniedCapabilities)", cfg.DeniedCapabilities),
+		strMap("exehash", "Exe-hash leased deny", "exehash", "exehash_pids (via blockedExeHashes)", cfg.BlockedExeHashes),
 		netpolDenyMap(cfg.NetPolDenies),
 		netpolRulesMap(cfg.NetPolRules),
 		netpolDefaultMap(cfg.NetPolDefaultDenies),

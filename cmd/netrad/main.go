@@ -106,6 +106,7 @@ func main() {
 	}
 	dnsDet, dnsInterval, dnsEnabled := buildDNSDetect()
 	scanDet, scanInterval, scanEnabled := buildScanDetect()
+	warmStartDetectors(log, stateFile, dnsDet, dnsEnabled, scanDet, scanEnabled)
 	autoEng, autoEnabled := buildAutoMitigate(log, st, scanDet)
 	wobs := buildWorkloadObs(log)
 	metrics := buildMetrics(log, stateFile, dispatcher)
@@ -117,6 +118,11 @@ func main() {
 	go func() { defer refreshWG.Done(); apiServer.RunIntelRefresh(refreshCtx) }()
 	defer refreshWG.Wait()
 	defer refreshCancel()
+	var detectPersistWG sync.WaitGroup
+	if stop := startDetectorPersist(ctx, log, stateFile, dnsDet, dnsEnabled, scanDet, scanEnabled, &detectPersistWG); stop != nil {
+		defer detectPersistWG.Wait()
+		defer stop()
+	}
 	var metricsWG sync.WaitGroup
 	if stop := metrics.start(ctx, &metricsWG); stop != nil {
 		defer metricsWG.Wait()
@@ -848,6 +854,8 @@ func electionLoop(
 	var lokiCancel func()
 	var lokiWG sync.WaitGroup
 	var dnsDetectCancel func()
+	var detectPersistCancel func()
+	var detectPersistWG sync.WaitGroup
 	var dnsDetectWG sync.WaitGroup
 	var scanDetectCancel func()
 	var scanDetectWG sync.WaitGroup
@@ -907,6 +915,11 @@ func electionLoop(
 			lokiCancel()
 			lokiWG.Wait()
 			lokiCancel = nil
+		}
+		if detectPersistCancel != nil {
+			detectPersistCancel()
+			detectPersistWG.Wait()
+			detectPersistCancel = nil
 		}
 		if dnsDetectCancel != nil {
 			dnsDetectCancel()
@@ -975,6 +988,7 @@ func electionLoop(
 		}
 		dnsDet, dnsInterval, dnsEnabled := buildDNSDetect()
 		scanDet, scanInterval, scanEnabled := buildScanDetect()
+		warmStartDetectors(log, stateFile, dnsDet, dnsEnabled, scanDet, scanEnabled)
 		autoEng, autoEnabled := buildAutoMitigate(log, st, scanDet)
 		wobs := buildWorkloadObs(log)
 		metrics := buildMetrics(log, stateFile, dispatcher)
@@ -988,6 +1002,9 @@ func electionLoop(
 		intelRefreshCancel = cancel
 		intelRefreshWG.Add(1)
 		go func() { defer intelRefreshWG.Done(); apiServer.RunIntelRefresh(refreshCtx) }()
+		if stop := startDetectorPersist(ctx, log, stateFile, dnsDet, dnsEnabled, scanDet, scanEnabled, &detectPersistWG); stop != nil {
+			detectPersistCancel = stop
+		}
 		if shouldRunAlertPoller(dispatcher) {
 			pctx, cancel := context.WithCancel(ctx)
 			pollerCancel = cancel
