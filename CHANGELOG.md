@@ -4,7 +4,7 @@
 
 ## 0.31.0 — 2026-10-17
 
-- **CI and deps match the GA chart defaults.** Helm CI now expects DNS/scan detect and bounded auto-capture on by default; `golang.org/x/net` bumps to v0.60.0 for the HTTP/2 Trailer advisories; govulncheck ignore drops the stale Cilium catch-all and documents GO-2026-6665 (Snowflake logger, no fixed release yet).
+- **CI and deps match the GA chart defaults.** Helm CI now expects DNS/scan detect and bounded auto-capture on by default; `golang.org/x/net` bumps to v0.60.0 for the HTTP/2 Trailer advisories; toolchain Go 1.27.2 + golangci-lint v2.15.0; govulncheck ignore drops the stale Cilium catch-all and documents GO-2026-6665 (Snowflake logger, no fixed release yet).
 - **Diagnose surfaces for APIs that already existed.** New console pages: Deny Preview (live + flow-history blast radius), Netlink timeline, BPF Attachments / hook drift, and Detect (DNS + scan findings). Overview Detect links to Detect; Needs action ranks detect findings there. MCP adds `netra_netlink`, `netra_netlink_findings`, `netra_ebpf_attachments`, `netra_listen_queues`.
 - **Auto-mitigate shadow preview.** `GET /api/v1/ebpf/auto-mitigate/preview` (MCP `netra_ebpf_auto_mitigate_preview`) lists candidates from scan findings and UDP deltas without mutating store or datapath. Metric anomalies never feed it; live actions still need an enforce lease.
 - **Detector HA warm-start.** DNS/scan finding rings persist beside `NETRA_STATE_FILE` (`.dnsdetect` / `.scandetect`) and reload on leader promote so observe continuity survives failover. Never persists auto-mitigate actions.

@@ -2,7 +2,7 @@ module github.com/zyvorai/netra
 
 go 1.27.0
 
-toolchain go1.27.1
+toolchain go1.27.2
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
