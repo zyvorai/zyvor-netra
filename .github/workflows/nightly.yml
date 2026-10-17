@@ -21,7 +21,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.2', cache: true}
+      with: {go-version: '1.27.1', cache: true}
     - name: The whole suite under the race detector
       run: go test -race -count=1 ./...
   fuzz:
@@ -30,7 +30,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.2', cache: true}
+      with: {go-version: '1.27.1', cache: true}
     - name: Fuzz the sampled-payload parsers for 10 minutes
       run: go test ./internal/l7sample/ -run xxx -fuzz FuzzParse -fuzztime 10m
     - uses: actions/upload-artifact@v7
@@ -60,7 +60,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.2', cache: true}
+      with: {go-version: '1.27.1', cache: true}
     - name: Install clang and tcpdump
       run: sudo apt-get update && sudo apt-get install -y clang llvm linux-libc-dev tcpdump iperf3
     - name: A current clang (the image's own is too old to build the BPF objects)
