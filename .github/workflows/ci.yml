@@ -965,12 +965,11 @@ jobs:
     # shipped: the agent binary and a BPF object for every bpf/netra_*.c. A
     # sensor added under bpf/ but not to the Dockerfile builds, passes every
     # unit test, and ships an agent that quietly never loads it.
-    # Heavy and trusted: self-hosted (group zyvor-build) on push to main and dispatch; the
-    # expression keeps every pull_request event, forks included, on a hosted runner.
-    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && '"ubuntu-latest"' || '["self-hosted","zyvor-build","docker"]') }}
+    # Hosted for now: org zyvor-build runners can stick busy with no assigned job and
+    # block main forever. Revisit self-hosted once the runner pool is healthy.
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      # Per-run tag: the self-hosted Docker daemon is shared by two runners and other workloads.
       IMAGE_TAG: netra-agent:ci-image-gate-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
     - uses: actions/checkout@v7
