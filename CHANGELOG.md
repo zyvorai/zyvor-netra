@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.32.0 — 2026-10-19
+
 - **Per-node agent mTLS identity (opt-in).** With `NETRA_AGENT_MTLS_BIND_NODE`, the reported node must match the client certificate (URI SAN `spiffe://netra.local/node/<name>`, else DNS SAN, else CN). Optional `NETRA_AGENT_MTLS_DENY_SERIALS` hot-reloads revoked serials. Shared-cert mode stays the default. Helm: `mtls.bindNode`, `mtls.denySerialsSecret`. Docs: `docs/agent-mtls.md`.
 - **Scoped authorization.** OIDC claims (`NETRA_OIDC_NAMESPACES_CLAIM`, clusters, tenants) and `NETRA_SERVICE_CREDENTIALS_FILE` add namespace/cluster/tenant ACLs on top of viewer/operator/admin. Scoped callers are filtered on observe queries and blocked from admin-only fleet surfaces. Docs: `docs/auth-oidc-rbac.md`.
 - **Optional SQLite flow history.** `NETRA_FLOW_BACKEND=sqlite` writes incremental indexed deltas to `<state>.flows.db` (retention via `NETRA_FLOW_RETAIN` / `MAX` / `MAX_BYTES`); JSON sidecar remains default. `GET /api/v1/fleet/flows/history` fans out to `NETRA_FLEET_PEERS`. Docs: `docs/flow-log.md`.
