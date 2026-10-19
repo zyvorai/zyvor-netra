@@ -41,6 +41,11 @@ func newCaptureHub() *captureHub { return &captureHub{sessions: map[string]*capt
 type captureSession struct {
 	mu       sync.Mutex
 	browsers map[*websocket.Conn]struct{}
+	// Metadata-only counters for MCP/agent summaries — never stores payloads.
+	frames      uint64
+	bytes       uint64
+	protoCounts map[string]uint64
+	startedAt   time.Time
 }
 
 func (h *captureHub) session(node string) *captureSession {
@@ -48,10 +53,52 @@ func (h *captureHub) session(node string) *captureSession {
 	defer h.mu.Unlock()
 	s, ok := h.sessions[node]
 	if !ok {
-		s = &captureSession{browsers: map[*websocket.Conn]struct{}{}}
+		s = &captureSession{browsers: map[*websocket.Conn]struct{}{}, protoCounts: map[string]uint64{}, startedAt: time.Now().UTC()}
 		h.sessions[node] = s
 	}
 	return s
+}
+
+func (s *captureSession) observeMeta(data []byte) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.frames++
+	s.bytes += uint64(len(data))
+	// Wire frame: capture package prefixes a small header; protocol byte is
+	// best-effort. Unknown buckets as "other".
+	proto := "other"
+	if len(data) > 22 {
+		switch data[22] {
+		case 6:
+			proto = "tcp"
+		case 17:
+			proto = "udp"
+		case 1:
+			proto = "icmp"
+		}
+	}
+	if s.protoCounts == nil {
+		s.protoCounts = map[string]uint64{}
+	}
+	s.protoCounts[proto]++
+}
+
+func (s *captureSession) summary() models.CaptureSessionSummary {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	dur := 0.0
+	if !s.startedAt.IsZero() {
+		dur = time.Since(s.startedAt).Seconds()
+	}
+	pc := make(map[string]uint64, len(s.protoCounts))
+	for k, v := range s.protoCounts {
+		pc[k] = v
+	}
+	return models.CaptureSessionSummary{
+		Frames: s.frames, Bytes: s.bytes, DurationSeconds: dur,
+		ProtocolCounts: pc,
+		Note:           "Metadata only — no packet payloads. Live bytes stay on the Capture dashboard.",
+	}
 }
 
 func (h *captureHub) drop(node string) {
@@ -293,6 +340,7 @@ func (s *Server) agentCaptureStream(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if mt == websocket.BinaryMessage {
+			sess.observeMeta(data)
 			sess.broadcast(data)
 			if s.tlsFP != nil {
 				s.tlsFP.ObserveFrame(node, data)
@@ -312,6 +360,11 @@ func (s *Server) finalizeAutoArtifact(node string, startedAt time.Time) {
 	if !ok || meta.ID == "" || meta.Frames == 0 {
 		return
 	}
+	sum := s.captureHub.session(node).summary()
+	if sum.Frames == 0 && meta.Frames > 0 {
+		sum.Frames = uint64(meta.Frames)
+		sum.Bytes = uint64(meta.Bytes)
+	}
 	s.store.PatchCaptureHistory(node, startedAt, func(e *models.CaptureHistoryEntry) {
 		e.ArtifactID = meta.ID
 		e.ArtifactBytes = meta.Bytes
@@ -322,6 +375,34 @@ func (s *Server) finalizeAutoArtifact(node string, startedAt time.Time) {
 		if e.TriggerSubject == "" {
 			e.TriggerSubject = meta.TriggerSubject
 		}
+		cp := sum
+		e.Summary = &cp
+	})
+}
+
+// captureSummaries handles GET /api/v1/capture/summaries — metadata for
+// active + recent sessions without packet bytes (MCP-safe).
+func (s *Server) captureSummaries(w http.ResponseWriter, r *http.Request) {
+	limit := 50
+	if v := strings.TrimSpace(r.URL.Query().Get("limit")); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 && n <= 500 {
+			limit = n
+		}
+	}
+	active := []map[string]any{}
+	for _, spec := range s.store.Captures() {
+		sum := s.captureHub.session(spec.Node).summary()
+		active = append(active, map[string]any{
+			"node": spec.Node, "backend": spec.Backend, "protocol": spec.Protocol,
+			"host": spec.Host, "port": spec.Port, "requestor": spec.Requestor,
+			"startedAt": spec.StartedAt, "summary": sum, "active": true,
+		})
+	}
+	hist := s.store.CaptureHistory(limit)
+	writeJSON(w, 200, map[string]any{
+		"active":  active,
+		"history": hist,
+		"note":    "Bounded capture session summaries — no PCAP bytes. Use the Capture UI for live frames.",
 	})
 }
 

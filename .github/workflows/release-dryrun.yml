@@ -44,6 +44,7 @@ jobs:
         include:
         - {image: netra, dockerfile: Dockerfile}
         - {image: netra-agent, dockerfile: Dockerfile.agent}
+        - {image: netra-mcp, dockerfile: Dockerfile.mcp}
     steps:
     - uses: actions/checkout@v7
     - uses: docker/setup-buildx-action@v4
@@ -71,6 +72,17 @@ jobs:
         # ...and so do its static files. An unknown path answers 200 with the HTML fallback, so only
         # fetching the logo and favicon and comparing them with web/public proves they are there.
         ./scripts/check-served-ui.sh http://127.0.0.1:30870
+  mcp-registry:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - name: server.json validates against the registry schema
+      run: |
+        curl -fsSL -o mcp-publisher.tar.gz \
+          https://github.com/modelcontextprotocol/registry/releases/download/v1.8.1/mcp-publisher_linux_amd64.tar.gz
+        echo "a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc  mcp-publisher.tar.gz" | sha256sum -c -
+        tar xzf mcp-publisher.tar.gz mcp-publisher
+        ./mcp-publisher validate server.json
   runtime-image:
     # Dockerfile.runtime is the thin image the remote deploy path uses; nothing built it.
     runs-on: ubuntu-latest
@@ -78,7 +90,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - uses: actions/setup-node@v7
       with: {node-version: '22', cache: npm, cache-dependency-path: web/package-lock.json}
     - name: Prebuild the inputs Dockerfile.runtime copies

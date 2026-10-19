@@ -19,7 +19,7 @@
 
 **Standalone eBPF network observability and emergency network control for Linux/Kubernetes — with optional Cilium + Hubble enrichment.** Kernel drop attribution, path and congestion diagnostics, live packet capture, and leased deny rules that return to observe on their own, on any CNI.
 
-**Observe-first** · **Lease-bounded, fails open** · **No CNI required** · **No payload collection** · **189 MCP tools**
+**Observe-first** · **Lease-bounded, fails open** · **No CNI required** · **No payload collection** · **190 MCP tools**
 
 📖 **[Read the full docs](https://zyvorai.github.io/zyvor-netra/)** — quickstart, architecture, security model, and a product tour.
 
@@ -56,7 +56,7 @@ From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.30.0):
 | "The network is slow" with no evidence | TCP path diagnostics and a Congestion Map that colors every layer of the Linux network stack by its worst finding |
 | A chart spiked and you need to know why | Per-second metrics with anomaly detection, where every spike links to the flows, drop reasons and captures from that window |
 | You need packets from one node, now | Filtered, time-bounded live capture with a Wireshark-style layered decode, one click from a finding |
-| Your AI agent should investigate without breaking things | An MCP server with 189 tools; mutations stay behind `NETRA_MCP_ALLOW_MUTATIONS` |
+| Your AI agent should investigate without breaking things | An MCP server with 190 tools; mutations stay behind `NETRA_MCP_ALLOW_MUTATIONS` |
 
 Netra does not require Cilium. The node agent owns its own programs and maps below `/sys/fs/bpf/netra`. If Cilium/Hubble exists, Netra can manage `CiliumNetworkPolicy` and display Hubble flows, but both integrations are opt-in.
 
@@ -218,7 +218,8 @@ Details: [Architecture and visibility boundaries](docs/architecture.md) · [Safe
 
 - **`netractl`** — the operator CLI. [Docs →](docs/netractl.md)
 - **Security review** — DNS QTYPE, versioned threat feeds with TTL/rollback and optional HTTPS refresh, flat deny-predicate suggestions, and exact-workload security correlation. [Docs →](docs/security-review.md)
-- **MCP server** — 189 stdio tools (129 read, 60 opt-in mutating) for AI agents. [Docs →](docs/mcp-integration.md)
+- **MCP server** — 190 stdio tools (130 read, 60 opt-in mutating) for AI agents. [Docs →](docs/mcp-integration.md)
+  - MCP Registry: [`io.github.zyvorai/netra`](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.zyvorai%2Fnetra/versions/latest) (live since v0.30.1), image `ghcr.io/zyvorai/netra-mcp:0.31.0`. [Install and use →](docs/mcp-integration.md#use-it)
 - **Built-in AI briefs** — heuristic by default, optional OpenAI-compatible rewrite, read-only. [Docs →](docs/ai.md)
 - **Export** — SIEM (CEF, syslog, JSONL, OTLP), Prometheus (scrape and remote write), Grafana, Loki, Graphite, Slack and Teams ChatOps.
 
@@ -250,20 +251,25 @@ Rules: [docs/packetwolf.md](docs/packetwolf.md) · [Suite placement](https://zyv
 
 ## Maturity
 
-Netra's latest release is **0.30.0** ([CHANGELOG.md](CHANGELOG.md)). What runs by default and what is opt-in ([architecture](docs/architecture.md)):
+Netra's latest release is **0.31.0** ([CHANGELOG.md](CHANGELOG.md)). Shipped observe and leased-control surfaces are **GA**. The table below says what runs by default versus what stays opt-in for privacy or safety ([architecture](docs/architecture.md)):
 
 | Area | Status |
 |---|---|
-| cgroup skb ingress/egress, connect/sendmsg, sockops hooks | Default |
-| `kfree_skb` drop reasons, TCX, XDP | Optional, on selected interfaces |
-| Enforcement | Observe by default; leased enforce returns to observe |
-| Sampled L7 and TLS plaintext sensors | Opt-in, off by default |
+| cgroup skb ingress/egress, connect/sendmsg, sockops hooks | GA (default) |
+| `kfree_skb` drop reasons, TCX, XDP | GA (optional attach), on selected interfaces |
+| Enforcement | GA — observe by default; leased enforce returns to observe |
+| TLS SNI, HTTP Host, DNS names and query types | GA (default, `NETRA_L7=auto`), Linux 5.17+; dropped on older kernels |
+| TLS fingerprints (JA3/JA4) | GA (default, `agent.tlsfp: auto`) |
+| DNS anomaly detect / scan detect | GA (default); observe-only |
+| Per-second metrics, anomalies, metric alerts | GA (default, `NETRA_METRICS_ENABLED`); alerts only notify |
+| Auto-capture on critical drops | GA (default); bounded duration/cooldown/PPS; disable with `alerting.autoCapture.enabled=false` |
+| Auto-mitigate (volumetric) | GA (default); acts only under an active enforce lease; fails open |
+| Node isolation | GA — loaded (`agent.nodeIsolation: auto`), inert until a per-node policy is set; shadow or enforce (leased) |
+| Security review, threat-feed history and rollback | GA (read-only); HTTPS feed refresh only when `NETRA_INTEL_SOURCE_URL` is set |
+| Historical deny preview (flow history) | GA — live counters plus optional `--since` / flowlog window |
+| Sampled L7 and TLS plaintext sensors | Opt-in (privacy), off by default |
 | Cilium `CiliumNetworkPolicy` and Hubble integration | Opt-in (`cilium.enabled`, `hubble.enabled`) |
-| MCP mutating tools | Opt-in (`NETRA_MCP_ALLOW_MUTATIONS`) |
-| TLS SNI, HTTP Host, DNS names and query types | Default (`NETRA_L7=auto`), Linux 5.17+; dropped on older kernels |
-| Per-second metrics, anomalies, metric alerts | Default (`NETRA_METRICS_ENABLED`); alerts only notify |
-| Node isolation | Loaded (`agent.nodeIsolation: auto`), inert until a per-node policy is set; shadow or enforce (leased) |
-| Security review, threat-feed history and rollback | Read-only; HTTPS feed refresh only when `NETRA_INTEL_SOURCE_URL` is set |
+| MCP mutating tools | Opt-in (safety, `NETRA_MCP_ALLOW_MUTATIONS`) |
 
 ---
 

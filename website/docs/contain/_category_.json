@@ -1,0 +1,8 @@
+{
+  "label": "Contain",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "Leased deny rules with preview, auto-mitigation and node isolation. Enforcement is bounded and fails open to observe."
+  }
+}

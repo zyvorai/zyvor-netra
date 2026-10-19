@@ -41,6 +41,46 @@ NETRA_URL=https://127.0.0.1:30870 NETRA_API_KEY=... ./bin/netra-mcp
 
 Each line you type after startup should produce one corresponding JSON-RPC response line (the `notifications/initialized` message, if you send it, produces none — see [Response shape](#response-shape)). Press Ctrl-D to close stdin and let the process exit.
 
+## Install from the MCP Registry (OCI)
+
+`netra-mcp` is listed in the MCP Registry as [`io.github.zyvorai/netra`](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.zyvorai%2Fnetra/versions/latest) (live since v0.30.1) and ships as the multi-arch, cosign-signed image `ghcr.io/zyvorai/netra-mcp`. Registry entries are published from `server.json` by the `publish-mcp` job in `.github/workflows/release.yml` on every `v*` tag. The image carries the `io.modelcontextprotocol.server.name` label the registry uses to verify ownership.
+
+Client configuration (any stdio MCP client):
+
+```json
+{
+  "mcpServers": {
+    "netra": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm",
+               "-e", "NETRA_URL", "-e", "NETRA_API_KEY",
+               "ghcr.io/zyvorai/netra-mcp:0.31.0"],
+      "env": { "NETRA_URL": "https://netra.example:30870", "NETRA_API_KEY": "..." }
+    }
+  }
+}
+```
+
+Mutating tools stay disabled unless `NETRA_MCP_ALLOW_MUTATIONS=true` is also passed; policy apply remains plan-token and risk-confirm gated and enforcement stays leased.
+
+## Use it
+
+Needs a running Netra controller and an API key.
+
+Claude Code:
+
+```bash
+claude mcp add netra \
+  -e NETRA_URL=https://<controller>:30870 -e NETRA_API_KEY=<key> \
+  -- docker run -i --rm -e NETRA_URL -e NETRA_API_KEY ghcr.io/zyvorai/netra-mcp:0.31.0
+```
+
+Claude Desktop and other stdio clients use the JSON above. Then ask in plain language ("Why are
+`payments-api` connections timing out?", "Which kernel function is dropping traffic from namespace
+`prod`?", "Draft a containment rule for this IP, but don't apply it."). Inside the container
+`127.0.0.1` is the container, so use the node address or `--network host`; set
+`NETRA_TLS_INSECURE=true` only for a self-signed lab controller.
+
 ## Environment variables
 
 | Var | Default | Notes |
@@ -80,7 +120,7 @@ Then, from a Hermes session:
 hermes mcp test netra
 ```
 
-should report a successful handshake and list the **129** read tools. Run `/reload-mcp` inside a chat session after changing `config.yaml` to pick up changes without restarting Hermes entirely.
+should report a successful handshake and list the **130** read tools. Run `/reload-mcp` inside a chat session after changing `config.yaml` to pick up changes without restarting Hermes entirely.
 
 Mutations stay off by default even with this config — `NETRA_MCP_ALLOW_MUTATIONS` must be added explicitly on the `netra-mcp` process's own environment, not just in Hermes's config. A conservative read-only-by-convention setup, worth keeping even once mutations are enabled server-side, restricts which tools Hermes is allowed to call at all via `tools.include`:
 
@@ -204,9 +244,17 @@ All tool names are prefixed `netra_`. Every tool maps 1:1 to one Netra controlle
 | `netra_intel_hits` | `GET /api/v1/intel/hits` | — | Match active feed against live agents (observe-only) |
 | `netra_ebpf_ai_destinations` | `GET /api/v1/ebpf/ai-destinations` | — | Observe known GenAI/MCP SaaS via SNI/Host/DNS |
 | `netra_ebpf_auto_mitigate` | `GET /api/v1/ebpf/auto-mitigate` | — | Volumetric auto-mitigation status |
+| `netra_ebpf_auto_mitigate_preview` | `GET /api/v1/ebpf/auto-mitigate/preview` | — | Shadow candidates from scan/UDP rules; applies nothing |
 | `netra_ebpf_deny_preview` | `POST /api/v1/ebpf/deny/preview` | `kind`, `value`, optional direction/protocol/scope | Observed-counter blast radius for a proposed deny. Applies nothing |
+| `netra_ebpf_deny_preview_history` | `POST /api/v1/ebpf/deny/preview-history` | same as deny preview plus optional `since` | Historical blast radius over flowlog deltas via counterfactual. Applies nothing |
 | `netra_ebpf_dns_findings` | `GET /api/v1/ebpf/dns-findings` | — | Metadata-only DNS anomaly findings (tunneling, DGA, beaconing, storms) from a continuously-running detector. Returns 409 if disabled |
 | `netra_ebpf_scan_findings` | `GET /api/v1/ebpf/scan-findings` | — | Port-scan/fan-out/lateral-movement/SYN-flood findings from a continuously-running detector. Returns 409 if disabled |
+| `netra_netlink` | `GET /api/v1/netlink` | `view`, `node`, `kind`, `since`, `limit` | Read-only RTNL change recorder |
+| `netra_netlink_findings` | `GET /api/v1/netlink/findings` | `window`, `node` | Level-triggered netlink findings |
+| `netra_ebpf_attachments` | `GET /api/v1/ebpf/attachments` | `node` | BPF attachment inventory / hook drift; never reattaches |
+| `netra_listen_queues` | `GET /api/v1/listen-queues` | `node` | TCP listen queue depth |
+| `netra_ebpf_stack_histograms` | `GET /api/v1/ebpf/stack-histograms` | `node` | Softirq/softnet + listen depth buckets |
+| `netra_capture_summaries` | `GET /api/v1/capture/summaries` | `limit` | Capture session metadata; no PCAP bytes |
 | `netra_pods` | `GET /api/v1/pods` | `namespace` | Lockdown status included per pod |
 | `netra_vms` | `GET /api/v1/vms` | `namespace` | Result's `available` field indicates whether KubeVirt is installed |
 | `netra_workload_detail` | `GET /api/v1/workloads/{kind}/{namespace}/{name}` | `kind` **(path, required, `pod`\|`vm`)**, `namespace` **(path, required)**, `name` **(path, required)** | Phase, node, IP, labels, recommended selector, matching policies |

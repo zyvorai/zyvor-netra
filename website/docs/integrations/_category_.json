@@ -1,0 +1,8 @@
+{
+  "label": "Integrations",
+  "position": 7,
+  "link": {
+    "type": "generated-index",
+    "description": "MCP for AI agents, Envoy in front of the API, and SIEM export."
+  }
+}

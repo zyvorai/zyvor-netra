@@ -1,8 +1,9 @@
 # Port-scan / lateral-movement detection (`internal/scandetect`)
 
 Per-workload port-scan, fan-out, lateral-movement, and SYN-flood
-detection from connection-attempt TCP flag data. Off by default
-(`NETRA_SCANDETECT_ENABLED=true`).
+detection from connection-attempt TCP flag data. GA and on by default
+(`scandetect.enabled` / `NETRA_SCANDETECT_ENABLED=true`); set
+`enabled: false` to disable.
 
 This is distinct from `internal/denysim`'s
 [deny blast-radius preview](deny-preview.md) — that's a review-only match

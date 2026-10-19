@@ -1,10 +1,10 @@
 image:
   repository: ghcr.io/zyvorai/netra
-  tag: "0.30.0"
+  tag: "0.31.0"
   pullPolicy: IfNotPresent
 agentImage:
   repository: ghcr.io/zyvorai/netra-agent
-  tag: "0.30.0"
+  tag: "0.31.0"
 replicaCount: 1
 ha:
   enabled: false
@@ -98,36 +98,36 @@ gitops:
   dir: /gitops/policies
   autoApply: false
   interval: 60s
-# Optional metadata-only DNS anomaly detection (tunneling, DGA, beaconing,
-# NXDOMAIN/SERVFAIL storms). Off by default. Observe-only — findings feed
+# GA metadata-only DNS anomaly detection (tunneling, DGA, beaconing,
+# NXDOMAIN/SERVFAIL storms). On by default. Observe-only — findings feed
 # alerting/SIEM, never enforcement. Fed by matched DNS-response events on
 # the interval below; every threshold not listed here keeps
 # internal/dnsdetect.DefaultConfig()'s own default.
 dnsdetect:
-  enabled: false
+  enabled: true
   interval: 30s
   maxUniqueSubdomains: 200
   nxdomainRatio: 0.7
   servfailRatio: 0.7
   maxDomains: 50000
   findingsTTL: 30m
-# Optional port-scan / fan-out / lateral-movement / SYN-flood detection
-# from per-connection-attempt TCP flag data. Off by default. Observe-only.
+# GA port-scan / fan-out / lateral-movement / SYN-flood detection
+# from per-connection-attempt TCP flag data. On by default. Observe-only.
 # Allowed (non-blocked) traffic is only sampled by the datapath, so this
 # sees every blocked/reset attempt but a sampled fraction of allowed ones.
 scandetect:
-  enabled: false
+  enabled: true
   interval: 30s
   window: 60s
   maxDestIps: 50
   maxDestPorts: 50
   minAttempts: 20
-# Optional volumetric auto-mitigation (SYN-flood → conn-rate / Shield;
-# high UDP packet deltas → leased deny). Off by default. Requires an
-# active enforce lease; fails open on expiry. Prefer enabling scandetect
-# alongside for the SYN-flood path.
+# GA volumetric auto-mitigation (SYN-flood → conn-rate / Shield;
+# high UDP packet deltas → leased deny). On by default. Requires an
+# active enforce lease; fails open on expiry. Prefer keeping scandetect
+# enabled for the SYN-flood path.
 automitigate:
-  enabled: false
+  enabled: true
   interval: 30s
   connRate: 10
   udpDelta: 100000
@@ -182,10 +182,12 @@ alerting:
   # Legacy webhook-only JSON (ignored when channelsJson / secret is set).
   webhooksJson: ""
   existingSecret: ""
-  # Opt-in: auto-start filtered capture on critical drop/congestion signals
-  # and persist PCAPs under dir. See docs/capture.md / docs/alerting.md.
+  # GA: auto-start filtered capture on critical drop/congestion signals
+  # and persist PCAPs under dir (may include cleartext). Bounded by
+  # duration/cooldown/PPS below. Set enabled: false to disable.
+  # See docs/capture.md / docs/alerting.md.
   autoCapture:
-    enabled: false
+    enabled: true
     duration: "60s"
     cooldown: "10m"
     protocol: tcp
@@ -201,6 +203,31 @@ service:
   type: ClusterIP
   port: 30870
   nodePort: null
+# Envoy in front of the API/UI, through Gateway API (works with Envoy Gateway
+# or any Gateway API implementation). Off by default; Netra's own auth is
+# unchanged. See docs/envoy-gateway.md.
+gateway:
+  enabled: false
+  # Gateway to attach to, e.g. [{name: eg, namespace: envoy-gateway-system}].
+  parentRefs: []
+  hostnames: []
+  path: /
+  annotations: {}
+  # "0s" keeps long-lived SSE / metric streams from being cut by Envoy.
+  requestTimeout: "0s"
+  # Netra's Service is HTTPS by default, so Envoy must verify the pod cert.
+  # Point caCertificateRefs at a ConfigMap holding the CA of tls.existingSecret.
+  backendTLS:
+    enabled: true
+    apiVersion: gateway.networking.k8s.io/v1alpha3
+    hostname: ""
+    caCertificateRefs: []
+    # e.g. [{group: "", kind: ConfigMap, name: netra-ca}]
+    wellKnownCACertificates: ""
+  # Envoy Gateway only. Needed for WebSocket streams when backendTLS is on.
+  backendTrafficPolicy:
+    enabled: false
+    useClientProtocol: true
 tls:
   # HTTPS is the default. Init container mints a self-signed P-256 cert into
   # an emptyDir; probes and the Service use scheme/port name https.
@@ -294,6 +321,14 @@ agent:
   # node with tolerations Exists so it lands on every schedulable node.
   # Set enabled=false only for controller-only installs.
   enabled: true
+  # Override NETRA_SERVER (default: in-cluster Service URL). Use a NodePort
+  # or host IP when hostNetwork agents cannot reliably resolve/reach CoreDNS
+  # → ClusterIP (multi-node labs with flaky ClusterFirstWithHostNet DNS).
+  server: ""
+  # Keep the privileged agent off nodes where it does not belong (a build
+  # host that shares the cluster, say). Empty means every schedulable node.
+  nodeSelector: {}
+  affinity: {}
   cgroupEnabled: true
   cgroupPath: /sys/fs/cgroup
   cgroupScanInterval: 10s

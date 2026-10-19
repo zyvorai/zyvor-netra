@@ -156,8 +156,9 @@ func TestRBACRoleLadderOnRealRoutes(t *testing.T) {
 	routes := []rt{
 		{"GET", "/api/v1/audit", oidcauth.RoleViewer},
 		{"GET", "/api/v1/agents", oidcauth.RoleViewer},
-		{"POST", "/api/v1/policies/plan", oidcauth.RoleViewer},          // computes, does not change
-		{"POST", "/api/v1/ebpf/deny/preview", oidcauth.RoleViewer},      // preview only
+		{"POST", "/api/v1/policies/plan", oidcauth.RoleViewer},     // computes, does not change
+		{"POST", "/api/v1/ebpf/deny/preview", oidcauth.RoleViewer}, // preview only
+		{"POST", "/api/v1/ebpf/deny/preview-history", oidcauth.RoleViewer},
 		{"POST", "/api/v1/ebpf/deny", oidcauth.RoleOperator},            // changes enforcement
 		{"DELETE", "/api/v1/ebpf/deny/10.0.0.1", oidcauth.RoleOperator}, // changes enforcement
 		{"GET", "/api/v1/capture/artifacts/abc", oidcauth.RoleOperator}, // packet contents

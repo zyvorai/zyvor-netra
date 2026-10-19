@@ -20,11 +20,11 @@ Netra stays a Cilium-independent network observability + leased emergency contai
 
 | Piece | Notes |
 |---|---|
-| Softirq *latency* histograms | Needs optional separate kprobe/tracepoint program — not grown into TC `handle_v4`/`handle_v6` |
-| SYN backlog depth histogram | Needs optional sensor; counters only for now |
+| Softirq *latency* histograms | Entry→exit still needs an optional kprobe/tracepoint program. Pressure buckets (NET_RX + softnet + listen depth) ship as `GET /api/v1/ebpf/stack-histograms` |
+| SYN backlog depth histogram | Point-in-time listen-queue depth buckets on `GET /api/v1/ebpf/stack-histograms` (inet_diag); time-series sensor still optional |
 | OTEL *logs* for audit/anomaly/incident | Shipped as pull-based `GET /api/v1/export/*?format=otlp` (`internal/siem`). Stdlib JSON Logs body only — no OTEL SDK, does not replace the JSON API. See `docs/siem-export.md` |
 | OTEL *spans* for block/deny | Shipped as pull-based `GET /api/v1/export/blocks?format=otlp-trace` (`internal/siem`). One zero-parent span per already-captured blocked/dropped `FastPathEvent`; no OTEL SDK, does not replace the JSON API. See `docs/siem-export.md` |
-| Exe-hash leased deny | Observe half shipped as `internal/exehash` (`GET /api/v1/ebpf/exehash`) — SHA-256 of the live `/proc/PID/exe` inode, diffed per process identity, no new BPF. See `docs/process-metadata.md`. The optional fail-open lease map (enforcement) remains a later, separate step — no lease/deny map exists for this anywhere yet |
+| Exe-hash leased deny | Observe: `internal/exehash`. Enforce: `BlockedExeHashes` → agent-sourced `exehash_pids` (same TOCTOU shape as `capgate_pids`), `POST /api/v1/ebpf/exehash-deny` with `X-Netra-Confirm-Risk: high`, lease-bounded fail-open. See `docs/process-metadata.md` |
 | Namespace-change watch | Shipped as `internal/nsdrift` (`GET /api/v1/ebpf/nsdrift`). Same identity/diff/pruning shape as `internal/capdrift`, no new BPF — `procmeta.Meta.NetNS` from `/proc/PID/ns/net`. See `docs/process-metadata.md` |
 
 ## Skipped

@@ -16,7 +16,7 @@ import (
 	"github.com/zyvorai/netra/internal/mcpserver"
 )
 
-const version = "0.1.0"
+const version = "0.31.0"
 
 func main() {
 	c := newClient()

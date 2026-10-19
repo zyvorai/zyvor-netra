@@ -2,6 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { bytesRate, compact } from './Overview';
 import { ratesBetween } from '../hooks/useOverviewPulse';
 import { flowDuration, workloadLabel } from '../components/DatapathHero';
+import { ctaLabel, rankOverviewActions } from '../lib/overviewActions';
+
+describe('overview action CTA', () => {
+  it('uses Investigate connections when the board is clear', () => {
+    const { worst } = rankOverviewActions({});
+    expect(ctaLabel(worst?.page)).toBe('Investigate connections');
+  });
+
+  it('names Congestion Map for a critical kernel finding', () => {
+    const { worst } = rankOverviewActions({
+      kernelFindings: [{ severity: 'critical', signal: 'softnet-drop', explanation: 'busy CPU', node: 'n1' }],
+    });
+    expect(ctaLabel(worst?.page)).toBe('Open Congestion Map');
+  });
+});
 
 describe('ratesBetween', () => {
   it('divides counter deltas by elapsed seconds', () => {

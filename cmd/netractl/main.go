@@ -1110,7 +1110,7 @@ func ebpf() error {
 		return request("PUT", p, b)
 	case "deny-preview":
 		if len(os.Args) < 5 {
-			return fmt.Errorf("deny-preview KIND VALUE [direction] [--protocol P] [--port N] [--namespace NS] [--pod POD] [--kind K] [--workload NAME] [--limit N]")
+			return fmt.Errorf("deny-preview KIND VALUE [direction] [--protocol P] [--port N] [--namespace NS] [--pod POD] [--kind K] [--workload NAME] [--limit N] [--since 1h]")
 		}
 		body := map[string]any{"kind": os.Args[3], "value": os.Args[4]}
 		i := 5
@@ -1118,6 +1118,7 @@ func ebpf() error {
 			body["direction"] = os.Args[i]
 			i++
 		}
+		var since string
 		for ; i < len(os.Args); i++ {
 			flag := os.Args[i]
 			if i+1 >= len(os.Args) {
@@ -1148,12 +1149,19 @@ func ebpf() error {
 					return fmt.Errorf("valid --limit required")
 				}
 				body["limit"] = n
+			case "--since":
+				since = value
+				body["since"] = value
 			default:
 				return fmt.Errorf("unknown deny-preview flag %s", flag)
 			}
 		}
 		b, _ := json.Marshal(body)
-		return request("POST", "/api/v1/ebpf/deny/preview", b)
+		path := "/api/v1/ebpf/deny/preview"
+		if since != "" {
+			path = "/api/v1/ebpf/deny/preview-history"
+		}
+		return request("POST", path, b)
 	case "deny":
 		if len(os.Args) < 5 {
 			return fmt.Errorf("deny add|del IP | deny import FILE")

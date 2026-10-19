@@ -65,7 +65,7 @@ CI gates: `scripts/ci-p1-p5-unit.sh`, `scripts/ci-tlsfp-unit.sh`,
 | | |
 |---|---|
 | **Buyer job** | Opt-in emergency response to SYN-flood / UDP amplify without permanent policy. |
-| **How it works** | Poller watches scan-detect / packet deltas; with an **active enforce lease**, may tighten conn-rate, XDP Shield PPS, or leased deny. Off by default (`NETRA_AUTOMITIGATE_ENABLED`). |
+| **How it works** | Poller watches scan-detect / packet deltas; with an **active enforce lease**, may tighten conn-rate, XDP Shield PPS, or leased deny. GA default on (`NETRA_AUTOMITIGATE_ENABLED`); still inert without an enforce lease. |
 | **API / CLI** | `GET /api/v1/ebpf/auto-mitigate` · `netractl ebpf auto-mitigate` |
 | **UX** | Surfaces → Auto-mitigate. |
 | **Not** | Cloud DDoS scrubbing or always-on prevention. |

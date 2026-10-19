@@ -77,6 +77,7 @@ var viewerPOST = map[string]bool{
 	"POST /api/v1/watchlist/match":               true,
 	"POST /api/v1/intel/preview":                 true,
 	"POST /api/v1/ebpf/deny/preview":             true,
+	"POST /api/v1/ebpf/deny/preview-history":     true,
 	"POST /api/v1/ebpf/scope/preview":            true,
 	"POST /api/v1/ebpf/netpol/default-deny/plan": true,
 	"POST /api/v1/investigate/connection":        true,

@@ -19,7 +19,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Version string sync across duplicated locations
       # The version has no single source of truth; this fails the build when a
       # bump misses web/package.json, Helm, deploy/*.yaml or server.go. Same
@@ -198,7 +198,17 @@ jobs:
     - uses: actions/checkout@v7
     - uses: actions/setup-node@v7
       with: {node-version: '22', cache: npm, cache-dependency-path: website/package-lock.json}
+    - uses: actions/setup-go@v7
+      with: {go-version: '1.27.2', cache: true}
     - run: npm --prefix website ci
+    # The tool catalog, facts and synced docs are generated and committed; the
+    # site must not drift from the code or the repo docs. Regenerate and fail on
+    # any difference (fix with: python3 scripts/gen-site-facts.py && npm --prefix website run sync-docs).
+    - name: Generated docs and facts are current
+      run: |
+        python3 scripts/gen-site-facts.py
+        npm --prefix website run sync-docs
+        git diff --exit-code -- website/docs website/src/data
     - run: npm --prefix website run build
   helm:
     runs-on: ubuntu-latest
@@ -450,24 +460,22 @@ jobs:
           echo "Loki password rendered as a plain value" >&2
           exit 1
         fi
-    - name: Default render must not enable dns/scan detectors
+    - name: Default render enables dns/scan detectors (GA observe defaults)
       run: |
-        if grep -q 'name: NETRA_DNSDETECT_ENABLED' /tmp/netra.yaml || grep -q 'name: NETRA_SCANDETECT_ENABLED' /tmp/netra.yaml; then
-          echo "dnsdetect/scandetect env vars unexpectedly rendered when disabled by default" >&2
-          exit 1
-        fi
+        grep -q 'name: NETRA_DNSDETECT_ENABLED' /tmp/netra.yaml
+        awk '/name: NETRA_DNSDETECT_ENABLED$/{getline; if ($0 !~ /"true"/) exit 1}' /tmp/netra.yaml
+        grep -q 'name: NETRA_SCANDETECT_ENABLED' /tmp/netra.yaml
+        awk '/name: NETRA_SCANDETECT_ENABLED$/{getline; if ($0 !~ /"true"/) exit 1}' /tmp/netra.yaml
     - name: Default render must not enable multi-channel alerting
       run: |
         if grep -q 'name: NETRA_ALERT_CHANNELS' /tmp/netra.yaml || grep -q 'name: NETRA_ALERT_WEBHOOKS' /tmp/netra.yaml || grep -q 'name: NETRA_ALERT_POLL_INTERVAL' /tmp/netra.yaml; then
           echo "alerting env vars unexpectedly rendered when alerting.enabled=false" >&2
           exit 1
         fi
-    - name: Default render must not enable auto-capture
+    - name: Default render enables bounded auto-capture (GA observe default)
       run: |
-        if grep -q 'name: NETRA_AUTO_CAPTURE' /tmp/netra.yaml; then
-          echo "auto-capture env unexpectedly rendered when alerting.autoCapture.enabled=false" >&2
-          exit 1
-        fi
+        grep -q 'name: NETRA_AUTO_CAPTURE' /tmp/netra.yaml
+        awk '/name: NETRA_AUTO_CAPTURE$/{getline; if ($0 !~ /"true"/) exit 1}' /tmp/netra.yaml
     - run: helm template test helm/netra --set auth.apiKey=ci-api-key --set auth.agentKey=ci-agent-key --set agent.enabled=true >/tmp/netra-agent.yaml
     - run: helm template test helm/netra --set auth.apiKey=ci-api-key --set auth.agentKey=ci-agent-key --set agent.enabled=true --set cilium.enabled=true --set hubble.enabled=true >/tmp/netra-cilium.yaml
     - name: Optional Cilium render must include policy RBAC
@@ -602,7 +610,7 @@ jobs:
     - uses: actions/checkout@v7
     - run: sudo apt-get update && sudo apt-get install -y clang llvm linux-libc-dev nftables
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Runner kernel facts (BTF, tracepoint record layouts)
       # Tracepoint record layouts change between kernels (tcp_send_reset moved
       # from sport/dport/family to sockaddr-style saddr/daddr), so the layout
@@ -635,7 +643,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Install iperf3
       run: sudo apt-get update && sudo apt-get install -y iperf3 iproute2
     - name: Auto-capture veth + iperf3 smoke
@@ -650,7 +658,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Install iperf3
       run: sudo apt-get update && sudo apt-get install -y iperf3 iproute2
     - name: Flow observe veth + iperf3 smoke
@@ -665,7 +673,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Install iperf3
       run: sudo apt-get update && sudo apt-get install -y iperf3 iproute2
     - name: Metrics veth + iperf3 smoke
@@ -681,7 +689,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Install iproute2
       run: sudo apt-get update && sudo apt-get install -y iproute2
     - name: Netlink recorder veth smoke
@@ -695,7 +703,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Install clang
       run: sudo apt-get update && sudo apt-get install -y clang llvm linux-libc-dev iproute2 ethtool
     - name: HTTP/1 status smoke
@@ -709,7 +717,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Install clang, iperf3, openssl
       run: sudo apt-get update && sudo apt-get install -y clang llvm linux-libc-dev iperf3 iproute2 openssl
     - name: TLS fingerprint openssl + iperf3 smoke
@@ -725,7 +733,7 @@ jobs:
     - uses: actions/checkout@v7
     - run: sudo apt-get update && sudo apt-get install -y clang llvm linux-libc-dev nftables python3 openssl
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: eBPF compile + privileged tests on arm64 (scripted)
       # Same entrypoint locally: sudo ./scripts/ci-ebpf-tests.sh
       run: sudo -E env "PATH=$PATH" "HOME=$HOME" "GOPATH=${GOPATH:-$HOME/go}" "GOMODCACHE=${GOMODCACHE:-}" "GOCACHE=${GOCACHE:-}" ./scripts/ci-ebpf-tests.sh
@@ -739,7 +747,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Install clang
       run: sudo apt-get update && sudo apt-get install -y clang llvm linux-libc-dev python3 openssl
     - name: TLS plaintext sampling end to end (scripted)
@@ -754,10 +762,10 @@ jobs:
     - uses: actions/checkout@v7
       with: {fetch-depth: 0}
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - uses: golangci/golangci-lint-action@v9
       with:
-        version: v2.13.2
+        version: v2.15.0
         only-new-issues: true
   security:
     # Known-vulnerable dependencies that the code can actually reach. Pinned so a
@@ -767,7 +775,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: govulncheck
       # Same command locally: ./scripts/ci-govulncheck.sh
       run: ./scripts/ci-govulncheck.sh
@@ -796,7 +804,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: MCP server against a live controller (scripted)
       # Same command locally: ./scripts/ci-mcp-live.sh
       run: ./scripts/ci-mcp-live.sh
@@ -809,7 +817,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Controller state persistence (scripted)
       # Same command locally: ./scripts/ci-persistence-live.sh
       run: ./scripts/ci-persistence-live.sh
@@ -822,7 +830,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Alert and export sinks (scripted)
       # Same command locally: ./scripts/ci-sinks-live.sh
       run: ./scripts/ci-sinks-live.sh
@@ -834,7 +842,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: netra-doctor as root, like the agent (scripted)
       # Same command locally: sudo ./scripts/ci-doctor-live.sh
       # Root matters: tracefs and the BPF filesystem are not readable without it, and the
@@ -849,7 +857,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Install clang
       run: sudo apt-get update && sudo apt-get install -y clang llvm linux-libc-dev
     - name: Enforcement on a veth (scripted)
@@ -863,7 +871,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Install clang and tcpdump
       run: sudo apt-get update && sudo apt-get install -y clang llvm linux-libc-dev tcpdump
     - name: Manual capture on both backends (scripted)
@@ -907,7 +915,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - uses: actions/setup-node@v7
       with: {node-version: '22', cache: npm, cache-dependency-path: web/package-lock.json}
     - run: npm --prefix web ci
@@ -930,7 +938,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Install clang
       run: sudo apt-get update && sudo apt-get install -y clang llvm linux-libc-dev openssl
     - name: Agent to controller mutual TLS end to end (scripted)
@@ -946,7 +954,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Install clang
       run: sudo apt-get update && sudo apt-get install -y clang llvm linux-libc-dev
     - name: Sampled L7 protocol observation end to end (scripted)
@@ -957,13 +965,20 @@ jobs:
     # shipped: the agent binary and a BPF object for every bpf/netra_*.c. A
     # sensor added under bpf/ but not to the Dockerfile builds, passes every
     # unit test, and ships an agent that quietly never loads it.
+    # Hosted for now: org zyvor-build runners can stick busy with no assigned job and
+    # block main forever. Revisit self-hosted once the runner pool is healthy.
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      IMAGE_TAG: netra-agent:ci-image-gate-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
     - uses: actions/checkout@v7
     - name: Build the agent image and verify its BPF objects (scripted)
       # Same command locally: ./scripts/ci-agent-image.sh
       run: ./scripts/ci-agent-image.sh
+    - name: Remove this run's image (job-scoped, never a global prune)
+      if: always()
+      run: docker rmi -f "$IMAGE_TAG" || true
   kind-e2e:
     # Real-cluster install of the chart (kind): RBAC, the TLS init container,
     # probes and auth enforcement — things `helm template` cannot catch. The
@@ -1023,7 +1038,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: OIDC + RBAC against a live netrad
       run: ./scripts/ci-oidc-live.sh
   workload-obs-live:
@@ -1037,7 +1052,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Per-workload metrics + SLO against a live netrad
       run: ./scripts/ci-workload-obs-live.sh
   prometheus-rules:
@@ -1072,7 +1087,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-go@v7
-      with: {go-version: '1.27.1', cache: true}
+      with: {go-version: '1.27.2', cache: true}
     - name: Install Loki (pinned, checksum-verified)
       run: |
         v=3.7.8

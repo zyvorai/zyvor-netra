@@ -234,3 +234,16 @@ func (s *Server) autoMitigateStatus(w http.ResponseWriter, _ *http.Request) {
 	}
 	writeJSON(w, 200, s.autoMitigate.StatusSnapshot())
 }
+
+func (s *Server) autoMitigatePreview(w http.ResponseWriter, _ *http.Request) {
+	if s.autoMitigate == nil {
+		writeJSON(w, 200, map[string]any{
+			"enabled": false, "candidates": []any{}, "wouldActCount": 0,
+			"note":   "set NETRA_AUTOMITIGATE_ENABLED=true",
+			"caveat": "Shadow preview only — applies nothing.",
+		})
+		return
+	}
+	agents := s.store.AgentStatuses(time.Now(), s.agentStaleAfter)
+	writeJSON(w, 200, s.autoMitigate.Preview(agents))
+}

@@ -62,6 +62,7 @@
 #define REASON_CONN_RATE 12           /* per-cgroup new-TCP-connection-rate cap (conn_rate_limits) */
 #define REASON_BPS 13                 /* per-destination byte-rate cap (rate_bps_v4/v6) */
 #define REASON_CAPABILITY 14          /* agent-sourced capability-gated socket deny (capgate_pids) */
+#define REASON_EXEHASH 15             /* agent-sourced exe-hash leased deny (exehash_pids) */
 #define FAMILY_V4    4
 #define FAMILY_V6    6
 
@@ -340,6 +341,16 @@ struct {
     __type(key, __u32); /* pid */
     __type(value, __u8);
 } capgate_pids SEC(".maps");
+
+// Exe-hash leased deny: agent populates PIDs whose /proc/PID/exe SHA-256
+// currently matches BlockedExeHashes (procmeta). Same TOCTOU caveats as
+// capgate_pids — see docs/process-metadata.md. Fail-open when not enforcing.
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 8192);
+    __type(key, __u32); /* pid */
+    __type(value, __u8);
+} exehash_pids SEC(".maps");
 
 struct rate_state { __u64 second; __u64 count; __u64 dropped; };
 struct {
@@ -2444,6 +2455,7 @@ static __always_inline int socket4(struct bpf_sock_addr *ctx,__u8 proto)
         if(bpf_map_lookup_elem(&blocked_uids,&uid)){reason=REASON_UID;blocked=1;}
         else if(bpf_map_lookup_elem(&blocked_comms,&ck)){reason=REASON_PROCESS;blocked=1;}
         else if(bpf_map_lookup_elem(&capgate_pids,&pid)){reason=REASON_CAPABILITY;blocked=1;}
+        else if(bpf_map_lookup_elem(&exehash_pids,&pid)){reason=REASON_EXEHASH;blocked=1;}
     }
     if(!blocked && proto==IPPROTO_TCP && conn_rate_limited(cgroup_id)){reason=REASON_CONN_RATE;blocked=1;}
     if(!blocked)blocked=decide4(DIR_EGRESS,dst,proto,dport,&reason,0,cgroup_id,0);
@@ -2461,6 +2473,7 @@ static __always_inline int socket6(struct bpf_sock_addr *ctx,__u8 proto)
         if(bpf_map_lookup_elem(&blocked_uids,&uid)){reason=REASON_UID;blocked=1;}
         else if(bpf_map_lookup_elem(&blocked_comms,&ck)){reason=REASON_PROCESS;blocked=1;}
         else if(bpf_map_lookup_elem(&capgate_pids,&pid)){reason=REASON_CAPABILITY;blocked=1;}
+        else if(bpf_map_lookup_elem(&exehash_pids,&pid)){reason=REASON_EXEHASH;blocked=1;}
     }
     if(!blocked && proto==IPPROTO_TCP && conn_rate_limited(cgroup_id)){reason=REASON_CONN_RATE;blocked=1;}
     if(!blocked)blocked=decide6(DIR_EGRESS,addr,proto,dport,&reason,0,cgroup_id,0);

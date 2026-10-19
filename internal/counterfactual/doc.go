@@ -26,12 +26,9 @@
 // # Where flows come from
 //
 // This package defines its own narrow Store interface and ships an
-// in-memory reference implementation (MemoryStore). It does not assume
-// any particular flow-history backend. As of this writing, Netra itself
-// has no queryable historical per-flow store — every existing
-// observability feature works off live/recent AgentReport aggregates
-// (internal/health, internal/pathdiag, internal/dropdiag, ...), not
-// individually retained flow records. Wiring a production Store
-// implementation (backed by whatever retention mechanism Netra adopts)
-// is a separate, larger piece of work than this package itself.
+// in-memory reference implementation (MemoryStore). The production
+// adapter is FlowLogStore, which reads the controller's bounded flow
+// history (internal/flowlog: 7 days / 100000 deltas by default) used by
+// GET /api/v1/flows/history and POST /api/v1/ebpf/deny/preview-history.
+// Live agent-counter deny preview remains in internal/denysim.
 package counterfactual

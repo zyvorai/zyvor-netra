@@ -8,6 +8,11 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  # One release run per ref; a re-run or double dispatch queues behind it, never cancels a publish.
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+# Hosted runners until the org zyvor-build pool stops sticking busy with no job.
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -23,6 +28,7 @@ jobs:
   images:
     needs: verify
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     permissions:
       contents: read
       packages: write
@@ -34,6 +40,7 @@ jobs:
         include:
         - {image: netra, dockerfile: Dockerfile}
         - {image: netra-agent, dockerfile: Dockerfile.agent}
+        - {image: netra-mcp, dockerfile: Dockerfile.mcp}
     steps:
     - uses: actions/checkout@v7
     - uses: docker/setup-qemu-action@v4
@@ -64,3 +71,24 @@ jobs:
     - uses: sigstore/cosign-installer@v3
     - name: Sign the image digest (keyless)
       run: cosign sign --yes ghcr.io/zyvorai/${{ matrix.image }}@${{ steps.build.outputs.digest }}
+  publish-mcp:
+    # Registry metadata only: the image above is what clients pull. Tag pushes only.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # GitHub OIDC login to the MCP Registry, no long-lived token
+    env:
+      MCP_PUBLISHER_VERSION: v1.8.1
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install mcp-publisher (pinned)
+      run: |
+        curl -fsSL -o mcp-publisher.tar.gz \
+          "https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz"
+        echo "a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc  mcp-publisher.tar.gz" | sha256sum -c -
+        tar xzf mcp-publisher.tar.gz mcp-publisher
+    - run: ./mcp-publisher validate server.json
+    - run: ./mcp-publisher login github-oidc
+    - run: ./mcp-publisher publish server.json

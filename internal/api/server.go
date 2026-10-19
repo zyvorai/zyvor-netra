@@ -213,13 +213,13 @@ func (s *Server) WithArtifacts(a *capture.ArtifactStore) *Server {
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, 200, map[string]any{"ok": true, "service": "netrad", "version": "0.30.0"})
+		writeJSON(w, 200, map[string]any{"ok": true, "service": "netrad", "version": "0.31.0"})
 	})
 	mux.HandleFunc("GET /livez", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, 200, map[string]any{"ok": true, "service": "netrad", "version": "0.30.0"})
+		writeJSON(w, 200, map[string]any{"ok": true, "service": "netrad", "version": "0.31.0"})
 	})
 	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, 200, map[string]any{"ok": true, "leader": true, "version": "0.30.0"})
+		writeJSON(w, 200, map[string]any{"ok": true, "leader": true, "version": "0.31.0"})
 	})
 	mux.HandleFunc("POST /api/v1/session", s.sessionCreate)
 	mux.HandleFunc("DELETE /api/v1/session", s.sessionDelete)
@@ -288,6 +288,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/v1/vms/{node}/capture/ws", s.auth(http.HandlerFunc(s.proxyCaptureStream)))
 	mux.Handle("GET /api/v1/capture/status", s.auth(http.HandlerFunc(s.captureStatus)))
 	mux.Handle("GET /api/v1/capture/history", s.auth(http.HandlerFunc(s.captureHistory)))
+	mux.Handle("GET /api/v1/capture/summaries", s.auth(http.HandlerFunc(s.captureSummaries)))
 	mux.Handle("GET /api/v1/capture/artifacts/{id}/context", s.auth(http.HandlerFunc(s.captureArtifactContext)))
 	mux.Handle("GET /api/v1/capture/artifacts/{id}", s.auth(http.HandlerFunc(s.captureArtifactDownload)))
 	mux.Handle("POST /api/v1/capture/bulk", s.auth(http.HandlerFunc(s.captureBulkStart)))
@@ -299,6 +300,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("PUT /api/v1/ebpf/mode", s.auth(http.HandlerFunc(s.ebpfMode)))
 	mux.Handle("POST /api/v1/ebpf/deny", s.auth(http.HandlerFunc(s.ebpfDenyAdd)))
 	mux.Handle("POST /api/v1/ebpf/deny/preview", s.auth(http.HandlerFunc(s.ebpfDenyPreview)))
+	mux.Handle("POST /api/v1/ebpf/deny/preview-history", s.auth(http.HandlerFunc(s.ebpfDenyPreviewHistory)))
 	mux.Handle("DELETE /api/v1/ebpf/deny/{ip}", s.auth(http.HandlerFunc(s.ebpfDenyDelete)))
 	mux.Handle("POST /api/v1/ebpf/deny/import", s.auth(http.HandlerFunc(s.ebpfDenyImport)))
 	mux.Handle("POST /api/v1/ebpf/allow", s.auth(http.HandlerFunc(s.ebpfAllowAdd)))
@@ -325,6 +327,8 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /api/v1/ebpf/process/delete", s.auth(http.HandlerFunc(s.ebpfProcessDelete)))
 	mux.Handle("POST /api/v1/ebpf/capability", s.auth(http.HandlerFunc(s.ebpfCapabilityAdd)))
 	mux.Handle("POST /api/v1/ebpf/capability/delete", s.auth(http.HandlerFunc(s.ebpfCapabilityDelete)))
+	mux.Handle("POST /api/v1/ebpf/exehash-deny", s.auth(http.HandlerFunc(s.ebpfExeHashDenyAdd)))
+	mux.Handle("POST /api/v1/ebpf/exehash-deny/delete", s.auth(http.HandlerFunc(s.ebpfExeHashDenyDelete)))
 	mux.Handle("POST /api/v1/ebpf/allow-process", s.auth(http.HandlerFunc(s.ebpfAllowProcessAdd)))
 	mux.Handle("POST /api/v1/ebpf/allow-process/delete", s.auth(http.HandlerFunc(s.ebpfAllowProcessDelete)))
 	mux.Handle("POST /api/v1/ebpf/sni", s.auth(http.HandlerFunc(s.ebpfSNIAdd)))
@@ -425,6 +429,8 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /api/v1/ebpf/ai-destinations/deny", s.auth(http.HandlerFunc(s.aiDestinationsDeny)))
 	mux.Handle("GET /api/v1/ebpf/app-categories", s.auth(http.HandlerFunc(s.appCategories)))
 	mux.Handle("GET /api/v1/ebpf/auto-mitigate", s.auth(http.HandlerFunc(s.autoMitigateStatus)))
+	mux.Handle("GET /api/v1/ebpf/auto-mitigate/preview", s.auth(http.HandlerFunc(s.autoMitigatePreview)))
+	mux.Handle("GET /api/v1/ebpf/stack-histograms", s.auth(http.HandlerFunc(s.stackHistograms)))
 	mux.Handle("GET /api/v1/compliance", s.auth(http.HandlerFunc(s.complianceReport)))
 	mux.Handle("GET /api/v1/ebpf/coverage", s.auth(http.HandlerFunc(s.ebpfCoverage)))
 	mux.Handle("GET /api/v1/fleet", s.auth(http.HandlerFunc(s.fleetInventory)))
@@ -623,7 +629,7 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 	baseline := s.store.Baseline()
 	rateBaseline := s.store.RateBaseline()
 	rateWindow := s.store.RateWindow(5*time.Minute, time.Now())
-	out := map[string]any{"version": "0.30.0", "datapath": "standalone-ebpf", "ciliumRequired": false, "ciliumEnabled": s.ciliumEnabled, "consoleEnabled": s.consoleEnabled, "fastPath": s.store.Config(), "agents": len(statuses), "staleAgents": stale, "requirePreflight": s.requirePreflight, "persistentState": s.store.Persistent(), "haEnabled": strings.EqualFold(strings.TrimSpace(os.Getenv("NETRA_HA_ENABLED")), "true"), "controllerIdentity": strings.TrimSpace(os.Getenv("NETRA_POD_NAME")), "baselineEntries": len(baseline.Entries), "rateBaselineEntries": len(rateBaseline.Entries), "rateWindowWarming": rateWindow.Warming}
+	out := map[string]any{"version": "0.31.0", "datapath": "standalone-ebpf", "ciliumRequired": false, "ciliumEnabled": s.ciliumEnabled, "consoleEnabled": s.consoleEnabled, "fastPath": s.store.Config(), "agents": len(statuses), "staleAgents": stale, "requirePreflight": s.requirePreflight, "persistentState": s.store.Persistent(), "haEnabled": strings.EqualFold(strings.TrimSpace(os.Getenv("NETRA_HA_ENABLED")), "true"), "controllerIdentity": strings.TrimSpace(os.Getenv("NETRA_POD_NAME")), "baselineEntries": len(baseline.Entries), "rateBaselineEntries": len(rateBaseline.Entries), "rateWindowWarming": rateWindow.Warming}
 	if !baseline.CapturedAt.IsZero() {
 		out["baselineCapturedAt"] = baseline.CapturedAt
 	}
@@ -1880,6 +1886,52 @@ func normalizeCapabilityName(v string) (string, error) {
 	}
 	return v, nil
 }
+func (s *Server) ebpfExeHashDenyAdd(w http.ResponseWriter, r *http.Request) {
+	s.ebpfExeHashDenyMutate(w, r, false)
+}
+func (s *Server) ebpfExeHashDenyDelete(w http.ResponseWriter, r *http.Request) {
+	s.ebpfExeHashDenyMutate(w, r, true)
+}
+func (s *Server) ebpfExeHashDenyMutate(w http.ResponseWriter, r *http.Request, del bool) {
+	var x struct {
+		Hash string `json:"hash"`
+	}
+	if err := decodeJSON(r, &x, 1<<12); err != nil {
+		errorJSON(w, 400, err.Error())
+		return
+	}
+	hash := strings.ToLower(strings.TrimSpace(x.Hash))
+	if len(hash) != 64 {
+		errorJSON(w, 400, "hash must be a 64-char hex SHA-256 digest")
+		return
+	}
+	for _, c := range hash {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			errorJSON(w, 400, "hash must be a 64-char hex SHA-256 digest")
+			return
+		}
+	}
+	if !del {
+		if !strings.EqualFold(strings.TrimSpace(r.Header.Get("X-Netra-Confirm-Risk")), "high") {
+			errorJSON(w, 409, "exe-hash deny is high risk; repeat with X-Netra-Confirm-Risk: high (still requires enforce lease to act)")
+			return
+		}
+	}
+	var cfg models.EBPFFastPathConfig
+	var err error
+	if del {
+		cfg, err = s.store.DelBlockedExeHash(hash, actor(r))
+	} else {
+		cfg, err = s.store.AddBlockedExeHash(hash, actor(r))
+	}
+	if err != nil {
+		s.metricsData.statePersistErrors.Add(1)
+		errorJSON(w, http.StatusInsufficientStorage, "could not persist exehash deny: "+err.Error())
+		return
+	}
+	writeJSON(w, 200, cfg)
+}
+
 func (s *Server) ebpfCapabilityAdd(w http.ResponseWriter, r *http.Request) {
 	s.ebpfCapabilityMutate(w, r, false)
 }
