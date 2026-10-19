@@ -348,7 +348,7 @@ func stringOr(v, def string) string {
 }
 
 func u64(n uint64) string {
-	return strings.TrimSpace(strings.ReplaceAll(strings.Replace(fmtInt(n), ",", "", -1), " ", ""))
+	return strings.TrimSpace(strings.ReplaceAll(strings.ReplaceAll(fmtInt(n), ",", ""), " ", ""))
 }
 
 func u16(n uint16) string { return fmtInt(uint64(n)) }

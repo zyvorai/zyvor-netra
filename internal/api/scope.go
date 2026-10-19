@@ -4,7 +4,6 @@
 package api
 
 import (
-	"net/http"
 	"os"
 	"strings"
 )
@@ -58,53 +57,4 @@ func localCluster() string {
 
 func localTenant() string {
 	return strings.TrimSpace(os.Getenv("NETRA_CLUSTER_TENANT"))
-}
-
-// enforceScope rejects scoped callers that cannot access ns/cluster/tenant.
-// Unrestricted principals always pass. Returns false when a response was written.
-func (s *Server) enforceScope(w http.ResponseWriter, r *http.Request, ns, cluster, tenant string) bool {
-	p, ok := principalFrom(r.Context())
-	if !ok || p.Unrestricted() {
-		return true
-	}
-	if cluster == "" {
-		cluster = localCluster()
-	}
-	if tenant == "" {
-		tenant = localTenant()
-	}
-	if p.Allows(ns, cluster, tenant) {
-		return true
-	}
-	s.metricsData.rbacDenied.Add(1)
-	errorJSON(w, http.StatusForbidden, "scope does not allow this resource")
-	return false
-}
-
-// requireUnrestricted blocks scoped service/OIDC credentials from admin-only
-// fleet-wide surfaces (exec, mode changes, etc.).
-func (s *Server) requireUnrestricted(w http.ResponseWriter, r *http.Request) bool {
-	p, ok := principalFrom(r.Context())
-	if !ok || p.Unrestricted() {
-		return true
-	}
-	s.metricsData.rbacDenied.Add(1)
-	errorJSON(w, http.StatusForbidden, "scoped credentials cannot use this endpoint")
-	return false
-}
-
-func filterStrings(allowed, values []string) []string {
-	if len(allowed) == 0 {
-		return values
-	}
-	var out []string
-	for _, v := range values {
-		for _, a := range allowed {
-			if strings.EqualFold(a, v) {
-				out = append(out, v)
-				break
-			}
-		}
-	}
-	return out
 }

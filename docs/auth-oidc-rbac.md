@@ -161,7 +161,7 @@ Empty scope lists mean unrestricted (today's default). Scoped callers:
 
 `NETRA_SERVICE_CREDENTIALS_FILE` is a JSON array. Each entry has an `id`, a
 `role`, optional `namespaces` / `clusters` / `tenants`, and either a plaintext
-`key` (hashed at load with SHA-256) or a precomputed `keyHash` (64 hex chars):
+`key` (bcrypt-hashed at load) or a precomputed `keyHash` (bcrypt hash string):
 
 ```json
 [

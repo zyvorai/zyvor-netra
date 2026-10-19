@@ -4,8 +4,6 @@
 package api
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -14,6 +12,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/zyvorai/netra/internal/flowlog"
 	"github.com/zyvorai/netra/internal/models"
@@ -43,10 +43,13 @@ func TestPrincipalAllows(t *testing.T) {
 func TestServiceCredAuthAndFlowFilter(t *testing.T) {
 	dir := t.TempDir()
 	key := "scoped-secret-key"
-	sum := sha256.Sum256([]byte(key))
+	hash, err := bcrypt.GenerateFromPassword([]byte(key), bcryptCost)
+	if err != nil {
+		t.Fatal(err)
+	}
 	path := filepath.Join(dir, "creds.json")
 	body, _ := json.Marshal([]map[string]any{{
-		"id": "reader", "keyHash": hex.EncodeToString(sum[:]), "role": "viewer",
+		"id": "reader", "keyHash": string(hash), "role": "viewer",
 		"namespaces": []string{"payments"},
 	}})
 	if err := os.WriteFile(path, body, 0o600); err != nil {

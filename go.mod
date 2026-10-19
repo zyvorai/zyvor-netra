@@ -13,6 +13,7 @@ require (
 	github.com/mdlayher/packet v1.2.0
 	github.com/snowflakedb/gosnowflake v1.19.1
 	github.com/vishvananda/netlink v1.3.2-0.20260831221819-dcee5577542a
+	golang.org/x/crypto v0.57.0
 	golang.org/x/net v0.60.0
 	golang.org/x/sys v0.49.0
 	google.golang.org/grpc v1.84.0
@@ -78,7 +79,6 @@ require (
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opentelemetry.io/otel v1.46.0 // indirect
 	go.opentelemetry.io/otel/trace v1.46.0 // indirect
-	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/exp v0.0.0-20260908205506-85c1c2202aba // indirect
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect

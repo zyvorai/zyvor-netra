@@ -4,23 +4,27 @@
 package api
 
 import (
-	"crypto/sha256"
-	"crypto/subtle"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/zyvorai/netra/internal/oidcauth"
 )
+
+// bcryptCost is the work factor for hashing service credential keys at load.
+// Cost 10 keeps verify under a few ms on typical controller hardware while
+// remaining expensive for offline guessing.
+const bcryptCost = 10
 
 // serviceCred is one scoped API credential loaded from
 // NETRA_SERVICE_CREDENTIALS_FILE.
 type serviceCred struct {
 	ID         string
 	Role       oidcauth.Role
-	Hash       [32]byte
+	Hash       []byte // bcrypt hash
 	Namespaces []string
 	Clusters   []string
 	Tenants    []string
@@ -28,8 +32,8 @@ type serviceCred struct {
 
 type serviceCredFile struct {
 	ID         string   `json:"id"`
-	Key        string   `json:"key,omitempty"`     // plaintext; hashed at load
-	KeyHash    string   `json:"keyHash,omitempty"` // sha256 hex
+	Key        string   `json:"key,omitempty"`     // plaintext; bcrypt-hashed at load
+	KeyHash    string   `json:"keyHash,omitempty"` // bcrypt hash string
 	Role       string   `json:"role"`
 	Namespaces []string `json:"namespaces,omitempty"`
 	Clusters   []string `json:"clusters,omitempty"`
@@ -60,16 +64,18 @@ func loadServiceCreds(path string) ([]serviceCred, error) {
 		if err != nil || role == oidcauth.RoleNone {
 			return nil, fmt.Errorf("service credentials[%d]: role: %w", i, err)
 		}
-		var hash [32]byte
+		var hash []byte
 		switch {
 		case strings.TrimSpace(row.KeyHash) != "":
-			raw, err := hex.DecodeString(strings.TrimSpace(row.KeyHash))
-			if err != nil || len(raw) != sha256.Size {
-				return nil, fmt.Errorf("service credentials[%d]: keyHash must be 64 hex chars", i)
+			hash = []byte(strings.TrimSpace(row.KeyHash))
+			if _, err := bcrypt.Cost(hash); err != nil {
+				return nil, fmt.Errorf("service credentials[%d]: keyHash must be a bcrypt hash: %w", i, err)
 			}
-			copy(hash[:], raw)
 		case row.Key != "":
-			hash = sha256.Sum256([]byte(row.Key))
+			hash, err = bcrypt.GenerateFromPassword([]byte(row.Key), bcryptCost)
+			if err != nil {
+				return nil, fmt.Errorf("service credentials[%d]: hash key: %w", i, err)
+			}
 		default:
 			return nil, fmt.Errorf("service credentials[%d]: key or keyHash is required", i)
 		}
@@ -97,18 +103,19 @@ func (s *Server) matchServiceCred(tok string) (principal, bool) {
 	if s == nil || tok == "" || len(s.serviceCreds) == 0 {
 		return principal{}, false
 	}
-	sum := sha256.Sum256([]byte(tok))
+	tokBytes := []byte(tok)
 	for _, c := range s.serviceCreds {
-		if subtle.ConstantTimeCompare(sum[:], c.Hash[:]) == 1 {
-			return principal{
-				kind:       "service",
-				name:       "svc:" + c.ID,
-				role:       c.Role,
-				Namespaces: append([]string(nil), c.Namespaces...),
-				Clusters:   append([]string(nil), c.Clusters...),
-				Tenants:    append([]string(nil), c.Tenants...),
-			}, true
+		if bcrypt.CompareHashAndPassword(c.Hash, tokBytes) != nil {
+			continue
 		}
+		return principal{
+			kind:       "service",
+			name:       "svc:" + c.ID,
+			role:       c.Role,
+			Namespaces: append([]string(nil), c.Namespaces...),
+			Clusters:   append([]string(nil), c.Clusters...),
+			Tenants:    append([]string(nil), c.Tenants...),
+		}, true
 	}
 	return principal{}, false
 }
