@@ -16,7 +16,7 @@ Not versus cloud SSE or perimeter NGFW. Those are already non-goals in
 |---|---|---|
 | Job | Stored flows, request metrics, sometimes traces and profiles | Live observe + node-stack diagnostics + leased emergency deny |
 | History | Hours or days of filterable flows (Relay, Loki, ClickHouse) | 7-day flow sidecar next to controller state, queryable by pod/peer/port. Not a column store |
-| L7 | HTTP status, gRPC, Kafka, Redis, SQL | HTTP/1 Host, cleartext HTTP/1 status when the status line starts the packet, TLS SNI, DNS health, QUIC flag, plus a well-known-port hint (mysql, postgres, redis, kafka, grpc) |
+| L7 | HTTP status, gRPC, Kafka, Redis, SQL | Always-on: HTTP/1 Host, cleartext HTTP/1 status when the status line starts the packet, TLS SNI, DNS health, QUIC flag, well-known-port hints. Opt-in sampler (`NETRA_L7_SAMPLE`): Redis, SQL, Kafka requests, HTTP/2 and gRPC operation counts — allowlisted metadata only ([`l7-sampling.md`](l7-sampling.md)) |
 | Process | A process on each connection | Comm and pid on a flow when TCP health matches that peer and port. No argv |
 | Payload | Some products keep bodies | Explicitly **no** payloads, argv, Secrets |
 
@@ -82,15 +82,22 @@ and duration per workload over a window. Rate is flow deltas. Errors are
 blocked packets plus TCP retransmission and RTO deltas. Duration is
 average TCP SRTT. Cleartext HTTP/1 status is counted when `HTTP/1.x NNN`
 starts the packet (`GET /api/v1/ebpf/l7` field `httpStatus`, RED
-`http5xx`). HTTP/2, HTTP/3, and a status line split across packets are
-still invisible ([`l7-metadata.md`](l7-metadata.md)).
+`http5xx`). On the always-on path, HTTP/2, HTTP/3, and a status line
+split across packets stay invisible ([`l7-metadata.md`](l7-metadata.md)).
+Opt-in sampling classifies HTTP/2 and gRPC from the first bytes of a
+connection ([`l7-sampling.md`](l7-sampling.md)); it is not wired into
+RED `http5xx`.
 
 ### 3. Protocol labels beyond HTTP Host
 
 A flow record carries `appProtocol` when the destination port is a
 well-known mysql, postgres, redis, kafka, amqp, mongodb, grpc (50051),
 http, or https port. That is a hint, not a parser. gRPC on 443 stays
-`https`. Payload decode of those protocols was not added.
+`https` on the flow path. Separately, the opt-in L7 sampler
+([`l7-sampling.md`](l7-sampling.md)) classifies Redis, SQL, Kafka
+requests, HTTP/2 and gRPC from allowlisted header/operation fields —
+counts only, no paths, cookies or bodies. It does not replace the port
+hint on flow history.
 
 ### 4. Process on the flow
 
@@ -132,8 +139,9 @@ Filterable history is the flow API, not the metrics scrape.
 
 ## Still not done
 
-- HTTP/2, HTTP/3, TCP reassembly, and any HTTP status line that does not start the packet.
-- Flow history past 7 days, or a column-store warehouse.
+- HTTP/3, TCP reassembly, and any HTTP status line that does not start the packet.
+- Sampled HTTP/2 still lacks per-connection HPACK state and CONTINUATION handling; Kafka responses are not classified ([`l7-sampling.md`](l7-sampling.md)).
+- Flow history past 7 days, or a column-store warehouse (optional SQLite backend raises the local ceiling; not ClickHouse).
 - User-space CPU flame graphs (`wchan` is one kernel wait symbol, not a graph).
 - Application journal collection (kernel-net and OOM lines only).
 
@@ -160,6 +168,7 @@ Netra should not grow a second Hubble. See [`packetwolf.md`](packetwolf.md).
 - [competitive-sse.md](competitive-sse.md) — cloud SSE / Zero Trust, out of scope
 - [competitive-quantum.md](competitive-quantum.md) — perimeter NGFW, out of scope
 - [investigation-ux.md](investigation-ux.md) — live connection sample
-- [l7-metadata.md](l7-metadata.md) — what L7 is and is not
+- [l7-metadata.md](l7-metadata.md) — what always-on L7 is and is not
+- [l7-sampling.md](l7-sampling.md) — opt-in Redis/SQL/Kafka/HTTP2/gRPC sampling
 - [experience.md](experience.md) — workload score, not APM
 - [tutorials/drop-incident-context.md](tutorials/drop-incident-context.md) — host snapshot at drop time

@@ -64,12 +64,34 @@ type Result struct {
 	Limitations []string `json:"limitations"`
 }
 
-// Limitations is the honest contract for every history response.
+// Limitations is the honest contract for the default JSON sidecar backend.
 func Limitations() []string {
 	return []string{
 		"Flow deltas are kept for 7 days, capped at 100000 records, in a sidecar file next to the controller state. Not a column store. The first sample after a restart is a new baseline.",
 		"First sample of a flow sets a baseline and is not emitted, so rates start on the second report.",
-		"App protocol is a well-known-port hint, not a payload decode. HTTP/2 and HTTP/3 are not decoded. Cleartext HTTP/1 status is counted only when the status line starts the packet.",
+		"App protocol on a flow is a well-known-port hint, not a payload decode. Always-on L7 does not decode HTTP/2 or HTTP/3; cleartext HTTP/1 status counts only when the status line starts the packet. Opt-in NETRA_L7_SAMPLE classifies HTTP/2 and gRPC from first bytes (see l7-sampling.md).",
+		"Process comm and pid are copied from TCP health when the peer and port match. No argv or cmdline.",
+		"No packet payloads. Kernel kfree_skb drops stay reason counts. Application journal is not collected.",
+	}
+}
+
+// SQLiteLimitations is the contract when NETRA_FLOW_BACKEND=sqlite.
+func SQLiteLimitations(retain time.Duration, max int, maxBytes int64) []string {
+	days := int(retain / (24 * time.Hour))
+	if days < 1 {
+		days = 1
+	}
+	msg := "Flow deltas are kept in a local SQLite file next to the controller state (indexed, incremental writes). Not a shared column-store warehouse. The first sample after a restart is a new baseline."
+	budget := "Retention is " + strconv.Itoa(days) + " day(s), capped at " + strconv.Itoa(max) + " records"
+	if maxBytes > 0 {
+		budget += " and " + strconv.FormatInt(maxBytes, 10) + " bytes"
+	}
+	budget += "."
+	return []string{
+		msg,
+		budget,
+		"First sample of a flow sets a baseline and is not emitted, so rates start on the second report.",
+		"App protocol on a flow is a well-known-port hint, not a payload decode. Always-on L7 does not decode HTTP/2 or HTTP/3; cleartext HTTP/1 status counts only when the status line starts the packet. Opt-in NETRA_L7_SAMPLE classifies HTTP/2 and gRPC from first bytes (see l7-sampling.md).",
 		"Process comm and pid are copied from TCP health when the peer and port match. No argv or cmdline.",
 		"No packet payloads. Kernel kfree_skb drops stay reason counts. Application journal is not collected.",
 	}
@@ -80,6 +102,9 @@ type prevStat struct {
 }
 
 // Log is safe for concurrent ingest and query.
+// When backend is set (SQLite), records are written there and not kept in the
+// in-memory ring; Query and Len delegate to the backend. JSON mode keeps the
+// ring and writes a sidecar via Save/SaveDebounced.
 type Log struct {
 	mu       sync.Mutex
 	retain   time.Duration
@@ -90,6 +115,7 @@ type Log struct {
 	gen      uint64
 	lastSave time.Time
 	saveMu   sync.Mutex
+	backend  Backend
 }
 
 func New() *Log { return NewLimited(DefaultRetain, DefaultMax) }
@@ -104,13 +130,40 @@ func NewLimited(retain time.Duration, max int) *Log {
 	return &Log{retain: retain, max: max, prev: map[string]prevStat{}}
 }
 
+// NewWithBackend returns a Log that persists deltas through b.
+// Ingest still owns the baseline map in process memory.
+func NewWithBackend(b Backend, retain time.Duration, max int) *Log {
+	l := NewLimited(retain, max)
+	l.backend = b
+	return l
+}
+
+// Close closes the optional backend. Safe on a nil Log.
+func (l *Log) Close() error {
+	if l == nil || l.backend == nil {
+		return nil
+	}
+	return l.backend.Close()
+}
+
 func (l *Log) Len() int {
 	if l == nil {
 		return 0
 	}
+	if l.backend != nil {
+		return l.backend.Len()
+	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return len(l.recs)
+}
+
+// Retain returns the configured retention window.
+func (l *Log) Retain() time.Duration {
+	if l == nil || l.retain <= 0 {
+		return DefaultRetain
+	}
+	return l.retain
 }
 
 // Ingest turns one agent report into deltas. The first observation of a
@@ -127,8 +180,11 @@ func (l *Log) Ingest(now time.Time, r models.AgentReport) {
 	comms := indexComm(r.ProcessMeta)
 
 	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.pruneLocked(now)
+	if l.backend == nil {
+		l.pruneLocked(now)
+	}
+	var batch []Record
+	useBackend := l.backend != nil
 	for _, st := range r.Stats {
 		if st.DestinationIP == "" {
 			continue
@@ -174,13 +230,24 @@ func (l *Log) Ingest(now time.Time, r models.AgentReport) {
 		if rec.Packets == 0 && rec.Bytes == 0 && rec.Blocked == 0 && rec.Retrans == 0 && rec.RTOs == 0 {
 			continue
 		}
+		if useBackend {
+			batch = append(batch, rec)
+			continue
+		}
 		l.recs = append(l.recs, rec)
 		l.dirty = true
 		l.gen++
 	}
-	l.pruneLocked(now)
+	if !useBackend {
+		l.pruneLocked(now)
+	}
 	if len(l.prev) > l.max*2 {
 		l.prev = map[string]prevStat{}
+	}
+	backend := l.backend
+	l.mu.Unlock()
+	if useBackend && len(batch) > 0 && backend != nil {
+		_ = backend.Append(batch)
 	}
 }
 
@@ -249,6 +316,9 @@ func (l *Log) pruneLocked(now time.Time) {
 
 // Query returns newest-first records that match.
 func (l *Log) Query(q Query) Result {
+	if l != nil && l.backend != nil {
+		return l.backend.Query(q)
+	}
 	res := Result{Records: []Record{}, Limitations: Limitations()}
 	if l == nil {
 		return res

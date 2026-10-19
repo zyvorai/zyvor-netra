@@ -91,6 +91,12 @@ spec:
         {{- if ne (include "netra.mtlsMode" .) "off" }}
         - {name: NETRA_AGENT_MTLS, value: {{ include "netra.mtlsMode" . | quote }}}
         - {name: NETRA_AGENT_CLIENT_CA, value: /mtls/ca.crt}
+        {{- if .Values.mtls.bindNode }}
+        - {name: NETRA_AGENT_MTLS_BIND_NODE, value: "true"}
+        {{- end }}
+        {{- if .Values.mtls.denySerialsSecret }}
+        - {name: NETRA_AGENT_MTLS_DENY_SERIALS, value: /mtls-deny/deny.txt}
+        {{- end }}
         {{- end }}
         - name: NETRA_CILIUM_ENABLED
           value: {{ .Values.cilium.enabled | quote }}
@@ -465,6 +471,9 @@ spec:
         {{- end }}
         {{- if ne (include "netra.mtlsMode" .) "off" }}
         - {name: agent-mtls-ca, mountPath: /mtls, readOnly: true}
+        {{- if .Values.mtls.denySerialsSecret }}
+        - {name: agent-mtls-deny, mountPath: /mtls-deny, readOnly: true}
+        {{- end }}
         {{- end }}
         {{- if .Values.persistence.enabled }}
         - name: state
@@ -532,6 +541,12 @@ spec:
         secret:
           secretName: {{ include "netra.mtlsSecret" . }}
           items: [{key: ca.crt, path: ca.crt}]   # never the agents' private key
+      {{- if .Values.mtls.denySerialsSecret }}
+      - name: agent-mtls-deny
+        secret:
+          secretName: {{ .Values.mtls.denySerialsSecret | quote }}
+          items: [{key: deny.txt, path: deny.txt}]
+      {{- end }}
       {{- end }}
       {{- if .Values.persistence.enabled }}
       - name: state

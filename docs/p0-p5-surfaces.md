@@ -71,6 +71,17 @@ CI gates: `scripts/ci-p1-p5-unit.sh`, `scripts/ci-tlsfp-unit.sh`,
 | **Not** | Cloud DDoS scrubbing or always-on prevention. |
 | **Doc** | [`auto-mitigate.md`](auto-mitigate.md) |
 
+### Failed-connection investigation timeline
+
+| | |
+|---|---|
+| **Buyer job** | Explain one failed connection with DNS, flow, route, policy and drop evidence in one place. |
+| **How it works** | Composer pulls existing observe APIs into an ordered timeline plus a confidence scorecard; ends with an explicit visibility gap. |
+| **API / CLI** | `POST /api/v1/investigate/connection` · `netractl investigate connection` · MCP `netra_investigate_connection` |
+| **UX** | CLI / MCP / API (no new dashboard tab required). |
+| **Not** | Decrypt, rule-ID-at-time-T, or enforcement. |
+| **Doc** | [`investigate-connection.md`](investigate-connection.md) |
+
 ---
 
 ## P1 — Differentiation without becoming an NGFW

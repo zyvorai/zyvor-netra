@@ -69,6 +69,9 @@ type Server struct {
 	apiKey              string
 	agentKey            string
 	agentMTLS           mtls.Mode // agent client-certificate policy (NETRA_AGENT_MTLS)
+	agentMTLSBind       bool      // NETRA_AGENT_MTLS_BIND_NODE
+	mtlsDeny            *mtls.DenyList
+	serviceCreds        []serviceCred
 	chatopsAPIKey       string
 	metricsToken        string
 	oidc                *oidcauth.Verifier
@@ -116,6 +119,15 @@ func New(log *slog.Logger, k *kube.Client, h *hubble.Client, st *store.Store) *S
 		mode = mtls.Required
 	}
 	s.agentMTLS = mode
+	s.agentMTLSBind = mtls.BindNodeFromEnv()
+	s.mtlsDeny = mtls.DenyListFromEnv()
+	if creds, err := loadServiceCreds(os.Getenv("NETRA_SERVICE_CREDENTIALS_FILE")); err != nil {
+		log.Error("service credentials file", "error", err)
+		// Fail closed: refuse to start with a half-loaded credential set.
+		os.Exit(1)
+	} else {
+		s.serviceCreds = creds
+	}
 
 	// ChatOps outbound trust is shared across every provider: every command
 	// is a thin HTTP client of this same process's own /api/v1/* endpoints
@@ -266,6 +278,9 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/v1/flows/stream", s.auth(http.HandlerFunc(s.streamFlows)))
 	mux.Handle("GET /api/v1/flows/summary", s.auth(http.HandlerFunc(s.flowSummary)))
 	mux.Handle("GET /api/v1/flows/history", s.auth(http.HandlerFunc(s.flowHistory)))
+	mux.Handle("GET /api/v1/fleet/flows/history", s.auth(http.HandlerFunc(s.fleetFlowHistory)))
+	mux.Handle("POST /api/v1/investigate/connection", s.auth(http.HandlerFunc(s.investigateConnection)))
+	mux.Handle("GET /api/v1/investigate/connection", s.auth(http.HandlerFunc(s.investigateConnection)))
 	mux.Handle("GET /api/v1/drops/explain", s.auth(http.HandlerFunc(s.ebpfDropExplain)))
 	mux.Handle("GET /api/v1/ebpf/config", s.authOrAgent(http.HandlerFunc(s.ebpfConfig)))
 	mux.Handle("PUT /api/v1/vms/{node}/capture", s.auth(http.HandlerFunc(s.captureStart)))
@@ -503,6 +518,15 @@ func (s *Server) auth(next http.Handler) http.Handler {
 			errorJSON(w, http.StatusForbidden, "role "+p.role.String()+" cannot perform this action; "+need.String()+" required")
 			return
 		}
+		pattern := r.Pattern
+		if pattern == "" {
+			pattern = r.Method + " " + r.URL.Path
+		}
+		if adminOnly[pattern] && !p.Unrestricted() {
+			s.metricsData.rbacDenied.Add(1)
+			errorJSON(w, http.StatusForbidden, "scoped credentials cannot use this endpoint")
+			return
+		}
 		next.ServeHTTP(w, r.WithContext(withPrincipal(r.Context(), p)))
 	})
 }
@@ -519,8 +543,34 @@ func (s *Server) agentAuth(next http.Handler) http.Handler {
 			errorJSON(w, 401, "a verified agent client certificate is required")
 			return
 		}
+		if s.mtlsDeny != nil && s.mtlsDeny.Denied(r) {
+			s.metricsData.mtlsDeniedSerial.Add(1)
+			errorJSON(w, 403, "agent certificate revoked")
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// requireAgentNode enforces per-node certificate binding when enabled.
+// When bind is off, or the request has no verified client cert (optional mode),
+// it returns true. When bind is on and a cert is present, claimed must match.
+func (s *Server) requireAgentNode(w http.ResponseWriter, r *http.Request, claimed string) bool {
+	if !s.agentMTLSBind || !mtls.Verified(r) {
+		return true
+	}
+	id, ok := mtls.NodeIdentity(r)
+	if !ok {
+		s.metricsData.mtlsNodeMismatch.Add(1)
+		errorJSON(w, 403, "agent certificate has no node identity")
+		return false
+	}
+	if strings.TrimSpace(claimed) == "" || !strings.EqualFold(strings.TrimSpace(claimed), id) {
+		s.metricsData.mtlsNodeMismatch.Add(1)
+		errorJSON(w, 403, "agent certificate node does not match report")
+		return false
+	}
+	return true
 }
 func (s *Server) authOrAgent(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1129,6 +1179,10 @@ func enrichExplanation(x map[string]any) {
 func (s *Server) ebpfConfig(w http.ResponseWriter, r *http.Request) {
 	cfg := s.store.Config()
 	node := strings.TrimSpace(r.URL.Query().Get("node"))
+	agentOnly := s.agentKey != "" && secureEq(r.Header.Get("X-Netra-Agent-Key"), s.agentKey)
+	if agentOnly && node != "" && !s.requireAgentNode(w, r, node) {
+		return
+	}
 	if node != "" {
 		cfg.DesiredCapture = s.store.Capture(node)
 		cfg.NodeIsolation = s.store.NodeIsolation(node)
@@ -2803,6 +2857,9 @@ func (s *Server) agentReport(w http.ResponseWriter, r *http.Request) {
 	}
 	if x.Node == "" {
 		errorJSON(w, 400, "node is required")
+		return
+	}
+	if !s.requireAgentNode(w, r, x.Node) {
 		return
 	}
 	// Set here, never read from the agent: it records how this report arrived.

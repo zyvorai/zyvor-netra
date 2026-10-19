@@ -11,8 +11,10 @@ import (
 	"encoding/pem"
 	"math/big"
 	"net"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -75,6 +77,35 @@ func (c *CA) Issue(t testing.TB, cn string, usage x509.ExtKeyUsage, notAfter tim
 // Client is a valid client certificate.
 func (c *CA) Client(t testing.TB, cn string) Pair {
 	return c.Issue(t, cn, x509.ExtKeyUsageClientAuth, time.Now().Add(time.Hour))
+}
+
+// ClientNode issues a client certificate with URI SAN spiffe://netra.local/node/<node>.
+func (c *CA) ClientNode(t testing.TB, node string) Pair {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	must(t, err)
+	c.serial++
+	uri, err := url.Parse("spiffe://netra.local/node/" + node)
+	must(t, err)
+	tmpl := &x509.Certificate{
+		SerialNumber: big.NewInt(c.serial), Subject: pkix.Name{CommonName: node},
+		NotBefore: time.Now().Add(-2 * time.Hour), NotAfter: time.Now().Add(time.Hour),
+		KeyUsage: x509.KeyUsageDigitalSignature, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+		URIs: []*url.URL{uri},
+	}
+	der, err := x509.CreateCertificate(rand.Reader, tmpl, c.cert, &key.PublicKey, c.key)
+	must(t, err)
+	kder, err := x509.MarshalECPrivateKey(key)
+	must(t, err)
+	p := Pair{CertFile: filepath.Join(c.dir, node+"-node.crt"), KeyFile: filepath.Join(c.dir, node+"-node.key")}
+	must(t, os.WriteFile(p.CertFile, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o600))
+	must(t, os.WriteFile(p.KeyFile, pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: kder}), 0o600))
+	return p
+}
+
+// LastSerial returns the hex serial of the most recently issued certificate.
+func (c *CA) LastSerial() string {
+	return strings.ToLower(big.NewInt(c.serial).Text(16))
 }
 
 // Server is a valid server certificate for 127.0.0.1 and localhost.

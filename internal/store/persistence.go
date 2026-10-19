@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/zyvorai/netra/internal/flowlog"
+	"github.com/zyvorai/netra/internal/flowlog/sqlitestore"
 	"github.com/zyvorai/netra/internal/models"
 )
 
@@ -79,13 +81,39 @@ func Open(path string) (*Store, error) {
 		_ = s.Close()
 		return nil, err
 	}
-	s.flowPath = abs + ".flows"
-	if err := s.flowLog.Load(s.flowPath); err != nil {
-		// A damaged flow sidecar must not stop the controller. History
-		// starts empty; the next reports rebuild a baseline.
-		_ = os.Rename(s.flowPath, s.flowPath+".bad")
+	if err := s.configureFlowLog(abs); err != nil {
+		_ = s.Close()
+		return nil, err
 	}
 	return s, nil
+}
+
+// configureFlowLog selects JSON sidecar (default) or optional SQLite.
+func (s *Store) configureFlowLog(stateAbs string) error {
+	opts := flowlog.OptionsFromEnv()
+	s.flowPath = stateAbs + ".flows"
+	switch flowlog.BackendFromEnv() {
+	case flowlog.BackendSQLite:
+		dbPath := stateAbs + ".flows.db"
+		backend, err := sqlitestore.Open(dbPath, opts)
+		if err != nil {
+			return fmt.Errorf("open sqlite flow store: %w", err)
+		}
+		if err := backend.ImportJSON(s.flowPath); err != nil {
+			// Damaged JSON must not block sqlite; leave file renamed and start empty.
+			_ = os.Rename(s.flowPath, s.flowPath+".bad")
+		}
+		s.flowLog = flowlog.NewWithBackend(backend, opts.Retain, opts.Max)
+		return nil
+	default:
+		s.flowLog = flowlog.NewLimited(opts.Retain, opts.Max)
+		if err := s.flowLog.Load(s.flowPath); err != nil {
+			// A damaged flow sidecar must not stop the controller. History
+			// starts empty; the next reports rebuild a baseline.
+			_ = os.Rename(s.flowPath, s.flowPath+".bad")
+		}
+		return nil
+	}
 }
 
 func (s *Store) load() error {
@@ -231,11 +259,15 @@ func (s *Store) load() error {
 }
 
 func (s *Store) Close() error {
-	if s == nil || s.backend == nil || s.backend.lock == nil {
+	if s == nil {
 		return nil
 	}
 	if s.flowPath != "" && s.flowLog != nil {
 		_ = s.flowLog.Save(s.flowPath)
+		_ = s.flowLog.Close()
+	}
+	if s.backend == nil || s.backend.lock == nil {
+		return nil
 	}
 	lock := s.backend.lock
 	s.backend.lock = nil

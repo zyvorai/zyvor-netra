@@ -25,6 +25,8 @@ type telemetry struct {
 	authFailures       atomic.Uint64
 	mtlsRejected       atomic.Uint64
 	mtlsReports        atomic.Uint64
+	mtlsNodeMismatch   atomic.Uint64
+	mtlsDeniedSerial   atomic.Uint64
 	rbacDenied         atomic.Uint64
 	policyPlans        atomic.Uint64
 	policyApplies      atomic.Uint64
@@ -61,6 +63,8 @@ func (s *Server) metrics(w http.ResponseWriter, _ *http.Request) {
 	metricCounter(w, "netra_auth_failures_total", "Rejected API or agent authentication attempts.", s.metricsData.authFailures.Load())
 	metricCounter(w, "netra_agent_mtls_rejected_total", "Agent requests refused for lacking a verified client certificate (NETRA_AGENT_MTLS=required).", s.metricsData.mtlsRejected.Load())
 	metricCounter(w, "netra_agent_mtls_reports_total", "Agent reports received over a connection with a verified client certificate.", s.metricsData.mtlsReports.Load())
+	metricCounter(w, "netra_agent_mtls_node_mismatch_total", "Agent requests refused because the certificate node identity did not match the claimed node (NETRA_AGENT_MTLS_BIND_NODE).", s.metricsData.mtlsNodeMismatch.Load())
+	metricCounter(w, "netra_agent_mtls_denied_serial_total", "Agent requests refused because the certificate serial is on NETRA_AGENT_MTLS_DENY_SERIALS.", s.metricsData.mtlsDeniedSerial.Load())
 	metricCounter(w, "netra_rbac_denied_total", "Authenticated requests refused because the caller's role was too low.", s.metricsData.rbacDenied.Load())
 	metricCounter(w, "netra_policy_plans_total", "Policy preflight plans requested.", s.metricsData.policyPlans.Load())
 	metricCounter(w, "netra_policy_applies_total", "Non-dry-run CiliumNetworkPolicy applies.", s.metricsData.policyApplies.Load())

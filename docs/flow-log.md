@@ -19,6 +19,17 @@ them to a sidecar next to the state file (`<state>.flows`). A restart
 loads that file. The baseline map is not stored, so the first report
 after a restart does not emit a delta. This is not a column store.
 
+Optional SQLite backend: set `NETRA_FLOW_BACKEND=sqlite`. History then
+lives in `<state>.flows.db` with indexes and incremental writes. Tune
+with `NETRA_FLOW_RETAIN` (duration), `NETRA_FLOW_MAX` (row cap), and
+`NETRA_FLOW_MAX_BYTES` (optional size budget). An existing JSON sidecar
+is imported once and renamed to `.flows.migrated`. Default remains
+`json`.
+
+Cross-cluster query: `GET /api/v1/fleet/flows/history` fans the same
+filters out to `NETRA_FLEET_PEERS`, merges newest-first locally, and
+lists partial peer failures in `limitations`. Not a shared warehouse.
+
 Filters: `since` (`1h` or RFC3339, max 168h), `namespace`, `pod`, `peer`,
 `protocol`, `app`, `node`, `limit` (max 2000).
 
@@ -45,8 +56,8 @@ paths.
 DNS failure counts and HTTP request counts on the same row are the
 latest cumulative agent counters, not window deltas. Cleartext HTTP/1
 5xx counts are a separate `http5xx` field, also cumulative, and only
-when the status line starts the packet. HTTP/2 and HTTP/3 are not
-decoded.
+when the status line starts the packet. Always-on HTTP/2 and HTTP/3 are
+not decoded; opt-in sampling is separate ([`l7-sampling.md`](l7-sampling.md)).
 
 ## Traces
 

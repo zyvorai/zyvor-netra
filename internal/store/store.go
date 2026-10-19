@@ -1700,6 +1700,14 @@ func (s *Store) FlowCount() int {
 	return s.flowLog.Len()
 }
 
+// FlowRetain is the configured flow history retention window.
+func (s *Store) FlowRetain() time.Duration {
+	if s == nil || s.flowLog == nil {
+		return flowlog.DefaultRetain
+	}
+	return s.flowLog.Retain()
+}
+
 func (s *Store) Agents() []models.AgentReport {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

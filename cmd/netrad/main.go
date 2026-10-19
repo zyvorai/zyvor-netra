@@ -496,6 +496,9 @@ func buildOIDC(log *slog.Logger) *oidcauth.Verifier {
 		RoleMap:           roleMap,
 		DefaultRole:       defaultRole,
 		IdentityClaim:     env("NETRA_OIDC_IDENTITY_CLAIM", ""),
+		NamespacesClaim:   env("NETRA_OIDC_NAMESPACES_CLAIM", ""),
+		ClustersClaim:     env("NETRA_OIDC_CLUSTERS_CLAIM", ""),
+		TenantsClaim:      env("NETRA_OIDC_TENANTS_CLAIM", ""),
 		AllowInsecureHTTP: strings.EqualFold(strings.TrimSpace(os.Getenv("NETRA_OIDC_ALLOW_INSECURE_HTTP")), "true"),
 		Logger:            log,
 	})

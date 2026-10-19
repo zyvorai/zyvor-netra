@@ -222,10 +222,14 @@ tls:
 #   required  agent-only requests (report, capture stream, agent config) also need
 #             a certificate signed by the CA below, in addition to the agent key.
 #             People (browser, netractl, API keys) are never asked for one.
-# Needs tls.enabled. The certificate is shared by all agents: it proves "an agent",
-# not which node, exactly as the agent key does.
+# Needs tls.enabled. By default the certificate is shared by all agents (proves
+# "an agent"). Set bindNode after issuing per-node certs with URI SAN
+# spiffe://netra.local/node/<nodeName> (docs/agent-mtls.md).
 mtls:
   mode: "off"
+  bindNode: false
+  # Optional Secret containing deny.txt (revoked serials, one per line).
+  denySerialsSecret: ""
   # A Secret holding ca.crt (the CA that signs agent certificates), tls.crt and
   # tls.key (the agents' client certificate). The controller mounts only ca.crt.
   secretName: ""
