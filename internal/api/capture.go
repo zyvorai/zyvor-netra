@@ -311,6 +311,9 @@ func (s *Server) agentCaptureStream(w http.ResponseWriter, r *http.Request) {
 		errorJSON(w, 400, "node is required")
 		return
 	}
+	if !s.requireAgentNode(w, r, node) {
+		return
+	}
 	conn, err := consoleUpgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return

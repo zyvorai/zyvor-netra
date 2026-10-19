@@ -80,6 +80,7 @@ var viewerPOST = map[string]bool{
 	"POST /api/v1/ebpf/deny/preview-history":     true,
 	"POST /api/v1/ebpf/scope/preview":            true,
 	"POST /api/v1/ebpf/netpol/default-deny/plan": true,
+	"POST /api/v1/investigate/connection":        true,
 }
 
 // requiredRole is the minimum role for the request's matched route.
@@ -106,9 +107,13 @@ func requiredRole(r *http.Request) oidcauth.Role {
 
 // principal is the authenticated caller of a request.
 type principal struct {
-	kind string // "apikey", "chatops", "oidc"
-	name string // audit identity; only meaningful for "oidc"
+	kind string // "apikey", "chatops", "oidc", "service"
+	name string // audit identity; meaningful for "oidc" and "service"
 	role oidcauth.Role
+	// Scopes: empty means unrestricted on that dimension.
+	Namespaces []string
+	Clusters   []string
+	Tenants    []string
 }
 
 type principalKey struct{}
@@ -126,7 +131,7 @@ func principalFrom(ctx context.Context) (principal, bool) {
 // authenticated as a person. The X-Netra-Actor header is client-supplied and
 // unverified, so it must never override this.
 func verifiedActor(r *http.Request) (string, bool) {
-	if p, ok := principalFrom(r.Context()); ok && p.kind == "oidc" {
+	if p, ok := principalFrom(r.Context()); ok && (p.kind == "oidc" || p.kind == "service") {
 		return p.name, true
 	}
 	return "", false
@@ -142,8 +147,8 @@ const (
 )
 
 // authenticate resolves the caller from the bearer credential. Static keys
-// are compared first, in constant time; only a token shaped like a JWT is
-// sent to the OIDC verifier.
+// are compared first, in constant time; scoped service credentials next;
+// only a token shaped like a JWT is sent to the OIDC verifier.
 func (s *Server) authenticate(r *http.Request) (principal, authResult) {
 	tok := bearer(r)
 	if tok == "" && s.sessionValid(r) {
@@ -155,13 +160,19 @@ func (s *Server) authenticate(r *http.Request) (principal, authResult) {
 	if s.chatopsAPIKey != "" && secureEq(tok, s.chatopsAPIKey) {
 		return principal{kind: "chatops", role: oidcauth.RoleAdmin}, authOK
 	}
+	if p, ok := s.matchServiceCred(tok); ok {
+		return p, authOK
+	}
 	if s.oidc == nil || !oidcauth.Looks(tok) {
 		return principal{}, authDenied
 	}
 	id, err := s.oidc.Verify(r.Context(), tok)
 	switch {
 	case err == nil:
-		return principal{kind: "oidc", name: id.Name, role: id.Role}, authOK
+		return principal{
+			kind: "oidc", name: id.Name, role: id.Role,
+			Namespaces: id.Namespaces, Clusters: id.Clusters, Tenants: id.Tenants,
+		}, authOK
 	case errors.Is(err, oidcauth.ErrNoRole):
 		return principal{}, authForbidden
 	case errors.Is(err, oidcauth.ErrKeysUnavailable):
@@ -177,8 +188,11 @@ func (s *Server) authenticate(r *http.Request) (principal, authResult) {
 }
 
 // authRequired reports whether any credential is needed at all. With no API
-// key and no OIDC the server is in explicit development mode and open.
-func (s *Server) authRequired() bool { return s.apiKey != "" || s.oidc != nil }
+// key, no OIDC and no service credentials the server is in explicit
+// development mode and open.
+func (s *Server) authRequired() bool {
+	return s.apiKey != "" || s.oidc != nil || len(s.serviceCreds) > 0
+}
 
 // WithOIDC enables OIDC/JWT bearer authentication alongside the static keys.
 func (s *Server) WithOIDC(v *oidcauth.Verifier) *Server {
@@ -228,8 +242,19 @@ func (s *Server) whoami(w http.ResponseWriter, r *http.Request) {
 		if p.name != "" {
 			out["identity"] = p.name
 		}
+		if len(p.Namespaces) > 0 {
+			out["namespaces"] = p.Namespaces
+		}
+		if len(p.Clusters) > 0 {
+			out["clusters"] = p.Clusters
+		}
+		if len(p.Tenants) > 0 {
+			out["tenants"] = p.Tenants
+		}
+		out["scoped"] = !p.Unrestricted()
 	} else {
 		out["kind"], out["role"] = "anonymous", oidcauth.RoleAdmin.String()
+		out["scoped"] = false
 	}
 	writeJSON(w, http.StatusOK, out)
 }

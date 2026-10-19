@@ -10,6 +10,12 @@ The latest 20 entries. The full history is in [CHANGELOG.md](https://github.com/
 
 ## Unreleased
 
+- **Per-node agent mTLS identity (opt-in).** With `NETRA_AGENT_MTLS_BIND_NODE`, the reported node must match the client certificate (URI SAN `spiffe://netra.local/node/<name>`, else DNS SAN, else CN). Optional `NETRA_AGENT_MTLS_DENY_SERIALS` hot-reloads revoked serials. Shared-cert mode stays the default. Helm: `mtls.bindNode`, `mtls.denySerialsSecret`. Docs: `docs/agent-mtls.md`.
+- **Scoped authorization.** OIDC claims (`NETRA_OIDC_NAMESPACES_CLAIM`, clusters, tenants) and `NETRA_SERVICE_CREDENTIALS_FILE` add namespace/cluster/tenant ACLs on top of viewer/operator/admin. Scoped callers are filtered on observe queries and blocked from admin-only fleet surfaces. Docs: `docs/auth-oidc-rbac.md`.
+- **Optional SQLite flow history.** `NETRA_FLOW_BACKEND=sqlite` writes incremental indexed deltas to `<state>.flows.db` (retention via `NETRA_FLOW_RETAIN` / `MAX` / `MAX_BYTES`); JSON sidecar remains default. `GET /api/v1/fleet/flows/history` fans out to `NETRA_FLEET_PEERS`. Docs: `docs/flow-log.md`.
+- **Failed-connection investigation timeline.** `POST /api/v1/investigate/connection` (also GET), `netractl investigate connection`, MCP `netra_investigate_connection` compose DNS, flows, netlink, policy explain, path/drops and a confidence scorecard with an explicit visibility gap. Observe-only. Docs: `docs/investigate-connection.md`.
+- **Competitive docs no longer understate sampled HTTP/2/gRPC.** Positioning and “Still not done” distinguish always-on L7 metadata from opt-in `NETRA_L7_SAMPLE`. Docs: `docs/competitive-observability.md`.
+
 ## 0.31.0 — 2026-10-17
 
 - **CI and deps match the GA chart defaults.** Helm CI now expects DNS/scan detect and bounded auto-capture on by default; `golang.org/x/net` bumps to v0.60.0 for the HTTP/2 Trailer advisories; toolchain Go 1.27.2 + golangci-lint v2.15.0; govulncheck ignore drops the stale Cilium catch-all and documents GO-2026-6665 (Snowflake logger, no fixed release yet). Agent-image and release publish jobs run on hosted runners while the org `zyvor-build` pool sticks busy with no assigned job.

@@ -152,6 +152,8 @@ func run(args []string) error {
 	switch args[0] {
 	case "explain":
 		return explainCmd(args[1:], os.Stdout)
+	case "investigate":
+		return investigateCmd(args[1:])
 	case "status":
 		return statusCmd(args[1:], os.Stdout)
 	case "install":
@@ -1701,6 +1703,64 @@ func incidentsCmd() error {
 	default:
 		return fmt.Errorf("unknown incidents command")
 	}
+}
+
+func investigateCmd(args []string) error {
+	if len(args) == 0 || args[0] != "connection" {
+		return fmt.Errorf("usage: netractl investigate connection [--namespace NS] [--pod POD] [--peer IP] [--port N] [--node NODE] [--window 15m]")
+	}
+	body := map[string]any{}
+	for i := 1; i < len(args); i++ {
+		switch args[i] {
+		case "--namespace", "-n":
+			i++
+			if i >= len(args) {
+				return fmt.Errorf("--namespace needs a value")
+			}
+			body["namespace"] = args[i]
+		case "--pod":
+			i++
+			if i >= len(args) {
+				return fmt.Errorf("--pod needs a value")
+			}
+			body["pod"] = args[i]
+		case "--peer":
+			i++
+			if i >= len(args) {
+				return fmt.Errorf("--peer needs a value")
+			}
+			body["peer"] = args[i]
+		case "--port":
+			i++
+			if i >= len(args) {
+				return fmt.Errorf("--port needs a value")
+			}
+			n, err := strconv.Atoi(args[i])
+			if err != nil || n <= 0 || n > 65535 {
+				return fmt.Errorf("invalid --port")
+			}
+			body["port"] = n
+		case "--node":
+			i++
+			if i >= len(args) {
+				return fmt.Errorf("--node needs a value")
+			}
+			body["node"] = args[i]
+		case "--window":
+			i++
+			if i >= len(args) {
+				return fmt.Errorf("--window needs a value")
+			}
+			body["window"] = args[i]
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	b, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	return request("POST", "/api/v1/investigate/connection", b)
 }
 
 func request(method, p string, b []byte) error {

@@ -52,6 +52,11 @@ type Config struct {
 	// IdentityClaim names the claim used as the display identity. Default
 	// "email", falling back to "sub".
 	IdentityClaim string
+	// NamespacesClaim, ClustersClaim, TenantsClaim hold optional scope lists.
+	// Empty claim name disables that dimension (caller is unrestricted there).
+	NamespacesClaim string
+	ClustersClaim   string
+	TenantsClaim    string
 	// AllowInsecureHTTP permits http:// issuer/JWKS URLs. Development only.
 	AllowInsecureHTTP bool
 
@@ -75,6 +80,10 @@ type Identity struct {
 	Name    string
 	Role    Role
 	Expires time.Time
+	// Scopes: empty slice means unrestricted on that dimension.
+	Namespaces []string
+	Clusters   []string
+	Tenants    []string
 }
 
 type Verifier struct {
@@ -179,11 +188,41 @@ func (v *Verifier) Verify(ctx context.Context, raw string) (*Identity, error) {
 		return nil, ErrNoRole
 	}
 	sub, _ := claims["sub"].(string)
-	id := &Identity{Subject: sub, Name: "oidc:" + v.identity(claims, sub), Role: role}
+	id := &Identity{
+		Subject:    sub,
+		Name:       "oidc:" + v.identity(claims, sub),
+		Role:       role,
+		Namespaces: scopeValues(claims, v.cfg.NamespacesClaim),
+		Clusters:   scopeValues(claims, v.cfg.ClustersClaim),
+		Tenants:    scopeValues(claims, v.cfg.TenantsClaim),
+	}
 	if exp, err := claims.GetExpirationTime(); err == nil && exp != nil {
 		id.Expires = exp.Time
 	}
 	return id, nil
+}
+
+func scopeValues(claims jwt.MapClaims, claim string) []string {
+	claim = strings.TrimSpace(claim)
+	if claim == "" {
+		return nil
+	}
+	raw := stringValues(claimValue(claims, claim))
+	out := make([]string, 0, len(raw))
+	seen := map[string]struct{}{}
+	for _, s := range raw {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			continue
+		}
+		key := strings.ToLower(s)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, s)
+	}
+	return out
 }
 
 func (v *Verifier) identity(claims jwt.MapClaims, sub string) string {

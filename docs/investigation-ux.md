@@ -28,6 +28,7 @@ Polling runs every 10 seconds, serially, with cancellation on unmount. Connectio
 - Events contain no stable winning rule ID or historical policy generation. Explanations quote the reported reason without inferring a historical rule from current config.
 - Identity comes from agent attribution, never an IP-only join. A VM launcher pod is not guest-process attribution.
 - Legacy diagnostic pages keep their own filters. Shared scope applies to the new Connections and Workloads views; Overview actions explicitly open a global investigation.
+- For a fused DNS → connect → netlink → policy → drops timeline with an explicit visibility boundary, use [`investigate-connection.md`](investigate-connection.md) (`POST /api/v1/investigate/connection`).
 
 ## Validation
 

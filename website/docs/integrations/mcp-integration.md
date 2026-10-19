@@ -145,6 +145,7 @@ mcp_servers:
         - netra_vms
         - netra_flow_summary
         - netra_flow_history
+        - netra_investigate_connection
         - netra_drops_explain
         - netra_ebpf_health
         - netra_ebpf_path
@@ -273,7 +274,8 @@ All tool names are prefixed `netra_`. Every tool maps 1:1 to one Netra controlle
 | Tool | Endpoint | Parameters | Notes |
 |---|---|---|---|
 | `netra_flow_summary` | `GET /api/v1/flows/summary` | `number` (1-5000, default 500), `verdict` (`FORWARDED`\|`DROPPED`\|`ERROR`\|`AUDIT`\|`REDIRECTED`\|`TRACED`\|`TRANSLATED`), `namespace`, `pod`, `direction` (`EGRESS`\|`INGRESS`), `protocol`, `destination` | Bounded point-in-time aggregate; the tool-shaped equivalent of the `flows/stream` SSE endpoint, which is not exposed (see [Not included](#not-included)) |
-| `netra_flow_history` | `GET /api/v1/flows/history` | `since` (duration or RFC3339, default 1h, max 168h), `namespace`, `pod`, `peer`, `protocol`, `app`, `node`, `limit` (1-2000, default 200) | Flow deltas in a 7-day sidecar. No payloads. See `docs/flow-log.md` |
+| `netra_flow_history` | `GET /api/v1/flows/history` | `since` (duration or RFC3339, default 1h, max 168h), `namespace`, `pod`, `peer`, `protocol`, `app`, `node`, `limit` (1-2000, default 200) | Flow deltas in a 7-day sidecar (or optional SQLite). No payloads. See `docs/flow-log.md` |
+| `netra_investigate_connection` | `POST /api/v1/investigate/connection` | `namespace`, `pod`, `peer`, `port`, `node`, `window`, `since`, `until` | Composed failed-connection timeline + confidence. Observe-only. See `docs/investigate-connection.md` |
 | `netra_drops_explain` | `GET /api/v1/drops/explain` | `limit` (1-100, default 20), `namespace`, `pod` | Plain-English summary + remediation suggestions per dropped flow |
 | `netra_ebpf_summary` | `GET /api/v1/ebpf/summary` | — | High-level rollup of fast-path activity across agents |
 | `netra_ebpf_health` | `GET /api/v1/ebpf/health` | `limit` (1-200, default 20) | TCP health/retransmit/connect-latency anomalies |
@@ -429,7 +431,7 @@ Every eBPF mutating tool returns the full updated `EBPFFastPathConfig` on succes
 
 ## Not included
 
-- **No `flows/stream` tool.** `GET /api/v1/flows/stream` is a Server-Sent-Events stream; it doesn't fit a request/response MCP `tools/call`. `netra_flow_summary` is the live aggregate. `netra_flow_history` is the 7-day flow sidecar (`docs/flow-log.md`), not a stream and not a column store.
+- **No `flows/stream` tool.** `GET /api/v1/flows/stream` is a Server-Sent-Events stream; it doesn't fit a request/response MCP `tools/call`. `netra_flow_summary` is the live aggregate. `netra_flow_history` is the flow sidecar or optional SQLite backend (`docs/flow-log.md`), not a stream and not a shared warehouse.
 - **Tools only — no MCP resources or prompts.** Every capability is exposed as a callable tool; there is no resource-subscription or prompt-template surface.
 - **No additional rate limiting.** `netra-mcp` adds no throttling of its own beyond whatever the controller's own API already enforces.
 - **No per-tool credential scoping.** See [Security considerations](#security-considerations) — one API key covers everything `netra-mcp` is allowed to do; the mutation gate is process-wide, not per-tool.

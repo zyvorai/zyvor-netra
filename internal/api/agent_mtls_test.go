@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -195,6 +196,65 @@ func TestRequiredModeDoesNotLockOutTheRestOfTheAPI(t *testing.T) {
 	}
 	if code := e.do(t, "GET", "/api/v1/agents", "", map[string]string{"Authorization": "Bearer api-key"}, ""); code != 200 {
 		t.Errorf("agents list with an API key and no certificate: %d", code)
+	}
+}
+
+func TestBindNodeRejectsMismatch(t *testing.T) {
+	t.Setenv("NETRA_AGENT_MTLS_BIND_NODE", "true")
+	e := newMTLSEnv(t, "required")
+	p := e.ca.ClientNode(t, "worker-a")
+	cfg, err := mtls.ClientConfig(e.ca.CAFile, p.CertFile, p.KeyFile, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	post := func(body string) int {
+		req, _ := http.NewRequest("POST", e.srv.URL+"/api/v1/agents/report", strings.NewReader(body))
+		req.Header.Set("X-Netra-Agent-Key", "agent-key")
+		c := &http.Client{Timeout: 5 * time.Second, Transport: &http.Transport{TLSClientConfig: cfg, DisableKeepAlives: true}}
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		_, _ = io.Copy(io.Discard, resp.Body)
+		return resp.StatusCode
+	}
+	if code := post(`{"node":"other-node","observedAt":"2026-01-01T00:00:00Z"}`); code != 403 {
+		t.Fatalf("mismatch: %d want 403", code)
+	}
+	if e.s.metricsData.mtlsNodeMismatch.Load() < 1 {
+		t.Fatal("mismatch counter not incremented")
+	}
+	if code := post(`{"node":"worker-a","observedAt":"2026-01-01T00:00:00Z"}`); code != 202 {
+		t.Fatalf("match: %d want 202", code)
+	}
+}
+
+func TestDenySerialRejects(t *testing.T) {
+	e := newMTLSEnv(t, "required")
+	p := e.ca.ClientNode(t, "n1")
+	denyPath := t.TempDir() + "/deny.txt"
+	if err := os.WriteFile(denyPath, []byte(e.ca.LastSerial()+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	e.s.mtlsDeny = mtls.NewDenyList(denyPath)
+	cfg, err := mtls.ClientConfig(e.ca.CAFile, p.CertFile, p.KeyFile, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, _ := http.NewRequest("POST", e.srv.URL+"/api/v1/agents/report", strings.NewReader(reportBody))
+	req.Header.Set("X-Netra-Agent-Key", "agent-key")
+	c := &http.Client{Timeout: 5 * time.Second, Transport: &http.Transport{TLSClientConfig: cfg, DisableKeepAlives: true}}
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 403 {
+		t.Fatalf("denied serial: %d want 403", resp.StatusCode)
+	}
+	if e.s.metricsData.mtlsDeniedSerial.Load() < 1 {
+		t.Fatal("denied serial counter not incremented")
 	}
 }
 

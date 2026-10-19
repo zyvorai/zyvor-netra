@@ -65,6 +65,10 @@ IdP does not stop the controller starting.
 | `NETRA_OIDC_ROLE_MAP` | literal names | `claimValue=role,…` e.g. `netra-admins=admin,sre=operator,all-staff=viewer`. Empty means the claim values `viewer`/`operator`/`admin` map to themselves. Highest matching role wins. Values are case-sensitive. |
 | `NETRA_OIDC_DEFAULT_ROLE` | none | Role for valid tokens that map to nothing. Empty = deny with 403. |
 | `NETRA_OIDC_IDENTITY_CLAIM` | `email`, then `sub` | Claim used as the audit identity. |
+| `NETRA_OIDC_NAMESPACES_CLAIM` | (off) | Claim holding allowed namespaces (string or array). Empty claim = unrestricted. |
+| `NETRA_OIDC_CLUSTERS_CLAIM` | (off) | Claim holding allowed cluster names (match `NETRA_CLUSTER_NAME` / fleet peer names). |
+| `NETRA_OIDC_TENANTS_CLAIM` | (off) | Claim holding allowed tenant labels (match `NETRA_CLUSTER_TENANT` / peer `|tenant`). |
+| `NETRA_SERVICE_CREDENTIALS_FILE` | (off) | JSON array of scoped service credentials (see below). |
 | `NETRA_OIDC_ALLOW_INSECURE_HTTP` | `false` | Permit `http://` issuer/JWKS. Development only. |
 | `NETRA_METRICS_TOKEN` | (off) | If set, `GET /metrics` needs `Authorization: Bearer <token>`. |
 
@@ -148,13 +152,47 @@ browser redirect flow. To put SSO in front of the UI, run it behind a reverse
 proxy such as oauth2-proxy that injects the access token as `Authorization:
 Bearer …`.
 
+## Scoped access
+
+Optional namespace, cluster and tenant scopes layer on top of the three roles.
+Empty scope lists mean unrestricted (today's default). Scoped callers:
+
+- See only matching namespaces on flow history and related observe queries.
+- Are refused (`403`) when they query or mutate outside their scope.
+- Cannot use admin-only fleet-wide surfaces (exec/logs/VNC, mode/scope/shield,
+  policy apply, feature toggles, intel feed replace) even with an admin role.
+- Appear on `GET /api/v1/whoami` with `scoped: true` and the allowed lists.
+
+### Service credentials
+
+`NETRA_SERVICE_CREDENTIALS_FILE` is a JSON array. Each entry has an `id`, a
+`role`, optional `namespaces` / `clusters` / `tenants`, and either a plaintext
+`key` (bcrypt-hashed at load) or a precomputed `keyHash` (bcrypt hash string):
+
+```json
+[
+  {
+    "id": "payments-reader",
+    "key": "replace-me",
+    "role": "viewer",
+    "namespaces": ["payments"],
+    "clusters": ["prod-east"],
+    "tenants": ["acme"]
+  }
+]
+```
+
+Present the key as `Authorization: Bearer …` like the static API key. MCP and
+automation should use a scoped credential instead of `NETRA_API_KEY` when they
+must not see the whole fleet.
+
 ## Limits
 
 - No browser authorization-code/PKCE flow, no logout/session store, no token
   revocation beyond expiry — keep token lifetimes short.
 - OIDC only (no SAML/LDAP).
 - `NETRA_CHATOPS_API_KEY` remains admin-equivalent.
-- Roles are three coarse levels, not per-namespace or per-resource.
+- Roles remain three levels; scopes add namespace/cluster/tenant isolation.
 
 ## Verification
 

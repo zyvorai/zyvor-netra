@@ -613,6 +613,21 @@ func registerReadTools(srv *mcpserver.Server, c *client) error {
 			queryParams: []string{"since", "namespace", "pod", "peer", "protocol", "app", "node", "limit"},
 		},
 		{
+			name: "netra_investigate_connection", method: "POST", path: "/api/v1/investigate/connection",
+			description: "Compose DNS, flow, netlink, policy explain, path/drop evidence and a confidence scorecard into one failed-connection timeline. Observe-only; never mutates.",
+			schema: objSchema(map[string]any{
+				"namespace": strProp("Workload namespace."),
+				"pod":       strProp("Pod name."),
+				"peer":      strProp("Peer IP or hostname."),
+				"port":      intProp("Destination port."),
+				"node":      strProp("Optional node filter."),
+				"window":    strProp("Lookback duration, e.g. 15m. Default 15m."),
+				"since":     strProp("Duration or RFC3339 start."),
+				"until":     strProp("RFC3339 end."),
+			}),
+			bodyFields: true,
+		},
+		{
 			name: "netra_insights_red", method: "GET", path: "/api/v1/insights/red",
 			description: "Per-workload rate, errors, and TCP SRTT over a window. Errors are drops and retransmits, not HTTP status.",
 			schema:      objSchema(map[string]any{"window": strProp("Duration, for example 5m. Max 168h.")}),

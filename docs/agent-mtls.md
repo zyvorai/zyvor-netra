@@ -15,7 +15,7 @@ byte-for-byte the same manifests.
 | Required for | agent-only requests: `POST /api/v1/agents/report`, the capture stream (`/api/v1/agents/capture/stream`), and the agent-key path of `GET /api/v1/ebpf/config` |
 | Not asked of | people: the browser, `netractl`, API keys and OIDC tokens, `/healthz`, `/livez`, `/metrics`. The listener *asks* for a certificate and verifies one only if it is offered, so a browser is never refused for lacking one |
 | Still needed | the agent key. A certificate is a second factor, not a replacement; a valid certificate with a wrong key is a 401 |
-| Not provided | **per-node identity.** One certificate is shared by every agent, so it proves "an agent", not which node. A compromised agent can still name another node in its report, exactly as with the shared key. Per-node certificates would need issuance per node and a binding to the reported name; that is a larger change |
+| Optional | **per-node identity.** With `NETRA_AGENT_MTLS_BIND_NODE=true`, the reported node must match the client certificate identity: URI SAN `spiffe://netra.local/node/<nodeName>` (preferred), else a DNS SAN, else Subject CN. Mismatches return 403 and increment `netra_agent_mtls_node_mismatch_total`. Without bind (default), one shared certificate still proves only "an agent" |
 
 What it does buy: a leaked agent key is no longer enough; the channel cannot be joined by
 a network attacker who lacks the certificate; and you can see, per agent, whether it is
@@ -67,15 +67,29 @@ every report. The same certificate is used for the capture-stream websocket.
 4. When every agent shows `mtls: true`: `--set mtls.mode=required`. Anything without a
    certificate now gets `401` (counted in `netra_agent_mtls_rejected_total`; the agent logs
    `config: 401 Unauthorized`).
+5. **Per-node certificates (optional):** issue one certificate per node with URI SAN
+   `spiffe://netra.local/node/<nodeName>` (cert-manager Certificate per DaemonSet pod
+   using downward API `spec.nodeName`). Then `--set mtls.bindNode=true`. Agents that
+   present a certificate claiming a different node than the report body get `403`.
 
 Going straight to `required` also works, but agents and controller restart together and the
 agents are refused until they have restarted; `optional` first avoids that window.
+
+## Revocation
+
+`NETRA_AGENT_MTLS_DENY_SERIALS` points at a text file of revoked serial numbers
+(lowercase hex or decimal, one per line; `#` comments allowed). The controller
+re-reads it when the file mtime changes. Prefer short-lived certificates plus
+deny-list for emergencies; there is no OCSP. Denied requests return `403` and
+increment `netra_agent_mtls_denied_serial_total`.
 
 ## Helm
 
 ```yaml
 mtls:
   mode: optional            # off | optional | required
+  bindNode: false           # require cert identity == reported node
+  denySerialsSecret: ""     # optional Secret with deny.txt of revoked serials
   secretName: netra-agent-mtls   # a Secret with ca.crt, tls.crt, tls.key
 ```
 

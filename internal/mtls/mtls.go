@@ -7,11 +7,12 @@
 // (Mode Required). A certificate that is offered but not signed by the configured
 // CA fails the handshake in every mode except Off.
 //
-// The certificate proves "a holder of the agent client key", exactly as the
-// shared agent key does; it is not a per-node identity, so it does not stop one
-// compromised agent naming another node in its report. What it adds is a second
-// factor that a leaked agent key alone cannot satisfy, and a channel a network
-// attacker cannot join.
+// By default the certificate proves "a holder of the agent client key", exactly
+// as the shared agent key does — a second factor and a channel a network
+// attacker cannot join. With NETRA_AGENT_MTLS_BIND_NODE the controller also
+// requires the reported node name to match the certificate identity (URI SAN
+// spiffe://netra.local/node/<name>, else DNS SAN, else CN). Optional
+// NETRA_AGENT_MTLS_DENY_SERIALS lists revoked serials (hex or decimal).
 package mtls
 
 import (

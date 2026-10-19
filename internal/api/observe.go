@@ -4,43 +4,123 @@
 package api
 
 import (
+	"context"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/zyvorai/netra/internal/fleet"
 	"github.com/zyvorai/netra/internal/flowlog"
 	"github.com/zyvorai/netra/internal/kube"
 	"github.com/zyvorai/netra/internal/models"
 )
 
 func (s *Server) flowHistory(w http.ResponseWriter, r *http.Request) {
+	q, ok := s.parseFlowQuery(w, r)
+	if !ok {
+		return
+	}
+	if p, ok := principalFrom(r.Context()); ok && !p.Unrestricted() {
+		if q.Namespace != "" && !p.AllowsNamespace(q.Namespace) {
+			s.metricsData.rbacDenied.Add(1)
+			errorJSON(w, http.StatusForbidden, "scope does not allow this namespace")
+			return
+		}
+		if len(p.Clusters) > 0 && !p.allowsDim(p.Clusters, localCluster()) {
+			s.metricsData.rbacDenied.Add(1)
+			errorJSON(w, http.StatusForbidden, "scope does not allow this cluster")
+			return
+		}
+		if len(p.Tenants) > 0 && !p.allowsDim(p.Tenants, localTenant()) {
+			s.metricsData.rbacDenied.Add(1)
+			errorJSON(w, http.StatusForbidden, "scope does not allow this tenant")
+			return
+		}
+	}
+	writeJSON(w, 200, s.filterFlowResult(r, s.store.FlowQuery(q)))
+}
+
+// fleetFlowHistory fans out the same filters to NETRA_FLEET_PEERS.
+func (s *Server) fleetFlowHistory(w http.ResponseWriter, r *http.Request) {
+	q, ok := s.parseFlowQuery(w, r)
+	if !ok {
+		return
+	}
+	local := s.filterFlowResult(r, s.store.FlowQuery(q))
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	peers := fleet.ParsePeers(os.Getenv("NETRA_FLEET_PEERS"))
+	if p, ok := principalFrom(r.Context()); ok && !p.Unrestricted() {
+		var allowed []fleet.Peer
+		for _, peer := range peers {
+			if len(p.Clusters) > 0 && !p.allowsDim(p.Clusters, peer.Name) {
+				continue
+			}
+			if len(p.Tenants) > 0 && (peer.Tenant == "" || !p.allowsDim(p.Tenants, peer.Tenant)) {
+				continue
+			}
+			allowed = append(allowed, peer)
+		}
+		peers = allowed
+	}
+	writeJSON(w, 200, fleet.AggregateFlows(ctx,
+		strings.TrimSpace(os.Getenv("NETRA_CLUSTER_NAME")),
+		local, q, peers, nil))
+}
+
+func (s *Server) filterFlowResult(r *http.Request, res flowlog.Result) flowlog.Result {
+	p, ok := principalFrom(r.Context())
+	if !ok || p.Unrestricted() || len(p.Namespaces) == 0 {
+		return res
+	}
+	var out []flowlog.Record
+	for _, rec := range res.Records {
+		if p.AllowsNamespace(rec.Namespace) {
+			out = append(out, rec)
+		}
+	}
+	res.Records = out
+	res.Matched = len(out)
+	res.Truncated = false
+	return res
+}
+
+func (s *Server) parseFlowQuery(w http.ResponseWriter, r *http.Request) (flowlog.Query, bool) {
 	now := time.Now().UTC()
+	retain := flowlog.DefaultRetain
+	if s.store != nil {
+		if d := s.store.FlowRetain(); d > 0 {
+			retain = d
+		}
+	}
 	since := now.Add(-time.Hour)
 	if v := r.URL.Query().Get("since"); v != "" {
-		if d, err := time.ParseDuration(v); err == nil && d > 0 && d <= flowlog.DefaultRetain {
+		if d, err := time.ParseDuration(v); err == nil && d > 0 && d <= retain {
 			since = now.Add(-d)
 		} else if t, err := time.Parse(time.RFC3339, v); err == nil {
 			since = t.UTC()
 		} else {
-			http.Error(w, "since must be a duration up to 168h or RFC3339", http.StatusBadRequest)
-			return
+			http.Error(w, "since must be a duration within retention or RFC3339", http.StatusBadRequest)
+			return flowlog.Query{}, false
 		}
 	}
 	limit := 200
 	if n, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && n > 0 && n <= 2000 {
 		limit = n
 	}
-	q := r.URL.Query()
-	writeJSON(w, 200, s.store.FlowQuery(flowlog.Query{
+	qv := r.URL.Query()
+	return flowlog.Query{
 		Since:       since,
-		Node:        q.Get("node"),
-		Namespace:   q.Get("namespace"),
-		Pod:         q.Get("pod"),
-		Peer:        q.Get("peer"),
-		Protocol:    q.Get("protocol"),
-		AppProtocol: q.Get("app"),
+		Node:        qv.Get("node"),
+		Namespace:   qv.Get("namespace"),
+		Pod:         qv.Get("pod"),
+		Peer:        qv.Get("peer"),
+		Protocol:    qv.Get("protocol"),
+		AppProtocol: qv.Get("app"),
 		Limit:       limit,
-	}))
+	}, true
 }
 
 func (s *Server) insightsRED(w http.ResponseWriter, r *http.Request) {
