@@ -5,6 +5,7 @@ package notify
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 )
 
 // Title builds a short one-line subject suitable for email/SMS headers.
@@ -60,5 +61,9 @@ func SMSBody(ev Event) string {
 	if len(s) <= max {
 		return s
 	}
-	return s[:max-3] + "..."
+	cut := max - 3
+	for cut > 0 && !utf8.RuneStart(s[cut]) {
+		cut--
+	}
+	return s[:cut] + "..."
 }

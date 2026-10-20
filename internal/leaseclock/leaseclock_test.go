@@ -20,3 +20,12 @@ func TestActiveAndExpired(t *testing.T) {
 		t.Fatalf("%#v", s)
 	}
 }
+
+func TestSubSecondLeaseStillActive(t *testing.T) {
+	now := time.Date(2026, 9, 15, 12, 0, 0, 0, time.UTC)
+	exp := now.Add(500 * time.Millisecond)
+	s := Build(models.EBPFFastPathConfig{Mode: "enforce", EnforceUntil: &exp}, now)
+	if !s.Active || s.Expired || s.RemainingSec != 1 {
+		t.Fatalf("%#v", s)
+	}
+}

@@ -31,9 +31,15 @@ func Build(cfg models.EBPFFastPathConfig, now time.Time) Status {
 	}
 	exp := cfg.EnforceUntil.UTC()
 	s.LeaseExpiresAt = &exp
-	rem := int64(exp.Sub(now).Seconds())
+	// Decide state on the exact duration; truncating to whole seconds would
+	// report a lease with <1s left as expired while it is still enforcing.
+	left := exp.Sub(now)
+	rem := int64(left / time.Second)
+	if left > 0 && rem == 0 {
+		rem = 1 // round up for display so an active lease never shows 0s
+	}
 	s.RemainingSec = rem
-	if rem > 0 {
+	if left > 0 {
 		s.Active = true
 		s.Note = "enforce lease running"
 	} else {

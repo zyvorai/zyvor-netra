@@ -3,7 +3,11 @@
 
 package kmsg
 
-import "testing"
+import (
+	"strings"
+	"testing"
+	"unicode/utf8"
+)
 
 func TestFilter(t *testing.T) {
 	in := "systemd[1]: Started ssh\n" +
@@ -21,5 +25,13 @@ func TestFilter(t *testing.T) {
 		if n.Text == "kernel: token=abc in netdev line" {
 			t.Fatal("secret line kept")
 		}
+	}
+}
+
+func TestFilterTruncatesOnRuneBoundary(t *testing.T) {
+	line := "oom-kill " + strings.Repeat("é", 200)
+	notes := Filter(line, 5)
+	if len(notes) != 1 || !utf8.ValidString(notes[0].Text) || len(notes[0].Text) > 180 {
+		t.Fatalf("%#v", notes)
 	}
 }

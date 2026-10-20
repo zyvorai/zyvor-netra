@@ -5,7 +5,10 @@
 // It does not read the application journal.
 package kmsg
 
-import "strings"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 // Note is one kept line.
 type Note struct {
@@ -26,7 +29,11 @@ func Filter(blob string, max int) []Note {
 			continue
 		}
 		if len(line) > 180 {
-			line = line[:180]
+			cut := 180
+			for cut > 0 && !utf8.RuneStart(line[cut]) {
+				cut--
+			}
+			line = line[:cut]
 		}
 		kept = append(kept, Note{Text: line})
 	}
