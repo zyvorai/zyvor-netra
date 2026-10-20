@@ -34,3 +34,20 @@ func TestExtractAndDetectFromFrame(t *testing.T) {
 		t.Fatalf("%+v", snap)
 	}
 }
+
+// A raw IPv4 packet whose source address is 8.0.x.x has 0x0800 at bytes
+// 12-13 and used to be misparsed as Ethernet instead of reaching the raw-IP path.
+func TestExtractClientHelloRawIPv4LooksLikeEthertype(t *testing.T) {
+	hello := buildClientHello(helloOpts{version: 0x0303, ciphers: []uint16{0x1301}, sni: "example.com"})
+	ip := make([]byte, 20)
+	ip[0] = 0x45
+	ip[9] = 6
+	ip[12], ip[13] = 0x08, 0x00 // src 8.0.0.1
+	ip[15] = 1
+	tcp := make([]byte, 20)
+	tcp[12] = 5 << 4
+	pkt := append(append(ip, tcp...), hello...)
+	if ExtractClientHello(pkt) == nil {
+		t.Fatal("raw IPv4 with src 8.0.x.x not parsed")
+	}
+}

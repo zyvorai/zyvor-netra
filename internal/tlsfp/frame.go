@@ -23,11 +23,18 @@ func ExtractClientHello(frame []byte) []byte {
 			etype = binary.BigEndian.Uint16(frame[16:18])
 			off = 18
 		}
+		// Do not return on a miss: a raw IP packet whose source address
+		// bytes 12-13 look like an ethertype (8.0.x.x, 134.221.x.x) must
+		// still reach the raw-IP fallback below.
+		var out []byte
 		switch etype {
 		case 0x0800: // IPv4
-			return extractFromIPv4(frame[off:])
+			out = extractFromIPv4(frame[off:])
 		case 0x86dd: // IPv6
-			return extractFromIPv6(frame[off:])
+			out = extractFromIPv6(frame[off:])
+		}
+		if out != nil {
+			return out
 		}
 	}
 	// Raw IP fallback (no Ethernet)
