@@ -17,6 +17,7 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/zyvorai/netra/internal/webhook"
 )
@@ -263,5 +264,13 @@ func TestEmailChannelInjectedSender(t *testing.T) {
 	}
 	if !strings.Contains(gotSubj, "CRITICAL") || !strings.Contains(gotBody, "spike") {
 		t.Fatalf("subj=%q body=%q", gotSubj, gotBody)
+	}
+}
+
+func TestSMSBodyKeepsValidUTF8(t *testing.T) {
+	ev := Event{Severity: "high", Kind: "k", Subject: "s", Message: strings.Repeat("é", 2000)}
+	got := SMSBody(ev)
+	if !utf8.ValidString(got) || len(got) > 1500 {
+		t.Fatalf("invalid or too long: valid=%v len=%d", utf8.ValidString(got), len(got))
 	}
 }

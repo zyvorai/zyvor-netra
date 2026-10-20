@@ -40,6 +40,8 @@ func TestLoadEnvFileDoesNotOverride(t *testing.T) {
 
 func TestTLSInsecureLoopbackDefault(t *testing.T) {
 	t.Setenv("NETRA_TLS_INSECURE", "")
+	oldBase := base
+	t.Cleanup(func() { base = oldBase })
 	base = "https://127.0.0.1:30870"
 	if !tlsInsecure() {
 		t.Fatal("expected loopback insecure when unset")
