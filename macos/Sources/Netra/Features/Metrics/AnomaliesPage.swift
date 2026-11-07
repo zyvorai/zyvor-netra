@@ -62,6 +62,17 @@ struct AnomaliesPage: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("\(ev.flowRecords) flow records in window").font(.caption).foregroundStyle(.secondary)
+                            if !ev.kinds.isEmpty {
+                                Text("Relevant evidence: " + ev.kinds.joined(separator: ", ")).font(.caption).foregroundStyle(.secondary)
+                            }
+                            if let l = r.labels, let t = MetricsMore.labelsParam(l) { Text("Labels: " + t).font(.caption2.monospaced()).foregroundStyle(.secondary) }
+                            let others = ev.anomalous.filter { $0.id != r.id }.prefix(6)
+                            if !others.isEmpty {
+                                Text("Also anomalous on this context").font(.headline)
+                                ForEach(Array(others)) { o in
+                                    Text("\(o.chart) / \(o.dimension) on \(o.node): \(String(format: "%.1f", o.anomalyRate))%").font(.caption.monospacedDigit())
+                                }
+                            }
                             if !ev.topPeers.isEmpty {
                                 Text("Top peers").font(.headline)
                                 ForEach(Array(ev.topPeers.enumerated()), id: \.offset) { _, p in
@@ -105,6 +116,6 @@ struct AnomaliesPage: View {
         evidence.value = nil; evidence.error = nil
         guard let r = current, let c = model.client else { return }
         let secs = range.seconds
-        await evidence.refresh { try await c.metricsEvidence(context: r.context, node: r.node, seconds: secs) }
+        await evidence.refresh { try await c.metricsEvidence(context: r.context, node: r.node, seconds: secs, labels: r.labels ?? [:]) }
     }
 }

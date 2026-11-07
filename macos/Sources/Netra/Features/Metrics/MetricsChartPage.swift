@@ -8,6 +8,7 @@ struct MetricsChartPage: View {
     @Environment(AppModel.self) private var model
     @State private var contexts = Poller<[MetricContext]>()
     @State private var data = Poller<MetricResult>()
+    @State private var live = LiveFeed()
     @State private var summary = Poller<MetricsSummary>()
     @State private var nodes = Poller<[MetricNodeInfo]>()
     @State private var selected: String?
@@ -30,6 +31,8 @@ struct MetricsChartPage: View {
         .navigationTitle("Metrics")
         .task { await slowLoop() }
         .task(id: "\(selected ?? "")|\(range.rawValue)|\(node)") { await fastLoop() }
+        .task(id: "\(selected ?? "")|\(range.rawValue)|\(node)|\(live.paused)") { await liveLoop() }
+        .onChange(of: live.lastFrame) { if live.delivering, let r = live.result { data.value = r; data.error = nil } }
     }
 
     private var picker: some View {
@@ -80,7 +83,7 @@ struct MetricsChartPage: View {
                 stat("Alerts", "\(s.alertsCritical) crit / \(s.alertsWarning) warn")
             } else if let e = summary.error { Text(e).font(.caption).foregroundStyle(.secondary) }
             Spacer()
-            Text("Refreshes every 5s").font(.caption2).foregroundStyle(.secondary)
+            LiveBadge(feed: live)
         }
     }
     private func stat(_ k: String, _ v: String) -> some View {
@@ -192,8 +195,13 @@ struct MetricsChartPage: View {
         let secs = range.seconds, n = node
         while !Task.isCancelled {
             guard let c = model.client else { return }
-            await data.refresh { try await c.metricsData(context: ctx, seconds: secs, nodes: n.isEmpty ? [] : [n]) }
+            if !live.delivering { await data.refresh { try await c.metricsData(context: ctx, seconds: secs, nodes: n.isEmpty ? [] : [n]) } }
             try? await Task.sleep(for: .seconds(5))
         }
+    }
+
+    private func liveLoop() async {
+        guard let ctx = selected, let c = model.client else { return }
+        await live.run(client: c, context: ctx, seconds: range.seconds, nodes: node.isEmpty ? [] : [node])
     }
 }

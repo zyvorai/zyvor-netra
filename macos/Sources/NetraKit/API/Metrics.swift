@@ -361,9 +361,11 @@ extension NetraClient {
     public func metricsAnomalies(seconds: Int, top: Int = 50) async throws -> AnomalySummary {
         try await get("api/v1/metrics/anomalies", query: [.init(name: "after", value: String(-seconds)), .init(name: "top", value: String(top))])
     }
-    public func metricsEvidence(context: String, node: String?, seconds: Int) async throws -> MetricEvidence {
+    /// `labels` become the server's `labels` filter (`k:v,k:v`); `before` is left to the server (now).
+    public func metricsEvidence(context: String, node: String?, seconds: Int, labels: [String: String] = [:]) async throws -> MetricEvidence {
         var q = [URLQueryItem(name: "context", value: context), .init(name: "after", value: String(-seconds))]
         if let node, !node.isEmpty { q.append(.init(name: "node", value: node)) }
+        if let l = MetricsMore.labelsParam(labels) { q.append(.init(name: "labels", value: l)) }
         return try await get("api/v1/metrics/evidence", query: q)
     }
     public func metricsAlerts(all: Bool = false, history: Int = 100) async throws -> MetricAlertSnapshot {

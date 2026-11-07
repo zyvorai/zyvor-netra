@@ -14,6 +14,8 @@ enum KernelPages {
         case .netlink: NetlinkPage().id(section)
         case .attachments: AttachmentsPage().id(section)
         case .maps: MapsPage().id(section)
+        case .ipv6: Ipv6Page().id(section)
+        case .kernelNetwork: KernelNetworkPage().id(section)
         default: JSONBrowserView(section: section).id(section)
         }
     }
