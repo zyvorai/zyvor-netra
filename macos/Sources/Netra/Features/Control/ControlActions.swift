@@ -129,3 +129,85 @@ struct ModeSheet: View {
         }
     }
 }
+
+/// Add or remove any fast-path rule kind through the guarded flow (dry run where the server has one).
+struct RuleSheet: View {
+    var log: ActivityLog
+    var initial = RuleDraft()
+    var onDone: () -> Void
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @State private var d = RuleDraft()
+    @State private var flow: MutationFlow?
+    @State private var seeded = false
+
+    private var directions: [String] { d.kind == .synDrop || d.kind == .synDropCIDR ? ["egress", "ingress"] : ["egress", "ingress", "both"] }
+
+    var body: some View {
+        if let flow {
+            MutationSheet(flow: flow, onClose: { onDone(); dismiss() }) {
+                Text(d.removing ? "Removes this entry; traffic it matched is no longer affected by it."
+                     : d.action == .allow ? "Exempts matching traffic from deny rules."
+                     : "Denies matching traffic. Takes effect only under an enforce lease and fails open to observe.")
+                    .font(.callout)
+            }
+        } else {
+            Form {
+                Picker("Change", selection: $d.removing) { Text("Add").tag(false); Text("Remove").tag(true) }.pickerStyle(.segmented)
+                Picker("Kind", selection: $d.kind) { ForEach(RuleKind.allCases) { Text($0.title).tag($0) } }
+                if d.kind.supportsAllow {
+                    Picker("Action", selection: $d.action) { Text("Deny").tag(RuleAction.deny); Text("Allow").tag(RuleAction.allow) }.pickerStyle(.segmented)
+                }
+                switch d.kind {
+                case .port:
+                    TextField("Port", value: $d.port, format: .number.grouping(.never))
+                    Picker("Protocol", selection: $d.proto) { ForEach(["ANY", "TCP", "UDP"], id: \.self) { Text($0).tag($0) } }
+                case .capability:
+                    Picker("Capability", selection: $d.value) { Text("CAP_NET_ADMIN").tag("CAP_NET_ADMIN"); Text("CAP_NET_RAW").tag("CAP_NET_RAW") }
+                default:
+                    TextField(placeholder, text: $d.value)
+                }
+                if d.kind == .rate {
+                    TextField("Packets/s", value: $d.pps, format: .number.grouping(.never))
+                    TextField("Bytes/s (optional)", value: $d.bps, format: .number.grouping(.never))
+                }
+                if d.kind.hasDirection {
+                    Picker("Direction", selection: $d.direction) { ForEach(directions, id: \.self) { Text($0).tag($0) } }
+                }
+                if let e = d.validationError, !(d.v.isEmpty && d.port == 0 && d.kind != .capability) {
+                    Label(e, systemImage: "exclamationmark.circle").font(.caption).foregroundStyle(.orange)
+                }
+                Text(d.hasDryRun ? "A dry run replays this against observed traffic before you confirm."
+                                 : "The server has no dry run for this change; the preview shows current rules.")
+                    .font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    Spacer()
+                    Button("Cancel") { dismiss() }
+                    Button("Continue") {
+                        guard let c = model.client else { return }
+                        flow = MutationFlow(spec: d.spec(client: c), client: c, gate: model.gate, log: log)
+                    }.disabled(d.validationError != nil || !model.gate.canMutate)
+                }
+            }
+            .padding().frame(width: 420)
+            .onAppear { if !seeded { d = initial; if d.kind == .capability && d.value.isEmpty { d.value = "CAP_NET_ADMIN" }; seeded = true } }
+            .onChange(of: d.kind) { _, k in
+                if !k.supportsAllow { d.action = .deny }
+                if k == .capability, !d.value.hasPrefix("CAP_") { d.value = "CAP_NET_ADMIN" }
+                if (k == .synDrop || k == .synDropCIDR), d.direction == "both" { d.direction = "egress" }
+            }
+        }
+    }
+
+    private var placeholder: String {
+        switch d.kind {
+        case .ip, .synDrop, .rate: "IP address"
+        case .cidr, .synDropCIDR: "CIDR (e.g. 10.0.0.0/8)"
+        case .uid: "User ID"
+        case .dns, .sni: "Name (e.g. example.com)"
+        case .process: "Process name (comm, max 15 bytes)"
+        case .exeHash: "SHA-256 (64 hex characters)"
+        default: "Value"
+        }
+    }
+}

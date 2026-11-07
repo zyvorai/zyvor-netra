@@ -1,7 +1,6 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 import SwiftUI
-import Network
 import NetraKit
 
 /// Reusable guarded-mutation sheet: preview -> (typed phrase if high risk) -> confirm.
@@ -66,46 +65,5 @@ struct MutationSheet<Extra: View>: View {
                     .foregroundStyle(.secondary)
             }
         }
-    }
-}
-
-/// Reference mutation: deny one IP (POST /ebpf/deny/preview, then POST /ebpf/deny).
-struct DenyIPSheet: View {
-    var log: ActivityLog
-    var onDone: () -> Void
-    @Environment(AppModel.self) private var model
-    @Environment(\.dismiss) private var dismiss
-    @State private var ip = ""
-    @State private var direction = DenyDirection.egress
-    @State private var flow: MutationFlow?
-
-    private var valid: Bool { IPv4Address(ip) != nil || IPv6Address(ip) != nil }
-
-    var body: some View {
-        if let flow {
-            MutationSheet(flow: flow, onClose: { onDone(); dismiss() }) {
-                Text("Deny \(direction.rawValue) traffic for \(ip).").font(.callout)
-            }
-        } else {
-            Form {
-                TextField("IP address", text: $ip)
-                Picker("Direction", selection: $direction) { ForEach(DenyDirection.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
-                HStack {
-                    Spacer()
-                    Button("Cancel") { dismiss() }
-                    Button("Continue") { begin() }.disabled(!valid || !model.gate.canMutate)
-                }
-            }.padding().frame(width: 360)
-        }
-    }
-
-    private func begin() {
-        guard let c = model.client else { return }
-        let ip = self.ip.trimmingCharacters(in: .whitespaces), dir = direction
-        let spec = MutationSpec(title: "Deny \(ip) (\(dir.rawValue))", risk: .high, expectedPhrase: "deny \(ip)", leaseBound: true,
-            preview: { c.denyPreviewRequest(ip: ip, direction: dir) },
-            summarize: { DenyPreview($0).summary },
-            execute: { c.denyRequest(ip: ip, direction: dir, confirmRisk: $0) })
-        flow = MutationFlow(spec: spec, client: c, gate: model.gate, log: log)
     }
 }

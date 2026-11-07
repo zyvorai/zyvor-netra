@@ -18,7 +18,8 @@ struct ControlView: View {
     @State private var error: String?
     @State private var loading = false
     @State private var showActivity = false
-    @State private var denySheet = false
+    @State private var ruleSheet = false
+    @State private var ruleSeed = RuleDraft()
     @State private var rollbackFlow: MutationFlow?
     @State private var captureSheet = false
     @State private var policySheet = false
@@ -72,9 +73,13 @@ struct ControlView: View {
         .toolbar {
             ToolbarItemGroup {
                 if section == .rules {
-                    Button("Deny IP…", systemImage: "nosign") { denySheet = true }
+                    Button("New rule…", systemImage: "plus.circle") { ruleSeed = RuleDraft(); ruleSheet = true }
                         .disabled(!model.gate.canMutate)
-                        .help(model.gate.canMutate ? "Preview then deny a single IP" : "This token is read-only")
+                        .help(model.gate.canMutate ? "Add or remove any rule kind, with a preview first" : "This token is read-only")
+                    Button("Remove…", systemImage: "minus.circle") {
+                        if let r = selectedRule, let d = RuleDraft.removal(from: r) { ruleSeed = d; ruleSheet = true }
+                    }
+                    .disabled(!model.gate.canMutate || selectedRule.flatMap(RuleDraft.removal(from:)) == nil)
                     Button("Roll back…", systemImage: "arrow.uturn.backward") { startRollback() }
                         .disabled(!model.gate.canMutate || selectedRule == nil || selectedRevision == nil)
                 }
@@ -108,7 +113,7 @@ struct ControlView: View {
                 }
             }
         }
-        .sheet(isPresented: $denySheet) { DenyIPSheet(log: log) { Task { await load() } } }
+        .sheet(isPresented: $ruleSheet) { RuleSheet(log: log, initial: ruleSeed) { Task { await load() } } }
         .sheet(isPresented: Binding(get: { rollbackFlow != nil }, set: { if !$0 { rollbackFlow = nil } })) {
             if let flow = rollbackFlow {
             MutationSheet(flow: flow, onClose: { rollbackFlow = nil; Task { await load(); await loadHistory() } }) {
