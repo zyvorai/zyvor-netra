@@ -74,15 +74,21 @@ struct LeaseCountdown: View {
 
 struct LeaseView: View {
     @Environment(AppModel.self) private var model
+    @State private var log = ActivityLog()
+    @State private var modeSheet = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 ModeCard().frame(maxWidth: 360)
                 if let n = model.lease?.note, !n.isEmpty { Text(n).foregroundStyle(.secondary) }
-                Text("Changing mode will go through preview and typed confirmation (coming with the Control phase).")
+                Button("Change mode…", systemImage: "shield.lefthalf.filled") { modeSheet = true }
+                    .disabled(!model.gate.canMutate)
+                    .help(model.gate.canMutate ? "Enforce is leased and fails open to observe" : "This token is read-only")
+                Text("Mode changes go through preview, and enforce needs a typed confirmation.")
                     .font(.callout).foregroundStyle(.secondary)
             }.padding(24)
         }
         .navigationTitle("Lease")
+        .sheet(isPresented: $modeSheet) { ModeSheet(log: log) }
     }
 }

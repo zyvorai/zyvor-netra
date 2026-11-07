@@ -20,6 +20,10 @@ struct ControlView: View {
     @State private var showActivity = false
     @State private var denySheet = false
     @State private var rollbackFlow: MutationFlow?
+    @State private var captureSheet = false
+    @State private var policySheet = false
+    @State private var actionFlow: MutationFlow?     // feature toggle / capture stop
+    @State private var actionNote = ""
 
     private var columns: [ControlColumn] {
         switch section {
@@ -74,12 +78,36 @@ struct ControlView: View {
                     Button("Roll back…", systemImage: "arrow.uturn.backward") { startRollback() }
                         .disabled(!model.gate.canMutate || selectedRule == nil || selectedRevision == nil)
                 }
+                if section == .policies {
+                    Button("Apply policy…", systemImage: "square.and.arrow.down") { policySheet = true }
+                        .disabled(!model.gate.canMutate).help(model.gate.canMutate ? "Plan, then apply with a plan token" : "This token is read-only")
+                }
+                if section == .features, let f = selectedRow {
+                    let on = f.text("enabled") == "true"
+                    Button(on ? "Disable…" : "Enable…", systemImage: "switch.2") { startFeatureToggle(f, enable: !on) }
+                        .disabled(!model.gate.canMutate)
+                }
+                if section == .capture {
+                    Button("Start capture…", systemImage: "record.circle") { captureSheet = true }.disabled(!model.gate.canMutate)
+                    if captureTab == 0, let c = selectedRow {
+                        Button("Stop", systemImage: "stop.circle") { startCaptureStop(c) }.disabled(!model.gate.canMutate)
+                    }
+                }
                 Toggle("Activity", systemImage: "list.bullet.rectangle", isOn: $showActivity)
                 Button("Refresh", systemImage: "arrow.clockwise") { Task { await load() } }.disabled(loading)
             }
         }
         .task(id: "\(section.rawValue)-\(captureTab)") { selection = nil; await load() }
         .task(id: selection) { await loadHistory() }
+        .sheet(isPresented: $captureSheet) { CaptureStartSheet(log: log) { Task { await load() } } }
+        .sheet(isPresented: $policySheet) { PolicyApplySheet(log: log) { Task { await load() } } }
+        .sheet(isPresented: Binding(get: { actionFlow != nil }, set: { if !$0 { actionFlow = nil } })) {
+            if let flow = actionFlow {
+                MutationSheet(flow: flow, onClose: { actionFlow = nil; Task { await load() } }) {
+                    Text(actionNote).font(.callout)
+                }
+            }
+        }
         .sheet(isPresented: $denySheet) { DenyIPSheet(log: log) { Task { await load() } } }
         .sheet(isPresented: Binding(get: { rollbackFlow != nil }, set: { if !$0 { rollbackFlow = nil } })) {
             if let flow = rollbackFlow {
@@ -88,6 +116,25 @@ struct ControlView: View {
             }
             }
         }
+    }
+
+    private var selectedRow: ControlRow? { rows.first { $0.id == selection } }
+
+    private func startFeatureToggle(_ f: ControlRow, enable: Bool) {
+        guard let c = model.client else { return }
+        let id = f.text("id"), name = f.text("title").isEmpty ? id : f.text("title")
+        let target = f.text("target")
+        let workload = target == "daemonset" ? "agent DaemonSet" : target.isEmpty ? nil : "controller Deployment"
+        actionNote = "\(enable ? "Enables" : "Disables") \(name) by patching a workload environment variable."
+        actionFlow = MutationFlow(spec: ControlMutations.featureSpec(client: c, id: id, name: name, enable: enable, restartsWorkload: workload),
+                                  client: c, gate: model.gate, log: log)
+    }
+
+    private func startCaptureStop(_ row: ControlRow) {
+        guard let c = model.client else { return }
+        let node = row.text("node")
+        actionNote = "Stops the active capture on \(node)."
+        actionFlow = MutationFlow(spec: ControlMutations.captureStopSpec(client: c, node: node), client: c, gate: model.gate, log: log)
     }
 
     private var selectedRule: ControlRow? { section == .rules ? rows.first { $0.id == selection } : nil }

@@ -3,7 +3,14 @@
 
 import Foundation
 
-public enum Risk: String, Sendable { case low, medium, high }
+public enum Risk: String, Sendable {
+    case low, medium, high, critical
+    /// High and critical changes need a typed phrase and the X-Netra-Confirm-Risk header.
+    public var requiresTypedConfirmation: Bool { self == .high || self == .critical }
+    /// The server compares the header to the plan's own risk, so critical must say "critical".
+    public var confirmHeaderValue: String { self == .critical ? "critical" : "high" }
+    public init(serverValue: String?) { self = Risk(rawValue: (serverValue ?? "").lowercased()) ?? .high }
+}
 
 public enum GateDecision: Sendable, Equatable {
     case allowed(confirmRiskHeader: Bool)
@@ -22,7 +29,7 @@ public struct MutationGate: Sendable {
     public func decide(risk: Risk, previewed: Bool, typedPhrase: String?, expectedPhrase: String) -> GateDecision {
         guard canMutate else { return .blocked(reason: "This token is read-only") }
         guard previewed else { return .needsPreview }
-        if risk == .high {
+        if risk.requiresTypedConfirmation {
             guard typedPhrase == expectedPhrase else { return .needsTypedConfirmation(phrase: expectedPhrase) }
             return .allowed(confirmRiskHeader: true)
         }

@@ -37,10 +37,17 @@ public struct MutationSpec: Sendable {
     public var preview: @Sendable () -> URLRequest
     public var summarize: @Sendable (JSONValue) -> String
     public var execute: @Sendable (_ confirmRisk: Bool) -> URLRequest
+    /// When set, replaces `execute`: the request depends on the preview result (e.g. a plan token).
+    public var executeWithPreview: (@Sendable (_ preview: JSONValue, _ confirmRisk: Bool) -> URLRequest)?
+    /// When set, the risk the server reported in the preview overrides `risk` (never below it).
+    public var riskFromPreview: (@Sendable (JSONValue) -> Risk)?
     public init(title: String, risk: Risk, expectedPhrase: String, leaseBound: Bool,
                 preview: @escaping @Sendable () -> URLRequest,
                 summarize: @escaping @Sendable (JSONValue) -> String = { $0.summary },
+                executeWithPreview: (@Sendable (JSONValue, Bool) -> URLRequest)? = nil,
+                riskFromPreview: (@Sendable (JSONValue) -> Risk)? = nil,
                 execute: @escaping @Sendable (Bool) -> URLRequest) {
+        self.executeWithPreview = executeWithPreview; self.riskFromPreview = riskFromPreview
         self.title = title; self.risk = risk; self.expectedPhrase = expectedPhrase; self.leaseBound = leaseBound
         self.preview = preview; self.summarize = summarize; self.execute = execute
     }
@@ -54,6 +61,7 @@ public final class MutationFlow {
     public let spec: MutationSpec
     public var typedPhrase = ""
     public private(set) var previewSummary: String?
+    public private(set) var previewValue: JSONValue?
     public private(set) var phase: Phase = .idle
     private let client: NetraClient
     private let gate: MutationGate
@@ -64,9 +72,21 @@ public final class MutationFlow {
     }
 
     public var previewed: Bool { previewSummary != nil }
+    /// The stricter of the declared risk and whatever the server reported in the preview.
+    public var effectiveRisk: Risk {
+        guard let v = previewValue, let f = spec.riskFromPreview else { return spec.risk }
+        let r = f(v)
+        return Self.rank(r) >= Self.rank(spec.risk) ? r : spec.risk
+    }
+    private static func rank(_ r: Risk) -> Int { [Risk.low: 0, .medium: 1, .high: 2, .critical: 3][r]! }
+    private func request(confirmRisk: Bool) -> URLRequest {
+        var r = (spec.executeWithPreview.flatMap { f in previewValue.map { f($0, confirmRisk) } }) ?? spec.execute(confirmRisk)
+        if confirmRisk { r.setValue(effectiveRisk.confirmHeaderValue, forHTTPHeaderField: "X-Netra-Confirm-Risk") }
+        return r
+    }
     public var decision: GateDecision {
-        gate.decide(risk: spec.risk, previewed: previewed,
-                    typedPhrase: spec.risk == .high ? typedPhrase : nil, expectedPhrase: spec.expectedPhrase)
+        gate.decide(risk: effectiveRisk, previewed: previewed,
+                    typedPhrase: effectiveRisk.requiresTypedConfirmation ? typedPhrase : nil, expectedPhrase: spec.expectedPhrase)
     }
     public var canPreview: Bool { gate.canMutate && phase != .previewing && phase != .running }
     public var canConfirm: Bool {
@@ -85,16 +105,17 @@ public final class MutationFlow {
         do {
             let data = try await client.send(req)
             let v = (try? JSONDecoder().decode(JSONValue.self, from: data)) ?? .null
+            previewValue = v
             previewSummary = spec.summarize(v)
             phase = .idle
         } catch {
-            previewSummary = nil
+            previewSummary = nil; previewValue = nil
             phase = .failed("Preview failed: \(Self.describe(error))")
         }
     }
 
     public func confirm() async {
-        let probe = spec.execute(false)
+        let probe = request(confirmRisk: false)
         let method = probe.httpMethod ?? "", path = probe.url?.path ?? ""
         switch decision {
         case .blocked(let r):
@@ -107,7 +128,7 @@ public final class MutationFlow {
             phase = .running
             log.append(title: spec.title, method: method, path: path, outcome: .attempted, detail: header ? "confirm-risk: high" : "")
             do {
-                let data = try await client.send(spec.execute(header))
+                let data = try await client.send(request(confirmRisk: header))
                 let msg = "HTTP OK, \(data.count) bytes"
                 log.append(title: spec.title, method: method, path: path, outcome: .succeeded, detail: msg)
                 phase = .done(msg)

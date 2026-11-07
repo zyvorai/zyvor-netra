@@ -27,13 +27,13 @@ struct MutationSheet<Extra: View>: View {
                         .foregroundStyle(flow.previewed ? Color.primary : Color.secondary)
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-            if flow.spec.risk == .high {
-                GroupBox("2. Type to confirm (high risk)") {
+            if flow.effectiveRisk.requiresTypedConfirmation {
+                GroupBox("2. Type to confirm (\(flow.effectiveRisk.rawValue) risk)") {
                     VStack(alignment: .leading) {
                         Text("Type: \(flow.spec.expectedPhrase)").font(.system(.body, design: .monospaced))
                         TextField("confirmation phrase", text: $flow.typedPhrase)
                             .disabled(!model.gate.canMutate || !flow.previewed)
-                        Text("Sends X-Netra-Confirm-Risk: high").font(.caption).foregroundStyle(.secondary)
+                        Text("Sends X-Netra-Confirm-Risk: \(flow.effectiveRisk.confirmHeaderValue)").font(.caption).foregroundStyle(.secondary)
                     }.frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
