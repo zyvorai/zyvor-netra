@@ -67,6 +67,16 @@ enum Form {
         return true
     }
 
+    /// URLComponents leaves a literal `+` in a query value, and the Go server reads `+` as a space.
+    /// Every `+` left in the query after URLComponents encoded it came from user text, so make it `%2B`.
+    static func encodePlus(_ r: URLRequest) -> URLRequest {
+        guard let u = r.url, var c = URLComponents(url: u, resolvingAgainstBaseURL: false), let q = c.percentEncodedQuery, q.contains("+") else { return r }
+        c.percentEncodedQuery = q.replacingOccurrences(of: "+", with: "%2B")
+        var out = r
+        out.url = c.url ?? u
+        return out
+    }
+
     static func summarizePlan(_ v: JSONValue, risk: String?) -> String {
         let dry = v["dryRun"]
         var s = "Plan risk: \(risk ?? "unknown")."
@@ -183,10 +193,10 @@ extension ControlAction {
 
     static func nodeIsolationSpec(_ c: NetraClient, _ v: FormValues) -> Result<MutationSpec, FormError> {
         let node = Form.str(v, "node"), mode = Form.str(v, "mode")
-        guard !node.isEmpty, node.count <= 253, !node.contains(where: { "/ \t\r\n".contains($0) }) else { return .failure(.init("A valid node name is required")) }
+        guard !node.isEmpty, node.utf8.count <= 253, !node.contains(where: { "/ \t\r\n".contains($0) }) else { return .failure(.init("A valid node name is required")) }
         guard ["shadow", "enforce"].contains(mode) else { return .failure(.init("Mode must be shadow or enforce")) }
         let policyId = Form.str(v, "policyId")
-        guard policyId.count <= 128 else { return .failure(.init("Policy ID is too long (max 128)")) }
+        guard policyId.utf8.count <= 128 else { return .failure(.init("Policy ID is too long (max 128)")) }
         var rules: [[String: Any]] = []
         for (i, line) in Form.lines(v, "rules").enumerated() {
             let p = line.split(separator: " ").map(String.init)
@@ -216,6 +226,7 @@ extension ControlAction {
             if ex.lowercased() == "none" { body["exemptLocalPorts"] = [Int](); dropsSSH = true }
             else {
                 let ports = Form.list(v, "exempt").map { Int($0) }
+                guard !ports.isEmpty else { return .failure(.init("Exempt ports: list at least one port, or type 'none' to remove every exemption")) }
                 guard ports.count <= 16, ports.allSatisfy({ $0.map { (1...65535).contains($0) } ?? false }) else { return .failure(.init("Exempt ports must be up to 16 numbers, 1–65535")) }
                 let set = Array(Set(ports.compactMap { $0 })).sorted()
                 body["exemptLocalPorts"] = set; dropsSSH = !set.contains(22)
@@ -281,9 +292,10 @@ extension ControlAction {
                 let data = Form.json(body), enforce = mode == "enforce"
                 return .success(MutationSpec(
                     title: "Set shield to \(mode)", risk: enforce ? .high : .low, expectedPhrase: enforce ? "shield enforce" : "", leaseBound: false,
-                    preview: { c.request("GET", "api/v1/ebpf/shield") },
+                    // GET /ebpf/shield is the drop diagnostics, not the config; the stored shield config is in /ebpf/config.
+                    preview: { c.request("GET", "api/v1/ebpf/config") },
                     summarize: { r in
-                        let cur = r["config"]?["mode"]?.string ?? r["mode"]?.string ?? "unknown"
+                        let cur = r["shield"]?["mode"]?.string ?? "off (never configured)"
                         return "Shield is currently \(cur); it will become \(mode)." + (enforce ? " Enforce drops packets over the thresholds for protected addresses." : "")
                     },
                     execute: { _ in c.request("PUT", "api/v1/ebpf/shield", body: data) }))
@@ -349,8 +361,8 @@ extension ControlAction {
                     title: "Remove connection limit \(id)", risk: .low, expectedPhrase: "", leaseBound: false,
                     preview: { c.request("GET", "api/v1/ebpf/config") },
                     summarize: { r in
-                        let have = r["connRateLimits"]?.controlItems.contains { $0["id"]?.string == id }
-                        return have == false ? "No limit with ID \(id) is listed; the server will answer 404." : "Removes limit \(id)."
+                        let have = (r["connRateLimits"]?.controlItems ?? []).contains { $0["id"]?.string == id }   // omitempty: absent means none
+                        return !have ? "No limit with ID \(id) is listed; the server will answer 404." : "Removes limit \(id)."
                     },
                     execute: { _ in c.request("DELETE", "api/v1/ebpf/conn-rate-limit/\(id)") }))
             }),
@@ -401,8 +413,8 @@ extension ControlAction {
                     title: "Remove network policy rule \(id)", risk: .low, expectedPhrase: "", leaseBound: false,
                     preview: { c.request("GET", "api/v1/ebpf/config") },
                     summarize: { r in
-                        let have = r["netPolRules"]?.controlItems.contains { $0["id"]?.string == id }
-                        return have == false ? "No rule with ID \(id) is listed; the server will answer 404." : "Removes rule \(id)."
+                        let have = (r["netPolRules"]?.controlItems ?? []).contains { $0["id"]?.string == id }   // omitempty: absent means none
+                        return !have ? "No rule with ID \(id) is listed; the server will answer 404." : "Removes rule \(id)."
                     },
                     execute: { _ in c.request("DELETE", "api/v1/ebpf/netpol/rules/\(id)") }))
             }),
@@ -500,7 +512,7 @@ extension ControlAction {
             id: "deny-import", group: "Rules", title: "Import a deny list",
             summary: "Bulk-add IP, CIDR, DNS and SNI denies. Partial success is reported per entry. Active only while enforce is leased.",
             symbol: "square.and.arrow.down.on.square", maxRisk: .high,
-            fields: [.init("entries", "Entries", .multiline, help: "One per line: value, or type value [direction]. Max 1000. # starts a comment.")],
+            fields: [.init("entries", "Entries", .multiline, help: "One per line: value, or type value [direction]. Direction (ip and cidr only) defaults to egress. Max 1000. # starts a comment.")],
             build: { c, v in
                 let (entries, err) = parseDenyImport(Form.lines(v, "entries"))
                 if let err { return .failure(.init(err)) }
@@ -524,6 +536,10 @@ extension ControlAction {
 
     // MARK: Threat-intel feed
 
+    /// GET /intel/feed answers {feed: {revision, count, ...}, entries: [...]}.
+    static func feedRevision(_ r: JSONValue) -> String { (r["feed"]?["revision"] ?? r["revision"])?.summary ?? "?" }
+    static func feedEntryCount(_ r: JSONValue) -> Int { r["feed"]?["count"]?.controlInt ?? r["entries"]?.controlItems.count ?? 0 }
+
     static let intel: [ControlAction] = [
         ControlAction(
             id: "intel-feed-put", group: "Threat intel", title: "Replace the intel feed",
@@ -540,7 +556,10 @@ extension ControlAction {
                 let ttl = Form.int(v, "ttlHours") ?? 0
                 guard (0...720).contains(ttl) else { return .failure(.init("Expiry must be 0–720 hours")) }
                 let note = Form.str(v, "note"), source = Form.str(v, "source")
-                guard note.count <= 1024, source.count <= 512 else { return .failure(.init("Source or note is too long")) }
+                guard note.utf8.count <= 1024, source.utf8.count <= 512 else { return .failure(.init("Source or note is too long")) }
+                guard source.unicodeScalars.allSatisfy({ $0.isASCII && $0.value >= 0x20 && $0.value != 0x7F }) else {
+                    return .failure(.init("Source is sent as an HTTP header: use printable ASCII only"))
+                }
                 let data = Data(text.utf8)
                 var qv: [URLQueryItem] = []
                 if !note.isEmpty { qv.append(.init(name: "note", value: note)) }
@@ -551,10 +570,12 @@ extension ControlAction {
                     preview: { var r = c.request("POST", "api/v1/intel/preview", body: data); r.setValue("text/plain", forHTTPHeaderField: "Content-Type"); return r },
                     summarize: { r in
                         let n = r["preview"]?["entries"]?.controlItems.count ?? 0
-                        return "The server parsed \(n) entr\(n == 1 ? "y" : "ies"). Storing it replaces the active feed but applies no denies."
+                        let skipped = r["preview"]?["skipped"]?.controlItems.count ?? 0
+                        return "The server parsed \(n) entr\(n == 1 ? "y" : "ies")" + (skipped > 0 ? " and skipped \(skipped) line(s)" : "")
+                            + ". Storing it replaces the active feed but applies no denies."
                     },
                     execute: { _ in
-                        var r = c.request("PUT", "api/v1/intel/feed", query: q, body: data)
+                        var r = Form.encodePlus(c.request("PUT", "api/v1/intel/feed", query: q, body: data))
                         r.setValue("text/plain", forHTTPHeaderField: "Content-Type")
                         if !source.isEmpty { r.setValue(source, forHTTPHeaderField: "X-Netra-Intel-Source") }
                         return r
@@ -568,7 +589,7 @@ extension ControlAction {
                 .success(MutationSpec(
                     title: "Clear the intel feed", risk: .medium, expectedPhrase: "", leaseBound: false,
                     preview: { c.request("GET", "api/v1/intel/feed") },
-                    summarize: { r in "Clears feed revision \(r["revision"]?.summary ?? "?"). Already-applied denies stay." },
+                    summarize: { r in "Clears feed revision \(ControlAction.feedRevision(r)) (\(ControlAction.feedEntryCount(r)) entr\(ControlAction.feedEntryCount(r) == 1 ? "y" : "ies")). Already-applied denies stay." },
                     execute: { _ in c.request("DELETE", "api/v1/intel/feed") }))
             }),
         ControlAction(
@@ -580,7 +601,7 @@ extension ControlAction {
                 return .success(MutationSpec(
                     title: "Roll back the intel feed to revision \(rev)", risk: .medium, expectedPhrase: "", leaseBound: false,
                     preview: { c.request("GET", "api/v1/intel/feed") },
-                    summarize: { r in "Current feed is revision \(r["revision"]?.summary ?? "?"); this restores revision \(rev)." },
+                    summarize: { r in "Current feed is revision \(ControlAction.feedRevision(r)); this restores revision \(rev) (the server answers 400 if that revision is not in its history)." },
                     execute: { _ in c.request("POST", "api/v1/intel/rollback/\(rev)") }))
             }),
         ControlAction(
@@ -597,6 +618,7 @@ extension ControlAction {
                     preview: { c.request("GET", "api/v1/intel/feed") },
                     summarize: { r in
                         let n = r["entries"]?.controlItems.count ?? r["feed"]?["entries"]?.controlItems.count
+                        if n == 0 { return "The active feed is empty: the server answers 400 and nothing is applied." }
                         return (n.map { "The feed has \($0) entr\($0 == 1 ? "y" : "ies"). " } ?? "")
                             + (matched ? "Only entries that matched live traffic become denies." : "Every entry becomes a deny rule.")
                             + " Requires enforce mode with an active lease."

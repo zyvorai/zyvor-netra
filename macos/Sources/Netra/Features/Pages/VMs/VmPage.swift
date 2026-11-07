@@ -16,7 +16,7 @@ struct VmPage: View {
                 PageColumn(title: "Phase", path: "phase"),
                 PageColumn(title: "Node", path: "node"),
                 PageColumn(title: "Pod IP", path: "podIP"),
-                PageColumn(title: "Locked down", path: "lockedDown"),
+                PageColumn(title: "Locked down", path: "lockedDown", kind: .bool),
             ],
             stats: [PageStat(title: "VMs", symbol: "desktopcomputer") { String($0.rows(at: "items").count) },
                     PageStat(title: "Running", symbol: "play.circle", tint: .green) { v in

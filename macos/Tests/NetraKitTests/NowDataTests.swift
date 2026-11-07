@@ -91,4 +91,39 @@ final class NowDataTests: XCTestCase {
         XCTAssertEqual(c[0].value, 88)
         XCTAssertEqual(c[3].value, 0)
     }
+
+    // Fixtures copy the Go json tags (models.NetworkHealthResponse, api.sloView, scorecard, compliance, auditstats, report).
+    func testGoShapedPayloads() {
+        let health = j(#"{"summary":{"tcpConnections":1,"tcpRetransmissions":4,"tcpRtos":0,"tcpResets":1,"averageSrttUs":2500,"maxSrttUs":9,"dnsQueries":3,"dnsResponses":3,"dnsFailures":1,"averageDnsLatencyUs":1,"maxDnsLatencyUs":1,"connectionAttempts":2,"estimatedConnectFailures":1,"udpFlows":0,"udpPackets":0,"udpBytes":0,"quicObservedFlows":0,"quicLongHeaderPackets":0,"healthScore":88,"topTcpProblems":[{"family":"ipv4","localIp":"1.1.1.1","remoteIp":"2.2.2.2","localPort":1,"remotePort":443,"retransmissions":7,"comm":"curl"}],"topDnsProblems":[{"name":"x.io","failures":2}],"anomalies":[{"severity":"warning","kind":"k","subject":"s","message":"m","value":1.5}]},"tcp":[],"dns":[],"signals":[],"udp":[],"quic":[]}"#)
+        XCTAssertEqual(NowData.topRetransmitters(health).first?.name, "2.2.2.2:443 (curl)")
+        XCTAssertEqual(NowData.topDNSFailures(health).first?.value, 2)
+        XCTAssertEqual(NowData.worstAnomaly(health), .warning)
+        XCTAssertEqual(CellFormat.text(health.at("summary.averageSrttUs").map { .number(($0.asDouble ?? 0) / 1000) }, .millis), "2.50 ms")
+
+        let slo = j(#"{"enabled":true,"workloadSeriesEnabled":false,"items":[{"name":"api","sli":"availability","namespace":"shop","workload":"web","targetPct":99.9,"window":"30d","severity":"ticket","hasData":true,"total":1000,"errors":3,"compliancePct":99.7,"budgetRemaining":0.25,"windows":[{"kind":"fast","long":"1h","short":"5m","longBurn":2.5,"shortBurn":3,"threshold":14.4,"firing":false}]}]}"#)
+        let it = NowData.sloItems(slo)[0]
+        XCTAssertEqual(it.scope, "shop/web"); XCTAssertEqual(it.severity, .warning); XCTAssertEqual(it.budgetRemaining, 0.25)
+        XCTAssertEqual(it.errors, 3); XCTAssertTrue(it.hasData); XCTAssertEqual(it.windows[0].long, "1h"); XCTAssertEqual(it.windows[0].threshold, 14.4)
+
+        let sc = j(#"{"generatedAt":"2026-01-01T00:00:00Z","score":80,"band":"amber","headline":"h","healthScore":90,"staleAgents":1,"detachedPrograms":2,"missingMaps":3,"blockedEvents":4,"notes":["n"]}"#)
+        XCTAssertEqual(NowData.scorecardCounters(sc).map(\.value), [90, 1, 2, 3, 4])
+        XCTAssertEqual(NowSeverity(sc.at("band")?.string), .warning)
+
+        let comp = j(#"{"generatedAt":"2026-01-01T00:00:00Z","packs":[{"id":"cis","title":"CIS","description":"d","generatedAt":"2026-01-01T00:00:00Z","controls":[{"id":"1.1","title":"t","cisRef":"3.1","status":"warn","severity":"high","evidence":"e","remediation":"r","nodes":2}],"passed":0,"failed":0,"warned":1,"note":"n"}],"sysctlSummary":{"nodes":3,"findings":0,"critical":0,"warnings":0,"informational":0,"outliers":0},"note":"n"}"#)
+        let c = NowData.controls(comp)[0]
+        XCTAssertEqual(c.cisRef, "3.1"); XCTAssertEqual(c.status, .warning); XCTAssertEqual(c.nodes, 2); XCTAssertEqual(NowData.packSummaries(comp)[0].warned, 1)
+        XCTAssertEqual(comp.at("sysctlSummary.nodes")?.asDouble, 3)
+
+        let aud = j(#"{"total":2,"byActor":[{"key":"alice","count":2}],"byAction":[{"key":"mode.set","count":2}],"byHour":[{"hour":"2026-01-01T10:00:00Z","count":2}]}"#)
+        XCTAssertEqual(NowData.auditTop(aud, key: "byActor").first?.name, "alice")
+        XCTAssertEqual(NowData.auditHours(aud).first?.1, 2)
+        let ev = j(#"{"items":[{"at":"2026-01-01T10:00:00.123456Z","actor":"a","action":"x","target":"t","details":{"k":"v","n":1}}]}"#)
+        XCTAssertNotNil(CellFormat.date(ev.at("items.0.at"))); XCTAssertEqual(NowData.auditDetails(ev.at("items.0")!), "k=v n=1")
+
+        let rep = j(#"{"generatedAt":"2026-01-01T00:00:00Z","headline":"h","mode":"observe","agents":2,"staleAgents":0,"healthScore":91,"packets":10,"blocked":1,"tcpRetransmissions":1,"dnsFailures":1,"anomalyCount":1,"driftFindings":0,"rateDriftFindings":0,"highExposure":0,"incidentClusters":0,"attention":["a"],"recentAudit":["r"],"leaseExpiresAt":"0001-01-01T00:00:00Z"}"#)
+        for k in ["headline", "mode", "agents", "healthScore", "packets", "blocked", "anomalyCount", "driftFindings", "rateDriftFindings", "highExposure", "incidentClusters", "tcpRetransmissions", "dnsFailures"] {
+            XCTAssertFalse(CellFormat.text(rep.at(k), .text).isEmpty, k)
+        }
+        XCTAssertNil(NowData.realDate(rep.at("leaseExpiresAt")))
+    }
 }

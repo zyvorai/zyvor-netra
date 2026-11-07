@@ -7,6 +7,20 @@ import XCTest
 final class PageDataTests: XCTestCase {
     private func json(_ s: String) -> JSONValue { try! JSONDecoder().decode(JSONValue.self, from: Data(s.utf8)) }
 
+    func testGoZeroTimeIsBlankNotYearOne() {
+        let zero = JSONValue.string("0001-01-01T00:00:00Z")
+        XCTAssertNil(CellFormat.date(zero))
+        XCTAssertEqual(CellFormat.text(zero, .time), "")
+        XCTAssertNotNil(CellFormat.date(.string("2026-11-07T14:25:15.123456789Z")) ?? CellFormat.date(.string("2026-11-07T14:25:15Z")))
+    }
+
+    func testScalarArraysRenderAsLists() {
+        XCTAssertEqual(CellFormat.text(.array([.string("a"), .string("b")]), .text), "a, b")
+        XCTAssertEqual(CellFormat.text(.array((1...8).map { .number(Double($0)) }), .text), "1, 2, 3, 4, 5, 6, +2")
+        XCTAssertEqual(CellFormat.text(.array([.object(["k": .null])]), .text), "[1]")
+        XCTAssertEqual(CellFormat.text(.array([]), .text), "[0]")
+    }
+
     func testDottedPathAndArrayIndex() {
         let v = json(#"{"a":{"b":[{"n":"x"},{"n":"y"}]},"c":3}"#)
         XCTAssertEqual(v.at("a.b.1.n")?.string, "y")

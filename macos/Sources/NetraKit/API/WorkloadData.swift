@@ -335,6 +335,7 @@ public enum WorkloadData {
                 "directionName": .string(num(f, "direction") == 1 ? "ingress" : "egress"),
                 "workload": .string(workloadText(f)),
                 "level": .string(lvl.label),
+                "levelRank": .number(Double(lvl.rawValue)),
             ]))
         }
     }

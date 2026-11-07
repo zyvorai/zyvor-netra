@@ -42,7 +42,7 @@ struct TLSPage: View {
                     WCol(title: "SNI", path: "sni", width: 170), WCol(title: "JA3", path: "ja3Short", width: 100),
                     WCol(title: "TLS", path: "versionText"), WCol(title: "ALPN", path: "alpn"),
                     WCol(title: "Seen", path: "count", kind: .int), WCol(title: "Last seen", path: "lastSeen", kind: .time),
-                    WCol(title: "Node", path: "node"), WCol(title: "Workload", path: "workloadName"),
+                    WCol(title: "Node", path: "node"), WCol(title: "JA4", path: "ja4", width: 150),
                 ], query: query, empty: "No TLS fingerprints observed yet.", fields: [
                     WField(label: "SNI", path: "sni"), WField(label: "JA3", path: "ja3"), WField(label: "JA4", path: "ja4"),
                     WField(label: "TLS version", path: "versionText"), WField(label: "ALPN", path: "alpn"),
@@ -50,7 +50,6 @@ struct TLSPage: View {
                     WField(label: "Risk", path: "riskLevel"), WField(label: "Reasons", path: "reasons"),
                     WField(label: "Seen", path: "count", kind: .int), WField(label: "First seen", path: "firstSeen", kind: .time),
                     WField(label: "Last seen", path: "lastSeen", kind: .time), WField(label: "Node", path: "node"),
-                    WField(label: "Source", path: "source"),
                 ])
             }
         }

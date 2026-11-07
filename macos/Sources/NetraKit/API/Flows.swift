@@ -56,7 +56,7 @@ public struct FlowRecord: Codable, Sendable, Identifiable, Hashable {
             for key in ["TCP", "tcp", "UDP", "udp", "SCTP", "sctp", "ICMPv4", "icmpv4", "ICMPv6", "icmpv6"] {
                 if let v = l4[key] {
                     p = key.uppercased().replacingOccurrences(of: "ICMPV", with: "ICMPv")
-                    sp = Int(v["sourcePort"]?.double ?? 0); dp = Int(v["destinationPort"]?.double ?? 0)
+                    sp = v["sourcePort"]?.controlInt ?? 0; dp = v["destinationPort"]?.controlInt ?? 0
                     break
                 }
             }
@@ -79,12 +79,7 @@ public struct FlowRecord: Codable, Sendable, Identifiable, Hashable {
     }
 
     static func parseDate(_ s: String) -> Date? {
-        guard !s.isEmpty else { return nil }
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = f.date(from: s) { return d }
-        f.formatOptions = [.withInternetDateTime]
-        return f.date(from: s)
+        NetraDate.parse(s)
     }
 
     public var sourceEndpoint: String { sourcePort > 0 ? "\(sourceIP):\(sourcePort)" : sourceIP }
@@ -140,8 +135,8 @@ public struct FlowHistoryRecord: Codable, Sendable, Identifiable, Hashable {
     }
     public init(from d: Decoder) throws {
         let c = try d.container(keyedBy: CodingKeys.self)
-        func s(_ k: CodingKeys) -> String { (try? c.decodeIfPresent(String.self, forKey: k)) ?? "" }
-        func i(_ k: CodingKeys) -> Int { Int((try? c.decodeIfPresent(Double.self, forKey: k)) ?? 0) }
+        func s(_ k: CodingKeys) -> String { LenientDecode.string(c, k) ?? "" }
+        func i(_ k: CodingKeys) -> Int { LenientDecode.double(c, k).flatMap(LenientDecode.int64).map { Int(clamping: $0) } ?? 0 }
         observedAt = s(.observedAt); node = s(.node); namespace = s(.namespace); pod = s(.pod)
         workload = [s(.workloadKind), s(.workloadName)].filter { !$0.isEmpty }.joined(separator: "/")
         peer = s(.peer); port = i(.port); proto = s(.protocol_); direction = s(.direction)
@@ -167,8 +162,8 @@ public struct FlowHistory: Codable, Sendable {
     public init(from d: Decoder) throws {
         let c = try d.container(keyedBy: K.self)
         records = (try? c.decodeIfPresent([FlowHistoryRecord].self, forKey: .records)) ?? []
-        matched = (try? c.decodeIfPresent(Int.self, forKey: .matched)) ?? records.count
-        truncated = (try? c.decodeIfPresent(Bool.self, forKey: .truncated)) ?? false
+        matched = LenientDecode.double(c, .matched).flatMap(LenientDecode.int64).map { Int(clamping: $0) } ?? records.count
+        truncated = LenientDecode.bool(c, .truncated) ?? false
         limitations = (try? c.decodeIfPresent([String].self, forKey: .limitations)) ?? []
     }
     enum K: String, CodingKey { case records, matched, truncated, limitations }
@@ -178,6 +173,13 @@ public struct FlowNamedCount: Codable, Sendable, Hashable, Identifiable {
     public var name: String
     public var count: Int
     public var id: String { name }
+    public init(name: String, count: Int) { self.name = name; self.count = count }
+    enum K: String, CodingKey { case name, count }
+    public init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: K.self)
+        name = LenientDecode.string(c, .name) ?? ""
+        count = LenientDecode.double(c, .count).flatMap(LenientDecode.int64).map { Int(clamping: $0) } ?? 0
+    }
 }
 
 /// GET /api/v1/flows/summary (models.FlowsSummary).
@@ -190,11 +192,17 @@ public struct FlowsSummary: Codable, Sendable {
     public var topWorkloads: [FlowNamedCount]
     public var topBlockedWorkloads: [FlowNamedCount]
     enum K: String, CodingKey { case total, verdicts, protocols, dropReasons, topDestinations, topWorkloads, topBlockedWorkloads }
+    /// Go map[string]uint64 (nil map encodes as null); tolerates float-formatted counts.
+    static func counts(_ c: KeyedDecodingContainer<K>, _ k: K) -> [String: Int] {
+        if let m = try? c.decodeIfPresent([String: Int].self, forKey: k) { return m }
+        guard let m = try? c.decodeIfPresent([String: Double].self, forKey: k) else { return [:] }
+        return m.compactMapValues { LenientDecode.int64($0).map { Int(clamping: $0) } }
+    }
     public init(from d: Decoder) throws {
         let c = try d.container(keyedBy: K.self)
-        total = (try? c.decodeIfPresent(Int.self, forKey: .total)) ?? 0
-        verdicts = (try? c.decodeIfPresent([String: Int].self, forKey: .verdicts)) ?? [:]
-        protocols = (try? c.decodeIfPresent([String: Int].self, forKey: .protocols)) ?? [:]
+        total = LenientDecode.double(c, .total).flatMap(LenientDecode.int64).map { Int(clamping: $0) } ?? 0
+        verdicts = FlowsSummary.counts(c, .verdicts)
+        protocols = FlowsSummary.counts(c, .protocols)
         dropReasons = (try? c.decodeIfPresent([FlowNamedCount].self, forKey: .dropReasons)) ?? []
         topDestinations = (try? c.decodeIfPresent([FlowNamedCount].self, forKey: .topDestinations)) ?? []
         topWorkloads = (try? c.decodeIfPresent([FlowNamedCount].self, forKey: .topWorkloads)) ?? []

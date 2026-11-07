@@ -57,11 +57,20 @@ extension JSONValue {
 }
 
 public enum CellFormat {
+    /// Go's zero `time.Time` serialises as 0001-01-01T00:00:00Z (omitempty does not drop structs): treat anything before 1971 as unset.
+    static func isUnsetTime(_ d: Date) -> Bool { d.timeIntervalSince1970 < 31_536_000 }
+
+    static func isUnsetTimeValue(_ v: JSONValue) -> Bool {
+        guard case .string(let s) = v else { return false }
+        return s.hasPrefix("0001-") || s.hasPrefix("0000-")
+    }
+
     public static func date(_ v: JSONValue?) -> Date? {
         switch v {
         case .string(let s)?:
-            return (try? Date(s, strategy: Date.ISO8601FormatStyle(includingFractionalSeconds: true)))
+            let d = (try? Date(s, strategy: Date.ISO8601FormatStyle(includingFractionalSeconds: true)))
                 ?? (try? Date(s, strategy: Date.ISO8601FormatStyle()))
+            return d.flatMap { isUnsetTime($0) ? nil : $0 }
         case .number(let n)?:
             if n <= 0 { return nil }
             return Date(timeIntervalSince1970: n > 1e12 ? n / 1000 : n)    // seconds or milliseconds
@@ -89,10 +98,21 @@ public enum CellFormat {
     }
 
     /// Display text for a cell. Missing/null shows as an empty string, never "null".
+    /// Arrays of scalars read as "a, b, c" (capped) instead of "[3]"; nested arrays/objects keep the count summary.
+    static func listText(_ v: JSONValue, limit: Int = 6) -> String? {
+        guard case .array(let a) = v, !a.isEmpty else { return nil }
+        var parts: [String] = []
+        for e in a {
+            switch e { case .array, .object: return nil; default: parts.append(e.summary) }
+        }
+        let shown = parts.prefix(limit).joined(separator: ", ")
+        return parts.count > limit ? "\(shown), +\(parts.count - limit)" : shown
+    }
+
     public static func text(_ v: JSONValue?, _ kind: CellKind, now: Date = Date()) -> String {
         guard let v, v != .null else { return "" }
         switch kind {
-        case .text: return v.summary
+        case .text: return listText(v) ?? v.summary
         case .int: return v.asDouble.map { String(Int($0.rounded())) } ?? v.summary
         case .number(let d): return v.asDouble.map { String(format: "%.\(d)f", $0) } ?? v.summary
         case .bytes: return v.asDouble.map(bytes) ?? v.summary
@@ -101,7 +121,9 @@ public enum CellFormat {
         case .seconds: return v.asDouble.map(duration) ?? v.summary
         case .millis: return v.asDouble.map { $0 < 10 ? String(format: "%.2f ms", $0) : String(format: "%.0f ms", $0) } ?? v.summary
         case .bool: if case .bool(let b) = v { return b ? "yes" : "no" }; return v.summary
-        case .time: return date(v).map { relative($0, now: now) } ?? v.summary
+        case .time:
+            if isUnsetTimeValue(v) { return "" }
+            return date(v).map { relative($0, now: now) } ?? v.summary
         }
     }
 

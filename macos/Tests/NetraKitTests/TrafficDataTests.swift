@@ -56,4 +56,22 @@ final class TrafficDataTests: XCTestCase {
         XCTAssertEqual(TrafficData.percent(1, of: 4), "25.0%")
         XCTAssertEqual(TrafficData.percent(1, of: 0), "–")
     }
+
+    // Fixtures copy the Go json tags (talkers/portheat/protomix/dnsboard Row, api.dropInfoView, models.DropDiagnosticsResponse).
+    func testGoShapedPayloads() throws {
+        func j(_ s: String) -> JSONValue { try! JSONDecoder().decode(JSONValue.self, from: Data(s.utf8)) }
+        let t = j(#"{"generatedAt":"2026-01-01T00:00:00Z","rows":[{"destination":"10.0.0.1","packets":10,"bytes":1000,"blocked":2,"nodes":1}],"count":1}"#)
+        XCTAssertEqual(TrafficData.talkerBars(t).first?.label, "10.0.0.1"); XCTAssertEqual(TrafficData.talkerBars(t).first?.blocked, 2)
+        let p = j(#"{"generatedAt":"x","rows":[{"port":443,"protocol":"tcp","key":"tcp/443","packets":5,"blocked":0,"flows":2}],"count":1}"#)
+        XCTAssertEqual(TrafficData.portBars(p).first?.label, "tcp/443")
+        let pr = j(#"{"generatedAt":"x","rows":[{"protocol":"tcp","packets":5,"bytes":9,"blocked":0,"flows":2}]}"#)
+        XCTAssertEqual(TrafficData.protocolBars(pr).first?.label, "tcp")
+        let d = j(#"{"generatedAt":"x","rows":[{"name":"a.io","queries":10,"responses":9,"failures":1,"failRate":0.1}],"queries":10,"failures":1}"#)
+        XCTAssertEqual(TrafficData.dnsBars(d).first?.value, 1)
+        let drops = j(#"{"summary":{"kernelDropEvents":3,"anomalies":null},"nodes":[{"node":"n","kernelDrops":[{"reason":2,"reasonName":"NETFILTER_DROP","count":7,"lastSeenNs":1}],"stack":{}}]}"#)
+        XCTAssertEqual(TrafficData.kernelReasonBars(drops).first?.label, "NETFILTER_DROP")
+        let info = j(#"{"nodes":[],"nodesReporting":1,"nodesNotReporting":0,"totals":{"drops":5,"withTuple":4},"reasons":[{"reason":"NO_SOCKET","count":5}],"sites":[{"reason":"NO_SOCKET","location":"tcp_v4_rcv","count":5}],"flows":[{"node":"n","family":"ipv4","proto":"tcp","src":"1.1.1.1","dst":"2.2.2.2","srcPort":1,"dstPort":2,"reason":"NO_SOCKET","count":5,"location":"f"}]}"#)
+        XCTAssertEqual(TrafficData.rankedBars(info, at: "reasons", valueKey: "count") { $0["reason"]?.string }.first?.value, 5)
+        XCTAssertEqual(info.at("flows.0.dst")?.string, "2.2.2.2"); XCTAssertEqual(info.at("totals.withTuple")?.asDouble, 4)
+    }
 }

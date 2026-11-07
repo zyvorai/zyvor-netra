@@ -105,3 +105,55 @@ final class DetectDataTests: XCTestCase {
         XCTAssertEqual(b.map(\.hops), [0, 1]); XCTAssertEqual(b.map(\.nodes), [1, 2])
     }
 }
+
+
+// Fixtures copy the Go struct tags (internal/models/history.go, internal/models/insights.go, internal/securityreview,
+// internal/intel, internal/watchlist, internal/api/security_review.go, internal/api/intel_live.go).
+extension DetectDataTests {
+    func testRateDriftWindowSecondsUsesRequestedWindowSeconds() {
+        let v = json(#"{"window":{"generatedAt":"2026-11-07T10:00:00Z","requestedWindowSeconds":300,"warming":false,"metrics":[]},"findings":[]}"#)
+        XCTAssertEqual(DetectData.rateDriftWindowSeconds(v), 300)
+        XCTAssertNil(DetectData.rateDriftWindowSeconds(json(#"{"window":{"windowSeconds":300}}"#)))
+    }
+
+    func testSecurityReviewWrappedShape() {
+        let v = json(#"""
+        {"result":{"items":[{"id":"i1","node":"n1","namespace":"prod","pod":"web-1","lastSeen":"2026-11-07T10:00:00.5Z",
+           "evidence":[{"id":"e1","kind":"dns","message":"m","at":"2026-11-07T09:58:00Z"},{"id":"e2","kind":"scan","message":"m2","at":"2026-11-07T09:59:00Z"}]}],
+          "autoApplied":false,"truncated":true,"note":"Temporal correlation"},"dnsEnabled":true,"scanEnabled":false}
+        """#)
+        let r = DetectData.securityReview(v)
+        XCTAssertEqual(r.incidents.count, 1); XCTAssertEqual(r.incidents[0].workload, "prod/web-1")
+        XCTAssertEqual(r.incidents[0].kinds, ["dns", "scan"]); XCTAssertNotNil(r.incidents[0].lastSeen)
+        XCTAssertTrue(r.truncated); XCTAssertTrue(r.dnsEnabled); XCTAssertFalse(r.scanEnabled); XCTAssertFalse(r.note.isEmpty)
+    }
+
+    func testIntelHitsUntaggedGoStructKeys() {
+        // watchlist.Hit has no json tags, so Go emits the field names verbatim; Result has tags.
+        let v = json(#"""
+        {"feed":{"count":2,"updatedAt":"2026-11-07T09:00:00Z","source":"operator","empty":false,"revision":4,"expired":false,"persistent":true,"journalUnavailable":false,"expiresAt":"2026-11-08T09:00:00Z"},
+         "match":{"hits":[{"Type":"ip","Value":"1.2.3.4","Kind":"flow","Node":"n1","Namespace":"prod","Pod":"web-1","Subject":"s","Packets":10,"Blocked":2}],"count":1,"capped":true,"checked":50},
+         "autoApplied":false,"note":"Observe-only"}
+        """#)
+        let h = DetectData.intelHits(v)
+        XCTAssertEqual(h.hits.count, 1); XCTAssertEqual(h.hits[0].value, "1.2.3.4"); XCTAssertEqual(h.hits[0].workload, "prod/web-1")
+        XCTAssertEqual(h.totalPackets, 10); XCTAssertEqual(h.totalBlocked, 2); XCTAssertEqual(h.checked, 50); XCTAssertTrue(h.capped); XCTAssertFalse(h.note.isEmpty)
+        let f = DetectData.feedStatus(v)
+        XCTAssertEqual(f.count, 2); XCTAssertEqual(f.revision, 4); XCTAssertEqual(f.label, "Active"); XCTAssertNotNil(f.expiresAt); XCTAssertTrue(f.persistent)
+    }
+
+    func testIntelFeedAndHistoryGoShape() {
+        let feed = json(#"{"feed":{"count":1,"revision":2,"empty":false,"expired":false,"persistent":false,"journalUnavailable":false},"entries":[{"type":"cidr","value":"10.0.0.0/8","direction":"egress"}],"note":"n"}"#)
+        XCTAssertEqual(DetectData.feedEntries(feed).map(\.value), ["10.0.0.0/8"]); XCTAssertEqual(DetectData.feedEntries(feed)[0].direction, "egress")
+        let hist = json(#"{"feed":{"count":1,"revision":2,"empty":false,"expired":false,"persistent":false,"journalUnavailable":false},"revisions":[{"revision":1,"updatedAt":"2026-11-07T09:00:00Z","source":"operator","entries":[{"type":"ip","value":"1.1.1.1"}]},{"revision":2,"updatedAt":"2026-11-07T10:00:00Z","expiresAt":"2026-11-08T10:00:00Z","source":"s","note":"n","entries":[{"type":"ip","value":"2.2.2.2"},{"type":"dns","value":"x.example"}]}]}"#)
+        let r = DetectData.revisions(hist)
+        XCTAssertEqual(r.map(\.revision), [2, 1]); XCTAssertEqual(r[0].entries, 2); XCTAssertEqual(r[0].byType["dns"], 1); XCTAssertNotNil(r[0].expiresAt)
+    }
+
+    func testIncidentTimelineAndTrendGoShape() {
+        let t = DetectData.timeline(json(#"{"generatedAt":"2026-11-07T10:00:00Z","since":"2026-11-07T00:00:00Z","entries":[{"at":"2026-11-07T09:00:00.25Z","kind":"audit","text":"t"}],"engine":"llm","prose":"p"}"#))
+        XCTAssertEqual(t.entries.count, 1); XCTAssertNotNil(t.entries[0].at); XCTAssertEqual(t.prose, "p")
+        let h = DetectData.healthTrend(json(#"{"generatedAt":"2026-11-07T10:00:00Z","samples":10,"spanSeconds":3600,"slopePerHour":-2,"currentScore":80,"breachThreshold":50,"timeToBreachSeconds":54000.5,"confidence":"low","note":"n"}"#))
+        XCTAssertEqual(h.currentScore, 80); XCTAssertEqual(h.threshold, 50); XCTAssertNotNil(h.timeToBreak)
+    }
+}

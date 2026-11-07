@@ -68,28 +68,29 @@ struct PlatPlaybooksPage: View {
     }
 }
 
-/// Registered agents (one row per node) from GET /agents.
+/// Registered agents (one row per node) from GET /agents ({items:[AgentStatus], staleAfterSeconds}).
+/// `interfaces` and `hooks` are string arrays, so they are joined into `...Text` fields for the table.
 struct PlatAgentsPage: View {
     var body: some View {
-        DataPageView(PageConfig(
-            title: "Agents", endpoint: "api/v1/agents", rowsPath: "items", idKeys: ["node"],
-            columns: [
-                .init(title: "Node", path: "node", width: 160),
-                .init(title: "Mode", path: "mode", width: 80),
-                .init(title: "Stale", path: "stale", kind: .bool, width: 60),
-                .init(title: "Last report", path: "ageSeconds", kind: .seconds, width: 90),
-                .init(title: "Interfaces", path: "interfaces", width: 160),
-                .init(title: "Hooks", path: "hooks", width: 220),
-                .init(title: "mTLS", path: "mtls", kind: .bool, width: 60),
-                .init(title: "Standalone", path: "standalone", kind: .bool, width: 80),
-            ],
-            stats: [
-                .init(title: "Agents", symbol: "antenna.radiowaves.left.and.right") { String(PlatformData.agentCounts($0).total) },
-                .init(title: "Stale", symbol: "exclamationmark.triangle", tint: .orange) { String(PlatformData.agentCounts($0).stale) },
-                .init(title: "Enforcing", symbol: "shield.lefthalf.filled", tint: .red) { String(PlatformData.agentCounts($0).enforcing) },
-                .init(title: "Stale after", symbol: "clock") { CellFormat.duration(PlatformData.agentCounts($0).staleAfter) },
-            ],
-            emptyText: "No agents have reported yet."
-        ))
+        MoreLoader(title: "Agents", endpoint: "api/v1/agents", liveEvery: 5) { v, _ in
+            VStack(spacing: 0) {
+                StatRow(stats: [
+                    .init(title: "Agents", symbol: "antenna.radiowaves.left.and.right") { String(PlatformData.agentCounts($0).total) },
+                    .init(title: "Stale", symbol: "exclamationmark.triangle", tint: .orange) { String(PlatformData.agentCounts($0).stale) },
+                    .init(title: "Enforcing", symbol: "shield.lefthalf.filled", tint: .red) { String(PlatformData.agentCounts($0).enforcing) },
+                    .init(title: "Stale after", symbol: "clock") { CellFormat.duration(PlatformData.agentCounts($0).staleAfter) },
+                ], value: v).padding([.horizontal, .top])
+                MoreRowsTable(rows: MoreData.defaultingFalse(MoreData.joined(MoreData.joined(v.rows(at: "items", idKeys: ["node"]), key: "interfaces"), key: "hooks"), keys: ["mtls"]), columns: [
+                    .init(title: "Node", path: "node", width: 160),
+                    .init(title: "Mode", path: "mode", width: 80),
+                    .init(title: "Stale", path: "stale", kind: .bool, width: 60),
+                    .init(title: "Last report", path: "ageSeconds", kind: .seconds, width: 90),
+                    .init(title: "Interfaces", path: "interfacesText", width: 160),
+                    .init(title: "Hooks", path: "hooksText", width: 220),
+                    .init(title: "mTLS", path: "mtls", kind: .bool, width: 60),
+                    .init(title: "Standalone", path: "standalone", kind: .bool, width: 80),
+                ], empty: "No agents have reported yet.")
+            }
+        }
     }
 }

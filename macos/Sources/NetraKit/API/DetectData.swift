@@ -230,6 +230,10 @@ public enum DetectData {
     }
     public static func rows(_ v: JSONValue, _ path: String) -> [JSONValue] { items(v.at(path)) }
 
+    /// Requested rate window in seconds from GET insights/rate-drift (`models.RateDriftResponse.window` is a
+    /// `RateWindow`, whose seconds field is `requestedWindowSeconds`).
+    public static func rateDriftWindowSeconds(_ v: JSONValue) -> Double? { v.at("window.requestedWindowSeconds")?.asDouble }
+
     /// Blast-radius hop histogram: [(hops, nodes)].
     public static func blastHops(_ v: JSONValue) -> [(hops: Int, nodes: Int)] {
         Dictionary(grouping: items(v["nodes"]), by: { Int(num($0, "hops")) }).map { ($0.key, $0.value.count) }.sorted { $0.hops < $1.hops }

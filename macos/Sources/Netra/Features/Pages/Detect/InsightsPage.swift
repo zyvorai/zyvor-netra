@@ -82,7 +82,7 @@ struct InsightsPage: View {
         .init(title: "Ratio", path: "ratio", kind: .number(1)), .init(title: "Message", path: "message")
     ], stats: [
         .init(title: "Findings", symbol: "waveform.path.ecg") { String($0.rows(at: "findings").count) },
-        .init(title: "Window", symbol: "timer") { v in v.at("window.windowSeconds").flatMap(\.asDouble).map(CellFormat.duration) ?? "–" }
+        .init(title: "Window", symbol: "timer") { v in DetectData.rateDriftWindowSeconds(v).map(CellFormat.duration) ?? "–" }
     ], emptyText: "No rate drift (the window may still be warming up).")
 
     static let dependencies = PageConfig(title: "Dependencies", endpoint: "api/v1/insights/dependencies", rowsPath: "edges", idKeys: ["source"], columns: [

@@ -183,4 +183,26 @@ final class WorkloadDataTests: XCTestCase {
             _ = W.kernelFindingRows(v); _ = W.anomalyRows(v); _ = W.sampledProtocolRows(v); _ = W.tlsSummary(fingerprints: v, risk: v)
         }
     }
+
+    // Fixtures below copy the Go json tags: tlsfp.Observation (embedded Fingerprint flattens), RiskItem, DropDetectiveFinding.
+    func testGoShapedTLSObservation() {
+        let fps = json(#"{"fingerprints":[{"ja3":"e7d705a3286e19ea42f587b344ee6865","ja3Raw":"771,4865","ja4":"t13d1516h2_8daaf6152771_b0da82dd1658","version":771,"sni":"api.example.com","alpn":"h2","ciphers":[4865],"exts":[0],"curves":[29],"sigAlgs":[1027],"node":"n1","firstSeen":"2026-01-01T00:00:00Z","lastSeen":"2026-01-02T00:00:00Z","count":12}],"stats":{"enabled":true,"uniqueJa3":1,"cap":2048},"note":"n"}"#)
+        let rows = W.tlsRows(fingerprints: fps, risk: json(#"{"items":[],"count":0,"uniqueJa3":1,"echSightings":0,"rare":0,"note":""}"#))
+        let v = rows[0].value
+        for k in ["ja4", "sni", "alpn", "node", "ja3Short", "versionText", "riskLevel", "transport"] {
+            XCTAssertFalse(CellFormat.text(v.at(k), .text).isEmpty, k)
+        }
+        XCTAssertEqual(CellFormat.text(v.at("count"), .int), "12")
+        XCTAssertFalse(CellFormat.text(v.at("lastSeen"), .time).isEmpty)
+        XCTAssertEqual(W.tlsSummary(fingerprints: fps, risk: nil).observations, 12)
+    }
+
+    func testGoShapedDetectiveRankSortable() {
+        let v = json(#"{"summary":{"text":"t","policyDropPackets":5,"policyDropFlows":1,"conntrackEntries":0,"exactFindings":1,"probableFindings":1},"findings":[{"node":"n1","confidence":"probable","code":"c","stage":"s","reason":2,"packets":3,"explanation":"e"},{"confidence":"exact","code":"d","stage":"s","reason":1,"protocol":6,"direction":1,"packets":9,"bytes":100,"explanation":"e","pid":4,"comm":"curl","namespace":"a","pod":"p","attributionState":"ok"}]}"#)
+        let rows = W.detectiveRows(v)
+        XCTAssertEqual(rows[0].value.at("levelRank")?.asDouble, 1)   // probable = info
+        XCTAssertEqual(rows[1].value.at("levelRank")?.asDouble, 2)
+        XCTAssertEqual(CellFormat.text(rows[1].value.at("bytes"), .bytes), "100 B")
+        XCTAssertEqual(rows[1].value.at("workload")?.string, "a/p")
+    }
 }

@@ -36,7 +36,7 @@ public enum PaletteObjects {
     }
     private static func list(_ v: JSONValue?) -> [JSONValue] {
         if case .array(let a)? = v { return a }
-        for k in ["items", "pods", "workloads", "rules", "talkers", "top"] { if case .array(let a)? = v?[k] { return a } }
+        for k in ["items", "rows", "pods", "workloads", "rules", "talkers", "top"] { if case .array(let a)? = v?[k] { return a } }
         return []
     }
 
@@ -52,7 +52,7 @@ public enum PaletteObjects {
 
     public static func workloads(_ v: JSONValue?) -> [PaletteObject] {
         list(v).prefix(perKindLimit).compactMap { w in
-            let name = s(w, "workloadName", "name"), ns = s(w, "namespace"), kind = s(w, "workloadKind", "kind")
+            let name = s(w, "workloadName", "name", "pod"), ns = s(w, "namespace"), kind = s(w, "workloadKind", "kind")
             guard !name.isEmpty else { return nil }
             return .init(kind: .workload, title: name, subtitle: [kind, ns].filter { !$0.isEmpty }.joined(separator: " · "),
                          section: "workloads", query: ["q": name])
@@ -64,7 +64,7 @@ public enum PaletteObjects {
         var seen = Set<String>(), out: [PaletteObject] = []
         for src in sources {
             for r in list(src) {
-                for k in ["podIP", "podIp", "ip", "sourceIp", "destinationIp", "srcIp", "dstIp", "address"] {
+                for k in ["podIP", "podIp", "ip", "sourceIp", "destinationIp", "srcIp", "dstIp", "address", "destination"] {
                     let ip = s(r, k)
                     guard !ip.isEmpty, ip.count <= 64, seen.insert(ip).inserted, out.count < perKindLimit else { continue }
                     let who = [s(r, "namespace"), s(r, "name", "pod")].filter { !$0.isEmpty }.joined(separator: "/")
@@ -77,10 +77,13 @@ public enum PaletteObjects {
 
     public static func rules(_ v: JSONValue?) -> [PaletteObject] {
         list(v).prefix(perKindLimit).compactMap { r in
+            // models.FirewallRule: opaque `id`, human `summary`, `type`, `direction`.
             let id = s(r, "id", "name")
-            guard !id.isEmpty else { return nil }
-            return .init(kind: .rule, title: id, subtitle: [s(r, "kind", "type"), s(r, "action")].filter { !$0.isEmpty }.joined(separator: " · "),
-                         section: "rules", query: ["q": id])
+            let title = s(r, "summary")
+            guard !id.isEmpty || !title.isEmpty else { return nil }
+            return .init(kind: .rule, title: title.isEmpty ? id : title,
+                         subtitle: [s(r, "kind", "type"), s(r, "action", "direction")].filter { !$0.isEmpty }.joined(separator: " · "),
+                         section: "rules", query: ["q": id.isEmpty ? title : id])
         }
     }
 

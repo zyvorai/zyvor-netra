@@ -85,6 +85,15 @@ public enum MoreData {
         return out
     }
 
+    /// Fills omitempty booleans (absent means false) so a bool column shows "no" instead of a blank cell.
+    public static func defaultingFalse(_ rows: [ControlRow], keys: [String]) -> [ControlRow] {
+        rows.map { r in
+            var extra: [String: JSONValue] = [:]
+            for k in keys where r.value[k] == nil || r.value[k] == .null { extra[k] = .bool(false) }
+            return extra.isEmpty ? r : ControlRow(id: r.id, value: adding(r.value, extra))
+        }
+    }
+
     /// Adds `<key>Text` (comma-joined) for a string array or string map field, so a table can show it.
     public static func joined(_ rows: [ControlRow], key: String) -> [ControlRow] {
         rows.map { r in

@@ -96,3 +96,42 @@ final class CoverageDataTests: XCTestCase {
         XCTAssertEqual(n, ["a", "b", "c"])
     }
 }
+
+
+// Fixtures copy the Go tags (internal/models CapChangeEvent/ExeHashChangeEvent/NamespaceChangeEvent, scandetect, automitigate,
+// fleet.FlowRollup, flowlog.Record, metricexport.Status, denycensus, ebpf stack-histograms, l7SampleView).
+extension CoverageDataTests {
+    func testGoShapedProcessDriftScanAndPreview() {
+        let ns = CoverageData.nsEventRows(json(#"{"anomalies":[],"events":[{"pid":1,"comm":"c","exe":"/x","previousNetNs":4026531840,"currentNetNs":4026532000,"namespace":"d","pod":"p"}]}"#))
+        XCTAssertEqual(ns[0].value.at("previousNetNs")?.asDouble, 4026531840); XCTAssertEqual(CellFormat.text(ns[0].value.at("currentNetNs"), .int), "4026532000")
+        let exe = CoverageData.exeEventRows(json(#"{"anomalies":[],"events":[{"pid":2,"exe":"/bin/sh","previousExeHash":"aaaaaaaaaaaaaaaabbbb","currentExeHash":"cccccccccccccccc","workloadKind":"Deployment","workloadName":"w"}]}"#))
+        XCTAssertEqual(exe[0].value["previousShort"]?.string, "aaaaaaaaaaaa"); XCTAssertEqual(exe[0].value["workload"]?.string, "Deployment/w")
+        let scan = json(#"{"findings":[{"id":"f1","type":"port-scan","severity":"high","score":7.5,"signals":["s"],"namespace":"d","pod":"p","uniqueDstIps":3,"uniqueDstPorts":40,"attempts":100,"synOnly":90,"resets":2,"firstSeen":"2026-11-07T09:00:00Z","lastSeen":"2026-11-07T10:00:00.1234Z"}],"snapshot":{"attemptsSeen":100,"workloadsTracked":2,"activeFindings":1,"findingsTotal":{"port-scan":3}}}"#)
+        let f = scan.rows(at: "findings", idKeys: ["id"])[0].value
+        XCTAssertEqual(CellFormat.text(f.at("uniqueDstIps"), .int), "3"); XCTAssertEqual(CellFormat.text(f.at("score"), .number(1)), "7.5")
+        XCTAssertFalse(CellFormat.text(f.at("lastSeen"), .time).isEmpty)
+        XCTAssertEqual(CoverageData.int(scan.at("snapshot.activeFindings")), 1); XCTAssertEqual(CoverageData.findingTotals(scan).first?.count, 3)
+        let pv = json(#"{"enabled":true,"leaseActive":false,"mode":"shadow","candidates":[{"kind":"syn_drop","target":"1.2.3.4","findingId":"f1","detail":"d"},{"kind":"conn_rate","target":"w","skipped":"cooldown"}],"wouldActCount":1,"skippedRecent":1,"note":"n","caveat":"c"}"#)
+        XCTAssertEqual(CoverageData.candidateSplit(pv).wouldAct, 1); XCTAssertEqual(CoverageData.candidateSplit(pv).skipped, 1)
+        XCTAssertEqual(CoverageData.notes(pv), ["n", "c"])
+    }
+
+    func testGoShapedFleetExportersCensusStacks() {
+        let fl = json(#"{"generatedAt":"2026-11-07T10:00:00Z","records":[{"observedAt":"2026-11-07T09:59:00.999999999Z","node":"n1","namespace":"d","pod":"p","workloadName":"w","peer":"8.8.8.8","port":443,"protocol":"tcp","direction":"egress","appProtocol":"tls","packets":10,"bytes":2048,"blocked":1,"retransmissions":2,"comm":"curl"}],"matched":1,"clusters":[{"name":"a","local":true,"ok":true,"matched":1},{"name":"b","ok":false,"error":"timeout"}],"limitations":["l"]}"#)
+        let rec = fl.rows(at: "records", idKeys: ["peer"])[0].value
+        XCTAssertEqual(CellFormat.text(rec.at("bytes"), .bytes), "2.0 KB"); XCTAssertEqual(CellFormat.text(rec.at("retransmissions"), .int), "2")
+        XCTAssertFalse(CellFormat.text(rec.at("observedAt"), .time).isEmpty)
+        XCTAssertEqual(CoverageData.clusterHealth(fl).ok, 1); XCTAssertEqual(CoverageData.clusterHealth(fl).failed, 1)
+        let ex = json(#"{"exporters":[{"sink":"prom-rw","pointsSent":120,"batches":4,"failures":1,"lastError":"e","lastSend":"2026-11-07T10:00:00Z","resolution":"1s"}]}"#)
+        XCTAssertEqual(CoverageData.exporterTotals(ex).sent, 120); XCTAssertEqual(CoverageData.exporterTotals(ex).failures, 1)
+        XCTAssertEqual(CellFormat.text(ex.rows(at: "exporters")[0].value.at("batches"), .int), "4")
+        let cen = CoverageData.censusGroups(json(#"{"generatedAt":"2026-11-07T10:00:00Z","mode":"shadow","blockedIPv4":3,"blockedIPv6":0,"blockedCidrs":1,"blockedPorts":2,"blockedDns":0,"blockedUids":0,"blockedIngressIPv4":4,"blockedIngressIPv6":0,"allowedIPv4":5,"allowedIPv6":0,"allowedCidrs":0,"allowedPorts":0,"totalDenied":10,"totalAllowed":5}"#))
+        XCTAssertEqual(cen[0].items.first { $0.label == "IPv4" }?.value, "3"); XCTAssertEqual(cen[0].items.first { $0.label == "Ingress IPv4" }?.value, "4")
+        XCTAssertEqual(cen[0].items.last?.value, "10"); XCTAssertEqual(cen[1].items.last?.value, "5")
+        let st = json(#"{"nodes":[{"node":"n1","softirqNetRx":5,"listenDepthBuckets":[{"label":"0","count":3},{"label":"1-8","count":1}],"topListeners":[{"family":"ipv4","addr":"0.0.0.0","port":80,"queue":1,"max":128,"peak":2,"peakPct":1}]}]}"#)
+        XCTAssertEqual(CoverageData.depthBuckets(st.rows(at: "nodes")[0].value).map(\.count), [3, 1])
+        let sp = CoverageData.sparkline(json(#"{"node":"n1","windows":[{"node":"n1","startAt":"2026-11-07T09:59:50Z","endAt":"2026-11-07T10:00:00Z","seconds":10,"warming":false,"softnetDroppedPerSecond":1.5}]}"#), field: "softnetDroppedPerSecond")
+        XCTAssertEqual(sp.count, 1); XCTAssertEqual(sp[0].value, 1.5)
+        XCTAssertEqual(CoverageData.errorRatio(json(#"{"protocol":"http","role":"served","requests":5,"responses":10,"errors":2,"estimatedRequests":50}"#)), 0.2)
+    }
+}

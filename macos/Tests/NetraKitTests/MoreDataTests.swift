@@ -96,4 +96,32 @@ final class MoreDataTests: XCTestCase {
         XCTAssertEqual(StubURLProtocol.seen.last!.httpMethod, "GET")
         XCTAssertTrue(url.query!.contains("port=443"))
     }
+
+    func testDefaultingFalseFillsOmittedBooleans() {
+        // models.AgentReport.MTLS is `json:"mtls,omitempty"`: false never appears on the wire.
+        let rows = json(#"{"items":[{"node":"a"},{"node":"b","mtls":true}]}"#).rows(at: "items", idKeys: ["node"])
+        let out = MoreData.defaultingFalse(rows, keys: ["mtls"])
+        XCTAssertEqual(out.map { CellFormat.text($0.value["mtls"], .bool) }, ["no", "yes"])
+    }
+
+    /// Shapes copied from the json tags of tcpEventsView / coverage.Matrix / nsheat.Board / PathDiagnosticsResponse.
+    func testGoTaggedFixturesProduceValues() {
+        let tcp = json(#"{"nodes":[{"node":"n1","sensors":["retransmit"],"skipped":{"rst":"no tp"},"reporting":true}],"nodesReporting":1,"nodesNotReporting":0,"totals":{"retransmits":5,"rstSent":1,"rstReceived":2,"stateTransitions":9},"transitions":[{"from":"ESTABLISHED","to":"CLOSE","count":4}],"flows":[{"node":"n1","family":"ipv4","src":"10.0.0.1","dst":"10.0.0.2","srcPort":1,"dstPort":443,"retransmits":3,"lastSeenNs":9}]}"#)
+        XCTAssertEqual(tcp.rows(at: "flows")[0].value["dstPort"]?.asDouble, 443)
+        XCTAssertEqual(tcp.at("totals.rstReceived")?.asDouble, 2)
+        XCTAssertEqual(tcp.rows(at: "transitions")[0].value["count"]?.asDouble, 4)
+        let heat = json(#"{"generatedAt":"2026-11-07T10:00:00Z","rows":[{"namespace":"web","packets":10,"bytes":1000,"blocked":2,"destinations":3}],"count":1}"#)
+        XCTAssertEqual(MoreData.hottestNamespace(heat), "web")
+        let path = json(#"{"summary":{"connectionsMeasured":2,"averageConnectUs":1500,"maxConnectUs":3000,"congestedFlows":1,"retransOut":1,"lostOut":0,"packetsOut":4,"anomalies":[{"severity":"warning","kind":"cwnd","subject":"web/p","message":"m"}]},"pressure":[{"remoteIp":"1.1.1.1","remotePort":443,"namespace":"web","pod":"p","sendCwnd":10,"packetsOut":5,"mss":1460}],"connect":[{"remoteIp":"1.1.1.1","remotePort":443,"established":2,"totalLatencyUs":3000,"maxLatencyUs":2000}],"edgeIntel":{"counts":{"syn":3,"rst":1}}}"#)
+        let p = MoreData.pathRows(path, at: "pressure")[0].value
+        XCTAssertEqual(p["workload"]?.string, "web/p"); XCTAssertEqual(p["remote"]?.string, "1.1.1.1:443"); XCTAssertEqual(p["cwndRatio"]?.asDouble, 0.5)
+        XCTAssertEqual(MoreData.pathRows(path, at: "connect")[0].value["avgConnectUs"]?.asDouble, 1500)
+        XCTAssertEqual(path.mapRows(at: "edgeIntel.counts").map { CellFormat.text($0.value["value"], .int) }, ["1", "3"])
+        let cov = json(#"{"nodes":[{"node":"n1","stale":false,"mode":"observe","ageSeconds":4,"programs":[{"name":"p","type":"cgroup_skb","attached":true,"runCount":7}],"attached":1,"detached":["x"],"missingMaps":["m"],"hookCount":2,"programCount":1}],"agentCount":1}"#)
+        XCTAssertEqual(MoreData.nested(cov, child: "programs")[0].value["runCount"]?.asDouble, 7)
+        XCTAssertEqual(MoreData.joined(cov.rows(at: "nodes", idKeys: ["node"]), key: "detached")[0].value["detachedText"]?.string, "x")
+        let inv = json(#"{"request":{"since":"2026-11-07T09:00:00Z"},"events":[{"ts":"2026-11-07T10:00:00Z","source":"flow","stage":"flow","summary":"s","confidence":"high"}],"confidence":{"overall":"high","notes":["n"]},"limitations":["l"]}"#)
+        XCTAssertEqual(MoreData.timeline(inv)[0].value["summary"]?.string, "s")
+        XCTAssertEqual(MoreData.strings(inv, at: "confidence.notes"), ["n"])
+    }
 }
