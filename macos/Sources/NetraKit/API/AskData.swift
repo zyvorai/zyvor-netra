@@ -15,6 +15,41 @@ public enum AskData {
         return (try? JSONSerialization.data(withJSONObject: o, options: [.sortedKeys])) ?? Data("{}".utf8)
     }
 
+    /// Exact body for POST /api/v1/ai/explain (ai.ExplainRequest). Empty fields are omitted.
+    public static func explainBody(kind: String, subject: String = "", message: String = "", severity: String = "", page: String = "") -> Data {
+        var o: [String: Any] = ["kind": kind]
+        for (k, v) in [("subject", subject), ("message", message), ("severity", severity), ("page", page)] where !v.isEmpty { o[k] = v }
+        return (try? JSONSerialization.data(withJSONObject: o, options: [.sortedKeys])) ?? Data("{}".utf8)
+    }
+
+    // MARK: Agent (POST /api/v1/ai/agent)
+
+    public struct AgentStep: Equatable, Sendable, Identifiable {
+        public var node: String, detail: String
+        public var id: String { "\(node)|\(detail)" }
+    }
+    /// ai.AgentResult: {brief, intent, draft?, suggestions?, steps:[{node,detail}], engine, conversationId}.
+    /// The draft is a text preview only; nothing here can apply it.
+    public struct AgentResult: Equatable, Sendable {
+        public var brief: Brief
+        public var intent: String, engine: String, conversationID: String
+        public var steps: [AgentStep]
+        public var suggestions: [String]
+        public var draft: Draft?
+        /// Tool/step trace as plain read-only text, one "n. node: detail" line per step.
+        public var traceText: String {
+            steps.enumerated().map { "\($0.offset + 1). \($0.element.node)" + ($0.element.detail.isEmpty ? "" : ": \($0.element.detail)") }.joined(separator: "\n")
+        }
+    }
+    public static func agentResult(_ v: JSONValue) -> AgentResult {
+        var steps: [AgentStep] = []
+        if case .array(let a)? = v.at("steps") { steps = a.map { AgentStep(node: str($0, "node"), detail: str($0, "detail")) } }
+        var d: Draft?
+        if let dv = v.at("draft"), dv != .null { d = draft(dv) }
+        return AgentResult(brief: brief(v.at("brief") ?? .null), intent: str(v, "intent"), engine: str(v, "engine"),
+                           conversationID: str(v, "conversationId"), steps: steps, suggestions: strings(v.at("suggestions")), draft: d)
+    }
+
     // MARK: Status
 
     public struct Status: Equatable, Sendable {

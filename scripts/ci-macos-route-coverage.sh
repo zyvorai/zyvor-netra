@@ -11,6 +11,11 @@
 # `/` matches as a prefix. Matching is by path only, so a verb that the app never calls
 # on an otherwise referenced path is not detected: review waivers and new routes by hand.
 #
+# Routes the app builds dynamically (macos/Sources/NetraKit/API/RuleKinds.swift, OpsData.swift) are
+# not greppable. They are listed with their builder in macos/route-dynamic.txt
+# (`VERB /path # builder: file`); Tests/NetraKitTests/RouteCoverageTests.swift asserts that file equals
+# exactly what the builders produce, so an entry is only valid if the test produces it.
+#
 # Usage:
 #   ./scripts/ci-macos-route-coverage.sh
 # Exits 1 when any route is neither referenced nor waived.
@@ -20,9 +25,11 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 src=macos/Sources
 waivers=macos/route-waivers.txt
+dynamic=macos/route-dynamic.txt
 
 [ -d "$src" ] || { echo "missing $src" >&2; exit 2; }
 [ -f "$waivers" ] || { echo "missing $waivers" >&2; exit 2; }
+[ -f "$dynamic" ] || { echo "missing $dynamic" >&2; exit 2; }
 
 # Every registered route, "VERB /path", from any non-test Go file under internal/ and cmd/.
 routes="$(grep -rhoE 'Handle(Func)?\("[A-Z]+ /api/v1/[^"]*"' internal cmd --include='*.go' --exclude='*_test.go' \
@@ -32,7 +39,10 @@ routes="$(grep -rhoE 'Handle(Func)?\("[A-Z]+ /api/v1/[^"]*"' internal cmd --incl
 # Waivers: strip comments and blanks, keep "VERB /path".
 waived="$(sed -E 's/[[:space:]]*#.*$//; /^[[:space:]]*$/d; s/[[:space:]]+/ /g' "$waivers" | sort -u)"
 
-total=0 covered=0 waivedn=0
+# Dynamic: same format, verified by the Swift test.
+dyn="$(sed -E 's/[[:space:]]*#.*$//; /^[[:space:]]*$/d; s/[[:space:]]+/ /g' "$dynamic" | sort -u)"
+
+total=0 covered=0 dynn=0 waivedn=0
 uncovered=""
 while IFS= read -r route; do
   [ -n "$route" ] || continue
@@ -46,6 +56,8 @@ while IFS= read -r route; do
   case "$rel" in */) edge="" ;; *) edge='([^A-Za-z0-9_-]|$)' ;; esac
   if grep -rqE -- "(^|[^A-Za-z0-9_-])${pat}${edge}" "$src" 2>/dev/null; then
     covered=$((covered + 1))
+  elif printf '%s\n' "$dyn" | grep -qxF -- "$route"; then
+    dynn=$((dynn + 1))
   elif printf '%s\n' "$waived" | grep -qxF -- "$route"; then
     waivedn=$((waivedn + 1))
   else
@@ -60,7 +72,13 @@ if [ -n "$stale" ]; then
   printf '  %s\n' $'\n'"$stale" | sed '/^  $/d' >&2
 fi
 
-echo "routes: $total, referenced: $covered, waived: $waivedn, uncovered: $(printf '%s' "$uncovered" | grep -c . || true)"
+stale_dyn="$(comm -13 <(printf '%s\n' "$routes") <(printf '%s\n' "$dyn" | sed '/^$/d'))"
+if [ -n "$stale_dyn" ]; then
+  echo "warning: route-dynamic.txt entries naming no registered route:" >&2
+  printf '%s\n' "$stale_dyn" | sed 's/^/  /' >&2
+fi
+
+echo "routes: $total, literal: $covered, dynamic: $dynn, waived: $waivedn, uncovered: $(printf '%s' "$uncovered" | grep -c . || true)"
 if [ -n "$uncovered" ]; then
   echo "UNCOVERED (reference in macos/Sources or add a reasoned waiver to $waivers):"
   printf '%s' "$uncovered" | sed 's/^/  /'

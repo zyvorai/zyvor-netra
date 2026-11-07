@@ -68,12 +68,17 @@ generic JSON browser.
 | Kernel | Diagnostics, Listen queues, Sysctl audit, Node resources, Netlink, BPF attachments, BPF maps, IPv6, Kernel network, eBPF coverage |
 | Detect | Metrics, Metric contexts, Anomalies, Alerts, Insights, Incidents, Security, Intel, Explain, Investigate, Optimizer, Playbooks, Baselines |
 | Record | Audit, Compliance, Report |
-| Ask Netra | Brief, Digest, Suggestions |
+| Ask Netra | Brief, Digest, Suggestions (the Ask panel has an Agent mode) |
 | Platform | Agents, Surfaces, Exports, Artifacts, GitOps, Tenants |
 | Control | Lease, Rules, Policies, Features, Capture, Enforcement, Fleet |
 
 Kernel network shows findings with evidence, and the suggested sysctl, apply and rollback
 commands only as text to copy; the app never changes a kernel tunable.
+
+The Ask panel's Agent mode calls `POST /api/v1/ai/agent` and shows the answer, the step trace
+(classify, draft, synthesize) and cited evidence as read-only text; a drafted rule is a text
+preview with no apply path. The Explain page has an "Explain in words" button for
+`POST /api/v1/ai/explain`. Neither request carries a risk confirmation.
 
 Beyond the sidebar: a menu bar item, a command palette, notifications for raised metric
 alerts, deep links, and Spotlight indexing.
@@ -85,7 +90,13 @@ alerts, deep links, and Spotlight indexing.
 (`{name}` segments match any one segment; a trailing `/` matches as a prefix) or is waived in
 `macos/route-waivers.txt` with a reason (`VERB /path # reason`). It exits non-zero while any
 route is uncovered, and warns about waivers that name no registered route. Matching is by
-path only, so an unused verb on a referenced path is not caught. Waive only what is not a
+path only, so an unused verb on a referenced path is not caught. Paths the app builds
+dynamically (the rule-mutation family in `NetraKit/API/RuleKinds.swift` and
+`api/v1/export/<kind>` in `OpsData.swift`) cannot be grepped, so they are listed in
+`macos/route-dynamic.txt` (`VERB /path # builder: file`).
+`Tests/NetraKitTests/RouteCoverageTests.swift` enumerates every kind, action and removal and
+asserts the file equals exactly what the builders produce, so a listed route is one the app
+really sends. The script prints literal, dynamic, waived and uncovered counts. Waive only what is not a
 client concern (agent-only ingest, browser session routes); do not waive a route to go green.
 It is not yet a CI step.
 

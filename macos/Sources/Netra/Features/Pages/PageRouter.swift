@@ -19,6 +19,7 @@ struct PageRouter: View {
         case .optimizer, .playbooks, .baselines, .agents, .surfaces: PlatformPages.view(for: section)
         case .metricContexts: MetricsPages.view(for: section)
         case .exports, .artifacts, .gitops, .tenants: OpsPages.view(for: section)
+        case .insightsDetail, .processWatch, .datapathDetail, .fleetExporters: CoveragePages.view(for: section)
         default: JSONBrowserView(section: section).id(section)
         }
     }

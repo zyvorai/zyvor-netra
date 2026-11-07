@@ -11,6 +11,8 @@ struct AskPanel: View {
     @Binding var question: String
     @State private var answer: AskData.Brief?
     @State private var draft: AskData.Draft?
+    @State private var agent: AskData.AgentResult?
+    @State private var agentMode = false
     @State private var busy = false
     @State private var error: String?
     @State private var conversationID = UUID().uuidString
@@ -24,7 +26,9 @@ struct AskPanel: View {
                         .lineLimit(1...3).textFieldStyle(.roundedBorder).focused($focused)
                         .onSubmit { Task { await ask() } }
                         .accessibilityLabel("Question for Netra")
-                    Button("Ask", systemImage: "paperplane.fill") { Task { await ask() } }
+                    Picker("Mode", selection: $agentMode) { Text("Ask").tag(false); Text("Agent").tag(true) }
+                        .pickerStyle(.segmented).labelsHidden().fixedSize().help("Agent shows the step trace behind the answer")
+                    Button(agentMode ? "Run agent" : "Ask", systemImage: agentMode ? "point.3.connected.trianglepath.dotted" : "paperplane.fill") { Task { await ask() } }
                         .keyboardShortcut(.return, modifiers: .command).disabled(!canSend)
                     Button("Draft rule", systemImage: "doc.text") { Task { await makeDraft() } }
                         .help("Preview a rule as text. Nothing is applied.").disabled(!canSend)
@@ -35,6 +39,7 @@ struct AskPanel: View {
                     .font(.caption).foregroundStyle(.secondary)
                 if busy { ProgressView().controlSize(.small) }
                 if let error { Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red).font(.callout) }
+                if let agent { AskAgentView(result: agent) }
                 if let answer { AskAnswerView(brief: answer) }
                 if let draft { AskDraftView(draft: draft) }
             }
@@ -46,7 +51,7 @@ struct AskPanel: View {
     private func post(_ path: String) async throws -> JSONValue {
         guard let c = model.client else { throw NetraError.transport("not connected") }
         // Plain client request: no confirmRisk, so this can never be taken for a mutation.
-        var req = c.request("POST", path, body: AskData.askBody(question: question, conversationID: path.hasSuffix("/ask") ? conversationID : nil))
+        var req = c.request("POST", path, body: AskData.askBody(question: question, conversationID: (path.hasSuffix("/ask") || path.hasSuffix("/agent")) ? conversationID : nil))
         req.timeoutInterval = 60
         return try JSONDecoder().decode(JSONValue.self, from: await c.send(req))
     }
@@ -54,17 +59,20 @@ struct AskPanel: View {
     private func ask() async {
         guard canSend else { return }
         busy = true; error = nil; draft = nil; defer { busy = false }
-        do { answer = AskData.brief(try await post("api/v1/ai/ask")) } catch { self.error = describe(error) }
+        do {
+            if agentMode { answer = nil; agent = AskData.agentResult(try await post("api/v1/ai/agent")) }
+            else { agent = nil; answer = AskData.brief(try await post("api/v1/ai/ask")) }
+        } catch { self.error = describe(error) }
     }
 
     private func makeDraft() async {
         guard canSend else { return }
-        busy = true; error = nil; answer = nil; defer { busy = false }
+        busy = true; error = nil; answer = nil; agent = nil; defer { busy = false }
         do { draft = AskData.draft(try await post("api/v1/ai/draft")) } catch { self.error = describe(error) }
     }
 
     private func reset() {
-        let old = conversationID; conversationID = UUID().uuidString; answer = nil; draft = nil; error = nil
+        let old = conversationID; conversationID = UUID().uuidString; answer = nil; agent = nil; draft = nil; error = nil
         guard let c = model.client else { return }
         // Best-effort: clear server-side conversation memory (POST /ai/forget; read-only state, not a mutation of Netra config).
         let body = try? JSONSerialization.data(withJSONObject: ["conversationId": old])
@@ -115,6 +123,35 @@ struct AskDraftView: View {
             Button(copied ? "Copied" : "Copy", systemImage: copied ? "checkmark" : "doc.on.doc") {
                 NSPasteboard.general.clearContents(); NSPasteboard.general.setString(draft.copyText, forType: .string); copied = true
             }
+        }
+    }
+}
+
+/// Agent output: the answer, the step trace and cited evidence, all read-only text. A drafted rule is
+/// shown as a preview (AskDraftView) with no apply path.
+struct AskAgentView: View {
+    let result: AskData.AgentResult
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            AskAnswerView(brief: result.brief)
+            Divider()
+            HStack {
+                Label("Agent trace", systemImage: "point.3.connected.trianglepath.dotted").font(.headline)
+                if !result.intent.isEmpty { Text("intent: \(result.intent)").font(.caption).foregroundStyle(.secondary) }
+                Spacer()
+                if !result.engine.isEmpty { Text(result.engine).font(.caption).foregroundStyle(.secondary) }
+            }
+            if result.steps.isEmpty { Text("The agent reported no steps.").font(.caption).foregroundStyle(.secondary) }
+            else {
+                Text(result.traceText).font(.system(.callout, design: .monospaced)).textSelection(.enabled)
+                    .padding(8).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 8))
+            }
+            if !result.suggestions.isEmpty {
+                Text("Follow-ups").font(.caption).foregroundStyle(.secondary)
+                ForEach(Array(result.suggestions.enumerated()), id: \.offset) { _, s in Text(s).font(.callout).textSelection(.enabled) }
+            }
+            if let d = result.draft { AskDraftView(draft: d) }
         }
     }
 }
