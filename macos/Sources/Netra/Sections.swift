@@ -10,7 +10,7 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
     case metrics, anomalies, alerts, insights, incidents, security, intel
     case audit, compliance, report
     case aiBrief, aiDigest, aiSuggestions
-    case rules, policies, lease, features, capture, fleet
+    case rules, policies, lease, features, capture, fleet, enforcement
 
     var id: String { rawValue }
 
@@ -23,6 +23,7 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .aiBrief: "Brief"
         case .aiDigest: "Digest"
         case .aiSuggestions: "Suggestions"
+        case .enforcement: "Enforcement"
         case .listenQueues: "Listen queues"
         case .nodeResources: "Node resources"
         case .attachments: "BPF attachments"
@@ -75,13 +76,14 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .features: "switch.2"
         case .capture: "record.circle"
         case .fleet: "server.rack"
+        case .enforcement: "shield.checkered"
         }
     }
 
     /// Read endpoint backing the generic viewer until a bespoke view replaces it.
     var endpoint: String? {
         switch self {
-        case .overview, .lease: nil
+        case .overview, .lease, .enforcement: nil
         case .health: "api/v1/ebpf/health"
         case .scorecard: "api/v1/scorecard"
         case .slo: "api/v1/slo"
@@ -138,6 +140,6 @@ struct SectionGroup: Identifiable {
         .init(title: "Detect", sections: [.metrics, .anomalies, .alerts, .insights, .incidents, .security, .intel]),
         .init(title: "Record", sections: [.audit, .compliance, .report]),
         .init(title: "Ask Netra", sections: [.aiBrief, .aiDigest, .aiSuggestions]),
-        .init(title: "Control", sections: [.lease, .rules, .policies, .features, .capture, .fleet]),
+        .init(title: "Control", sections: [.lease, .rules, .policies, .features, .capture, .enforcement, .fleet]),
     ]
 }
