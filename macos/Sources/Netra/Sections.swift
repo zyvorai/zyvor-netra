@@ -149,7 +149,7 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .capture: "api/v1/capture/status"
         case .fleet: "api/v1/fleet"
         case .tcpEvents: "api/v1/ebpf/tcp-events"
-        case .connections: "api/v1/ebpf/connections"
+        case .connections: "api/v1/agents"
         case .pathDiag: "api/v1/ebpf/path"
         case .congestion: "api/v1/namespaces/heat"
         case .ebpfCoverage: "api/v1/ebpf/coverage"

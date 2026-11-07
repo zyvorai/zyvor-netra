@@ -6,6 +6,7 @@ import NetraKit
 enum MetricsPages {
     @MainActor @ViewBuilder static func view(for section: NavSection) -> some View {
         switch section {
+        case .metricContexts: MxContextsPage()
         default: JSONBrowserView(section: section).id(section)
         }
     }

@@ -7,13 +7,8 @@ import NetraKit
 struct AlertsPage: View {
     @Environment(AppModel.self) private var model
     @State private var snap = Poller<MetricAlertSnapshot>()
-    @State private var actionError: String?
-    @State private var showSilence = false
-    @State private var sRule = ""
-    @State private var sNode = ""
-    @State private var sChart = ""
-    @State private var sDuration = "2h"
-    @State private var sComment = ""
+    @State private var log = ActivityLog()
+    @State private var chosen: ControlAction?
 
     private var canMutate: Bool { model.gate.canMutate }
 
@@ -32,7 +27,6 @@ struct AlertsPage: View {
                     .font(.caption).foregroundStyle(.secondary)
                 if !canMutate { Text("This token is read-only; ack and silence are disabled.").font(.caption).foregroundStyle(.secondary) }
                 if let e = snap.error { ErrorBanner(text: e) }
-                if let e = actionError { ErrorBanner(text: e) }
 
                 if let s = snap.value {
                     if s.active.isEmpty {
@@ -41,6 +35,12 @@ struct AlertsPage: View {
                     }
                     ForEach(s.active) { a in alertRow(a) }
                     silences(s)
+                    if !log.entries.isEmpty {
+                        Text("This session").font(.headline)
+                        ForEach(log.entries.prefix(6)) { e in
+                            Text("\(e.outcome.rawValue): \(e.title)" + (e.detail.isEmpty ? "" : " (\(e.detail))")).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
                     if !s.history.isEmpty {
                         Text("Recent transitions").font(.headline)
                         ForEach(s.history.prefix(15), id: \.rowID) { t in
@@ -52,7 +52,7 @@ struct AlertsPage: View {
         }
         .navigationTitle("Alerts")
         .task { await loop() }
-        .sheet(isPresented: $showSilence) { silenceForm }
+        .sheet(item: $chosen, onDismiss: { Task { await reload() } }) { a in ActionFormSheet(action: a, log: log) }
     }
 
     private func alertRow(_ a: MetricAlert) -> some View {
@@ -70,9 +70,11 @@ struct AlertsPage: View {
                 }
             }
             Spacer()
-            Button("Acknowledge") { Task { await ack(a) } }
+            Button("Acknowledge") { chosen = MetricAlertActions.ack(alertID: a.id, label: a.rule) }
                 .disabled(!canMutate || a.acked == true)
                 .help("Marks this alert acknowledged (notification state only)")
+            Button("Silence") { chosen = MetricAlertActions.silence(rule: a.rule, node: a.node, chart: a.chart) }
+                .disabled(!canMutate).help("Suppresses notifications for this rule, node and chart (notification state only)")
         }
         .padding(10).background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 8))
     }
@@ -82,7 +84,7 @@ struct AlertsPage: View {
             HStack {
                 Text("Silences").font(.headline)
                 Spacer()
-                Button("New silence") { showSilence = true }.disabled(!canMutate)
+                Button("New silence") { chosen = MetricAlertActions.silence() }.disabled(!canMutate)
                     .help("Suppresses notifications only; alert status is still tracked")
             }
             if s.silences.isEmpty { Text("None").font(.caption).foregroundStyle(.secondary) }
@@ -94,25 +96,10 @@ struct AlertsPage: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("Remove", role: .destructive) { Task { await unsilence(x) } }.disabled(!canMutate)
+                    Button("Remove", role: .destructive) { chosen = MetricAlertActions.removeSilence(id: x.id, label: x.rule ?? x.id) }.disabled(!canMutate)
                 }
             }
         }
-    }
-
-    private var silenceForm: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("New silence").font(.headline)
-            Text("Suppresses notifications for matching alerts. Globs allowed (*). Notification state only.").font(.caption).foregroundStyle(.secondary)
-            TextField("Rule", text: $sRule); TextField("Node", text: $sNode); TextField("Chart", text: $sChart)
-            TextField("Duration (e.g. 2h)", text: $sDuration); TextField("Comment", text: $sComment)
-            HStack {
-                Spacer()
-                Button("Cancel") { showSilence = false }
-                Button("Create silence") { Task { await createSilence() } }
-                    .keyboardShortcut(.defaultAction).disabled(!canMutate || sDuration.isEmpty || (sRule + sNode + sChart).isEmpty)
-            }
-        }.textFieldStyle(.roundedBorder).padding().frame(width: 400)
     }
 
     private func loop() async {
@@ -123,17 +110,9 @@ struct AlertsPage: View {
         }
     }
 
-    private func run(_ op: @Sendable (NetraClient) async throws -> Void) async {
-        guard canMutate, let c = model.client else { return }
-        do { try await op(c); actionError = nil } catch { actionError = snap.message(error) }
+    private func reload() async {
+        guard let c = model.client else { return }
         await snap.refresh { try await c.metricsAlerts() }
-    }
-    private func ack(_ a: MetricAlert) async { let id = a.id; await run { try await $0.ackMetricAlert(id: id) } }
-    private func unsilence(_ s: MetricSilence) async { let id = s.id; await run { try await $0.deleteMetricSilence(id: id) } }
-    private func createSilence() async {
-        let (r, n, ch, d, cm) = (sRule, sNode, sChart, sDuration, sComment)
-        await run { _ = try await $0.addMetricSilence(rule: r, node: n, chart: ch, duration: d, comment: cm) }
-        if actionError == nil { showSilence = false; sRule = ""; sNode = ""; sChart = ""; sComment = "" }
     }
 }
 
