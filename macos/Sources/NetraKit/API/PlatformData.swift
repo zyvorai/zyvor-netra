@@ -20,10 +20,10 @@ public enum PlatformData {
         .init(id: "encdns", label: "Encrypted DNS", group: "Encrypted", path: "api/v1/ebpf/encrypted-dns?limit=100", listKeys: ["result.hits", "result.items", "hits"]),
         .init(id: "ech", label: "ECH / missing SNI", group: "Encrypted", path: "api/v1/insights/ech-blind?limit=100", listKeys: ["findings", "items"]),
         .init(id: "shadow", label: "Shadow SaaS", group: "Fit", path: "api/v1/insights/shadow-saas?limit=100", listKeys: ["findings", "items"]),
-        .init(id: "experience", label: "Experience", group: "Fit", path: "api/v1/insights/experience?limit=100", listKeys: ["rows", "items"]),
-        .init(id: "destrisk", label: "Destination risk", group: "Fit", path: "api/v1/insights/destination-risk?limit=100", listKeys: ["items"]),
+        .init(id: "experience", label: "Experience", group: "Fit", path: "api/v1/insights/experience?limit=100", listKeys: ["workloads"]),
+        .init(id: "destrisk", label: "Destination risk", group: "Fit", path: "api/v1/insights/destination-risk?limit=100", listKeys: ["destinations"]),
         .init(id: "zt", label: "Zero Trust drafts", group: "Fit", path: "api/v1/insights/zero-trust?limit=50", listKeys: ["drafts", "items"]),
-        .init(id: "microseg", label: "Microseg", group: "Fit", path: "api/v1/insights/microseg?limit=50", listKeys: ["suggestions", "items", "drafts"]),
+        .init(id: "microseg", label: "Microseg", group: "Fit", path: "api/v1/insights/microseg?limit=50", listKeys: ["leaseDrafts"]),
         .init(id: "packs", label: "Policy packs", group: "Fit", path: "api/v1/insights/policy-packs?limit=50", listKeys: ["packs", "items"]),
         .init(id: "identity", label: "Identity drafts", group: "Fit", path: "api/v1/insights/identity-drafts?limit=50", listKeys: ["drafts", "items"]),
         .init(id: "exfil", label: "Exfil heuristics", group: "Threat", path: "api/v1/insights/exfil?limit=100", listKeys: ["findings", "items"]),
@@ -32,19 +32,44 @@ public enum PlatformData {
         .init(id: "dnsintel", label: "DNS intel hits", group: "Threat", path: "api/v1/intel/dns-hits?limit=100", listKeys: ["hits", "items"]),
         .init(id: "intel", label: "Threat intel feed", group: "Threat", path: "api/v1/intel/feed", listKeys: ["entries", "items"]),
         .init(id: "appcat", label: "App categories", group: "Ops", path: "api/v1/ebpf/app-categories?limit=100", listKeys: ["hits", "items"]),
-        .init(id: "compliance", label: "Compliance", group: "Ops", path: "api/v1/compliance?limit=100", listKeys: ["checks", "items", "findings"]),
-        .init(id: "ainet", label: "AI destinations", group: "Ops", path: "api/v1/ebpf/ai-destinations?limit=100", listKeys: ["hits", "items", "destinations"]),
+        .init(id: "compliance", label: "Compliance", group: "Ops", path: "api/v1/compliance?limit=100", listKeys: ["packs[].controls"]),
+        .init(id: "ainet", label: "AI destinations", group: "Ops", path: "api/v1/ebpf/ai-destinations?limit=100", listKeys: ["result.hits"]),
         .init(id: "automitigate", label: "Auto-mitigate", group: "Ops", path: "api/v1/ebpf/auto-mitigate", listKeys: ["recent", "actions", "items"]),
-        .init(id: "prevention", label: "Prevention report", group: "Ops", path: "api/v1/report/prevention", listKeys: ["sections", "items"]),
+        .init(id: "prevention", label: "Prevention report", group: "Ops", path: "api/v1/report/prevention", listKeys: ["gaps+coverage"]),
         .init(id: "clusters", label: "Fleet clusters", group: "Fleet", path: "api/v1/fleet/clusters", listKeys: ["clusters", "items"]),
         .init(id: "tenants", label: "Fleet tenants", group: "Fleet", path: "api/v1/fleet/tenants", listKeys: ["tenants", "items"]),
     ]
 
     public static func boards(in group: String) -> [Board] { boards.filter { $0.group == group } }
 
-    /// First array found at one of `keys` (dotted), else the response itself when it is an array, else empty.
+    /// First list found at one of `keys`, else the response itself when it is an array, else empty.
+    /// A key is a dotted path (`result.hits`), `a+b` (arrays `a` then `b` concatenated) or `a[].b`
+    /// (the `b` array of every element of `a`, flattened, each row tagged with `pack` = the parent's title).
+    /// Bare strings become `{"name": s, "section": key}` rows so string lists (prevention gaps) render.
     public static func pickList(_ v: JSONValue, keys: [String]) -> [JSONValue] {
-        for k in keys { if case .array(let a)? = v.at(k) { return a } }
+        for k in keys {
+            if k.contains("[]."), case let parts = k.components(separatedBy: "[]."), parts.count == 2, case .array(let parents)? = v.at(parts[0]) {
+                var out: [JSONValue] = []
+                for p in parents {
+                    guard case .array(let kids)? = p.at(parts[1]) else { continue }
+                    let tag = p["title"] ?? p["id"] ?? .null
+                    for kid in kids {
+                        if case .object(var o) = kid { if o["pack"] == nil { o["pack"] = tag }; out.append(.object(o)) } else { out.append(kid) }
+                    }
+                }
+                return out
+            }
+            if k.contains("+") {
+                let names = k.split(separator: "+").map(String.init)
+                let found = names.compactMap { n -> (String, [JSONValue])? in if case .array(let a)? = v.at(n) { return (n, a) }; return nil }
+                if found.isEmpty { continue }
+                return found.flatMap { n, a in a.map { item -> JSONValue in
+                    if case .string = item { return .object(["name": item, "section": .string(n)]) }
+                    return item
+                } }
+            }
+            if case .array(let a)? = v.at(k) { return a }
+        }
         if case .array(let a) = v { return a }
         return []
     }
@@ -56,13 +81,13 @@ public enum PlatformData {
 
     /// Headline for a generic board row (never payload fields).
     public static func rowLabel(_ row: JSONValue) -> String {
-        s(row, ["ja3", "sni", "host", "hostname", "name", "title", "id", "source", "destination", "category", "node", "tenant", "cluster", "check", "domain", "value"])
+        s(row, ["ja3", "sni", "host", "hostname", "name", "title", "id", "source", "destination", "category", "hostOrIp", "destinationIp", "target", "workloadName", "pod", "node", "tenant", "cluster", "check", "domain", "value"])
     }
 
     /// One-line meta for a generic board row.
     public static func rowMeta(_ row: JSONValue) -> String {
         var p: [String] = []
-        for (k, label) in [("severity", ""), ("ja4", "ja4 "), ("count", "n="), ("score", "score "), ("riskScore", "risk "), ("category", ""), ("mode", ""), ("message", "")] {
+        for (k, label) in [("severity", ""), ("ja4", "ja4 "), ("count", "n="), ("score", "score "), ("riskScore", "risk "), ("risk", ""), ("status", ""), ("kind", ""), ("section", ""), ("pack", ""), ("category", ""), ("mode", ""), ("message", "")] {
             let t = s(row, [k]); if !t.isEmpty { p.append(label + t) }
         }
         if case .array(let r)? = row["reasons"], !r.isEmpty { p.append(r.map(\.summary).joined(separator: ", ")) }

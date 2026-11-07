@@ -14,15 +14,20 @@ final class OpsActionTests: XCTestCase {
 
     func testResyncSendsPostWithManifestAndConfirmHeader() async {
         StubURLProtocol.handler = { r in
-            r.httpMethod == "GET" ? (200, #"{"manifests":[{"namespace":"web","name":"p","drifted":true,"plan":{"risk":"high"}}]}"#) : (200, "{}")
+            r.url!.path.hasSuffix("/plan")
+                ? (200, #"{"plan":{"risk":"high","specChanged":true,"warnings":["narrows egress"]},"dryRun":{"passed":true},"receipt":{"token":"t"}}"#)
+                : (200, "{}")
         }
         let c = client()
         let manifest = Data(#"{"metadata":{"name":"p","namespace":"web"}}"#.utf8)
         let flow = MutationFlow(spec: OpsAction.gitopsResyncSpec(client: c, manifest: manifest, namespace: "web", name: "p"),
                                 client: c, gate: .init(canMutate: true), log: ActivityLog())
         await flow.runPreview()
-        XCTAssertTrue(flow.previewSummary?.contains("DRIFTED") == true)
-        XCTAssertEqual(StubURLProtocol.seen.last?.url?.path, "/api/v1/policies/gitops/status")
+        XCTAssertTrue(flow.previewSummary?.contains("Plan risk: high") == true)
+        let plan = StubURLProtocol.seen.last!
+        XCTAssertEqual(plan.httpMethod, "POST")
+        XCTAssertEqual(plan.url?.path, "/api/v1/policies/plan")           // read-only plan of the exact body; its risk drives the header
+        XCTAssertEqual(plan.httpBody, manifest)
         flow.typedPhrase = "nope"; await flow.confirm()
         XCTAssertEqual(StubURLProtocol.seen.count, 1)
         flow.typedPhrase = "resync web/p"; await flow.confirm()
@@ -30,11 +35,26 @@ final class OpsActionTests: XCTestCase {
         XCTAssertEqual(r.httpMethod, "POST")
         XCTAssertEqual(r.url?.path, "/api/v1/policies/gitops/resync")
         XCTAssertEqual(r.value(forHTTPHeaderField: "X-Netra-Confirm-Risk"), "high")
+        XCTAssertNil(r.value(forHTTPHeaderField: "X-Netra-Plan-Token"))   // resync issues its own receipt server-side
         XCTAssertEqual(r.httpBody, manifest)
     }
 
+    /// The server compares the header with the plan's own risk, so a critical plan needs "critical", not "high".
+    func testResyncOfACriticalPlanConfirmsCritical() async {
+        StubURLProtocol.handler = { r in
+            r.url!.path.hasSuffix("/plan") ? (200, #"{"plan":{"risk":"critical"},"dryRun":{"passed":true}}"#) : (200, "{}")
+        }
+        let c = client()
+        let flow = MutationFlow(spec: OpsAction.gitopsResyncSpec(client: c, manifest: Data("{}".utf8), namespace: "a", name: "b"),
+                                client: c, gate: .init(canMutate: true), log: ActivityLog())
+        await flow.runPreview()
+        XCTAssertEqual(flow.effectiveRisk, .critical)
+        flow.typedPhrase = "resync a/b"; await flow.confirm()
+        XCTAssertEqual(StubURLProtocol.seen.last?.value(forHTTPHeaderField: "X-Netra-Confirm-Risk"), "critical")
+    }
+
     func testResyncServerRefusalIsSurfaced() async {
-        StubURLProtocol.handler = { r in r.httpMethod == "GET" ? (200, "{}") : (409, #"{"error":"Cilium is not enabled"}"#) }
+        StubURLProtocol.handler = { r in r.url!.path.hasSuffix("/plan") ? (200, "{}") : (409, #"{"error":"Cilium is not enabled"}"#) }
         let c = client()
         let flow = MutationFlow(spec: OpsAction.gitopsResyncSpec(client: c, manifest: Data("{}".utf8), namespace: "a", name: "b"),
                                 client: c, gate: .init(canMutate: true), log: ActivityLog())

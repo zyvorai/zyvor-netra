@@ -12,17 +12,20 @@ public enum OpsAction {
     public static func gitopsResyncSpec(client c: NetraClient, manifest: Data, namespace: String, name: String) -> MutationSpec {
         MutationSpec(
             title: "GitOps resync \(namespace)/\(name)", risk: .high, expectedPhrase: "resync \(namespace)/\(name)", leaseBound: false,
-            preview: { c.request("GET", "api/v1/policies/gitops/status") },
+            // The server compares X-Netra-Confirm-Risk to the plan's own risk ("high" or "critical"), so the
+            // preview is the read-only plan of this exact body (POST /policies/plan, viewer role, Cilium-gated
+            // like the resync itself), and the risk it reports decides the header value.
+            preview: { c.request("POST", "api/v1/policies/plan", body: manifest) },
             summarize: { v in
-                let d = GitOpsStatus(v)
-                guard let m = d.manifests.first(where: { $0.namespace == namespace && $0.name == name }) else {
-                    return "\(namespace)/\(name) is not among the \(d.manifests.count) manifest(s) GitOps tracks; the server will still apply the body you send."
-                }
-                var s = "Last pass: \(m.drifted ? "live policy has DRIFTED from Git" : "no drift"), risk \(m.risk ?? "unknown"), \(m.applied ? "applied" : "not applied")."
-                if let e = m.error, !e.isEmpty { s += " Error: \(e)." }
-                return s + " Resync overrides the unattended gating and requires explicit confirmation."
+                let plan = v["plan"]
+                let risk = plan?["risk"]?.string ?? "unknown"
+                var s = "Plan risk: \(risk)."
+                if case .bool(let b)? = v["dryRun"]?["passed"] { s += b ? " Kubernetes dry-run passed." : " Kubernetes dry-run FAILED\(v["dryRun"]?["error"]?.string.map { ": " + $0 } ?? "")." }
+                if case .bool(false)? = plan?["specChanged"] { s += " The live policy already matches: nothing would change." }
+                if case .array(let w)? = plan?["warnings"], !w.isEmpty { s += " Warnings: " + w.map(\.summary).joined(separator: "; ") + "." }
+                return s + " Resync applies the body regardless of GitOps drift gating and needs GitOps enabled (NETRA_GITOPS_DIR) on the controller."
             },
-            riskFromPreview: nil,
+            riskFromPreview: { Risk(serverValue: $0["plan"]?["risk"]?.string) },
             execute: { _ in c.request("POST", "api/v1/policies/gitops/resync", body: manifest) })
     }
 
@@ -31,7 +34,7 @@ public enum OpsAction {
         ControlAction(
             id: "ops.gitops.resync", group: "GitOps", title: "GitOps resync",
             summary: "Force-apply a manifest through the GitOps pipeline (POST /policies/gitops/resync). Cilium must be enabled on the controller.",
-            symbol: "arrow.triangle.2.circlepath", maxRisk: .high,
+            symbol: "arrow.triangle.2.circlepath", maxRisk: .critical,
             fields: [.init("manifest", "Manifest (JSON or YAML)", .multiline, help: "A CiliumNetworkPolicy; namespace/name are read from metadata")],
             build: { c, v in
                 let text = Form.str(v, "manifest")

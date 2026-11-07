@@ -23,13 +23,11 @@ public struct MetricsSummary: Decodable, Sendable, Equatable {
     enum K: String, CodingKey { case available, nodes, staleNodes, series, anomalyRate, alertsCritical, alertsWarning, topAlerts, topAnomalous }
     public init(from d: Decoder) throws {
         let c = try d.container(keyedBy: K.self)
-        available = (try? c.decode(Bool.self, forKey: .available)) ?? false
-        nodes = (try? c.decode(Int.self, forKey: .nodes)) ?? 0
-        staleNodes = (try? c.decode(Int.self, forKey: .staleNodes)) ?? 0
-        series = (try? c.decode(Int.self, forKey: .series)) ?? 0
-        anomalyRate = (try? c.decode(Double.self, forKey: .anomalyRate)) ?? 0
-        alertsCritical = (try? c.decode(Int.self, forKey: .alertsCritical)) ?? 0
-        alertsWarning = (try? c.decode(Int.self, forKey: .alertsWarning)) ?? 0
+        func n(_ k: K) -> Int { LenientDecode.double(c, k).flatMap(LenientDecode.int64).map { Int(clamping: $0) } ?? 0 }
+        available = LenientDecode.bool(c, .available) ?? false
+        nodes = n(.nodes); staleNodes = n(.staleNodes); series = n(.series)
+        anomalyRate = LenientDecode.double(c, .anomalyRate) ?? 0
+        alertsCritical = n(.alertsCritical); alertsWarning = n(.alertsWarning)
         topAlerts = c.list(.topAlerts); topAnomalous = c.list(.topAnomalous)
     }
 }
@@ -307,6 +305,107 @@ public struct MetricAlertSnapshot: Decodable, Sendable, Equatable {
     }
 }
 
+// MARK: - Lenient decoding
+// Go always sends these fields, but one wrong type or null must never blank a whole table, so every
+// field falls back to a default. Declared in extensions so the memberwise initialisers stay available.
+
+private struct LK: CodingKey {
+    var stringValue: String; var intValue: Int? { nil }
+    init(_ s: String) { stringValue = s }
+    init?(stringValue: String) { self.stringValue = stringValue }
+    init?(intValue: Int) { nil }
+}
+private struct Lx {
+    let c: KeyedDecodingContainer<LK>
+    init(_ d: Decoder) throws { c = try d.container(keyedBy: LK.self) }
+    func s(_ k: String) -> String { LenientDecode.string(c, LK(k)) ?? "" }
+    func os(_ k: String) -> String? { LenientDecode.string(c, LK(k)) }
+    func d(_ k: String) -> Double { LenientDecode.double(c, LK(k)) ?? 0 }
+    func od(_ k: String) -> Double? { LenientDecode.double(c, LK(k)) }
+    func i(_ k: String) -> Int { LenientDecode.double(c, LK(k)).flatMap(LenientDecode.int64).map { Int(clamping: $0) } ?? 0 }
+    func i64(_ k: String) -> Int64 { LenientDecode.double(c, LK(k)).flatMap(LenientDecode.int64) ?? 0 }
+    func oi64(_ k: String) -> Int64? { LenientDecode.double(c, LK(k)).flatMap(LenientDecode.int64) }
+    func b(_ k: String) -> Bool? { LenientDecode.bool(c, LK(k)) }
+    func labels(_ k: String) -> [String: String]? { try? c.decodeIfPresent([String: String].self, forKey: LK(k)) }
+}
+
+extension MetricAlertRef {
+    public init(from d: Decoder) throws { let x = try Lx(d); rule = x.s("rule"); status = x.s("status"); node = x.os("node"); chart = x.os("chart") }
+}
+extension MetricRef {
+    public init(from d: Decoder) throws { let x = try Lx(d); node = x.os("node"); chart = x.os("chart"); dimension = x.os("dimension"); anomalyRate = x.d("anomalyRate") }
+}
+extension MetricNodeInfo.Stats {
+    public init(from d: Decoder) throws {
+        let x = try Lx(d)
+        series = x.i("series"); memoryBytes = x.oi64("memoryBytes"); diskBytes = x.oi64("diskBytes"); oldestT = x.oi64("oldestT"); newestT = x.oi64("newestT")
+    }
+}
+extension MetricNodeInfo {
+    public init(from d: Decoder) throws {
+        let x = try Lx(d)
+        node = x.s("node"); lastIngest = x.os("lastIngest")
+        stats = try? x.c.decodeIfPresent(Stats.self, forKey: LK("stats"))
+    }
+}
+extension MetricRanked {
+    public init(from d: Decoder) throws {
+        let x = try Lx(d)
+        node = x.s("node"); context = x.s("context"); chart = x.s("chart"); dimension = x.s("dimension"); units = x.os("units")
+        labels = x.labels("labels"); anomalyRate = x.d("anomalyRate"); score = x.d("score")
+    }
+}
+extension MetricNodeRate {
+    public init(from d: Decoder) throws {
+        let x = try Lx(d)
+        node = x.s("node"); anomalyRate = x.d("anomalyRate"); dimensions = x.i("dimensions"); anomalousDimensions = x.i("anomalousDimensions")
+    }
+}
+extension EvidenceLink {
+    public init(from d: Decoder) throws { let x = try Lx(d); kind = x.s("kind"); title = x.s("title"); href = x.s("href"); why = x.s("why") }
+}
+extension EvidencePeer {
+    public init(from d: Decoder) throws {
+        let x = try Lx(d)
+        namespace = x.os("namespace"); workload = x.os("workload"); peer = x.s("peer"); port = x.i("port"); protocolName = x.os("protocol")
+        packets = x.i("packets"); bytes = x.i("bytes")
+        blocked = x.od("blocked").flatMap(LenientDecode.int64).map { Int(clamping: $0) }
+        retransmissions = x.od("retransmissions").flatMap(LenientDecode.int64).map { Int(clamping: $0) }
+        rtos = x.od("rtos").flatMap(LenientDecode.int64).map { Int(clamping: $0) }
+    }
+}
+extension EvidenceCount {
+    public init(from d: Decoder) throws { let x = try Lx(d); name = x.s("name"); count = x.i("count") }
+}
+extension MetricAlert {
+    public init(from d: Decoder) throws {
+        let x = try Lx(d)
+        id = x.s("id"); rule = x.s("rule"); node = x.s("node"); context = x.os("context"); chart = x.s("chart"); dimension = x.os("dimension")
+        status = x.s("status"); value = x.od("value"); units = x.os("units"); info = x.os("info"); since = x.os("since")
+        silenced = x.b("silenced"); acked = x.b("acked"); ackedBy = x.os("ackedBy")
+    }
+}
+extension MetricAlertRule {
+    public init(from d: Decoder) throws { let x = try Lx(d); name = x.s("name"); context = x.os("context"); warn = x.os("warn"); crit = x.os("crit") }
+}
+extension MetricAlertTransition {
+    public init(from d: Decoder) throws {
+        let x = try Lx(d)
+        time = x.s("time"); id = x.s("id"); rule = x.s("rule"); node = x.s("node"); chart = x.s("chart")
+        from = x.s("from"); to = x.s("to"); value = x.od("value"); units = x.os("units")
+    }
+}
+extension MetricSilence {
+    public init(from d: Decoder) throws {
+        let x = try Lx(d)
+        id = x.s("id"); rule = x.os("rule"); node = x.os("node"); chart = x.os("chart"); until = x.s("until")
+        comment = x.os("comment"); createdBy = x.os("createdBy"); created = x.os("created")
+    }
+}
+extension MetricAlertStats {
+    public init(from d: Decoder) throws { let x = try Lx(d); rules = x.i("rules"); instances = x.i("instances"); warning = x.i("warning"); critical = x.i("critical") }
+}
+
 public enum MetricRange: String, CaseIterable, Identifiable, Sendable {
     case m5 = "5m", m15 = "15m", h1 = "1h", h6 = "6h", h24 = "24h"
     public var id: String { rawValue }
@@ -316,11 +415,7 @@ public enum MetricRange: String, CaseIterable, Identifiable, Sendable {
 public enum MetricsFormat {
     public static func parseTime(_ s: String?) -> Date? {
         guard let s else { return nil }
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = f.date(from: s) { return d }
-        f.formatOptions = [.withInternetDateTime]
-        return f.date(from: s)
+        return NetraDate.parse(s)
     }
     /// Index of the timestamp closest to `t` (timestamps ascending); nil when empty.
     public static func nearestIndex(_ timestamps: [Int64], to t: Double) -> Int? {

@@ -9,13 +9,38 @@ public struct ConnectionProfile: Sendable, Equatable {
     public init(baseURL: URL, token: String? = nil) { self.baseURL = baseURL; self.token = token }
 }
 
+/// GET /api/v1/whoami (map built in internal/api/rbac.go). kind/role are always sent; identity,
+/// namespaces, clusters, tenants only when non-empty. Decoding never fails on a missing field.
 public struct WhoAmI: Codable, Sendable, Equatable {
     public var authRequired: Bool
     public var oidcEnabled: Bool
     public var kind: String
     public var role: String
     public var identity: String?
-    public var parsedRole: Role { Role(rawValue: role) ?? .none }
+    public var scoped: Bool
+    public var namespaces: [String]
+    public var clusters: [String]
+    public var tenants: [String]
+
+    enum K: String, CodingKey { case authRequired, oidcEnabled, kind, role, identity, scoped, namespaces, clusters, tenants }
+    public init(authRequired: Bool = false, oidcEnabled: Bool = false, kind: String = "", role: String = "none", identity: String? = nil,
+                scoped: Bool = false, namespaces: [String] = [], clusters: [String] = [], tenants: [String] = []) {
+        self.authRequired = authRequired; self.oidcEnabled = oidcEnabled; self.kind = kind; self.role = role
+        self.identity = identity; self.scoped = scoped; self.namespaces = namespaces; self.clusters = clusters; self.tenants = tenants
+    }
+    public init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: K.self)
+        authRequired = LenientDecode.bool(c, .authRequired) ?? false
+        oidcEnabled = LenientDecode.bool(c, .oidcEnabled) ?? false
+        kind = LenientDecode.string(c, .kind) ?? ""
+        role = LenientDecode.string(c, .role) ?? "none"
+        identity = LenientDecode.string(c, .identity)
+        scoped = LenientDecode.bool(c, .scoped) ?? false
+        namespaces = (try? c.decodeIfPresent([String].self, forKey: .namespaces)) ?? []
+        clusters = (try? c.decodeIfPresent([String].self, forKey: .clusters)) ?? []
+        tenants = (try? c.decodeIfPresent([String].self, forKey: .tenants)) ?? []
+    }
+    public var parsedRole: Role { Role(rawValue: role.lowercased()) ?? .none }
     /// Operators may change rules/captures; the UI disables controls otherwise (server still enforces).
     public var canMutate: Bool { parsedRole >= .operator }
     /// Admins additionally change posture (mode), apply policy and open consoles (exec/VNC).

@@ -61,7 +61,7 @@ private struct DiagnosticsBody: View {
             switch tab {
             case .drops:
                 WLTable(rows: drops, columns: [
-                    WCol(title: "Confidence", path: "level", sortPath: "confidence", style: .level, width: 90),
+                    WCol(title: "Confidence", path: "level", sortPath: "levelRank", style: .level, width: 90),
                     WCol(title: "Reason", path: "code", width: 110), WCol(title: "Dir", path: "directionName"), WCol(title: "Proto", path: "protocolName"),
                     WCol(title: "Source", path: "src", width: 130), WCol(title: "Destination", path: "dst", width: 130),
                     WCol(title: "Packets", path: "packets", kind: .int), WCol(title: "Bytes", path: "bytes", kind: .bytes),

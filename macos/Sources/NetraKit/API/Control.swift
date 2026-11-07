@@ -13,13 +13,15 @@ public struct ControlRow: Identifiable, Sendable, Equatable {
         var v: JSONValue? = value
         for part in key.split(separator: ".") { v = v?[String(part)] }
         guard let v, v != .null else { return "" }
+        // Go emits the zero time.Time for an unset timestamp ("0001-01-01T00:00:00Z"); show it as blank.
+        if case .string(let t) = v, t.hasPrefix("0001-01-01") { return "" }
         return v.summary
     }
 }
 
 extension JSONValue {
     public var controlItems: [JSONValue] { if case .array(let a) = self { a } else { [] } }
-    public var controlInt: Int? { double.map { Int($0) } }
+    public var controlInt: Int? { double.flatMap { LenientDecode.int64($0) }.map { Int(clamping: $0) } }
 }
 
 public func controlRows(_ v: JSONValue, listKey: String, idKeys: [String] = ["id"]) -> [ControlRow] {
