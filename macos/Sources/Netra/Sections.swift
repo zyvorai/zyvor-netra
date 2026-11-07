@@ -159,11 +159,11 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .playbooks: "api/v1/playbooks"
         case .baselines: "api/v1/baselines"
         case .agents: "api/v1/agents"
-        case .surfaces: "api/v1/ebpf/capabilities"
+        case .surfaces: "api/v1/ebpf/coverage"
         case .exports: "api/v1/export/status"
-        case .artifacts: "api/v1/capture/artifacts"
-        case .gitops: "api/v1/policies/gitops"
-        case .tenants: "api/v1/tenants"
+        case .artifacts: "api/v1/capture/history"
+        case .gitops: "api/v1/policies/gitops/status"
+        case .tenants: "api/v1/fleet/tenants"
         case .metricContexts: "api/v1/metrics/contexts"
         }
     }

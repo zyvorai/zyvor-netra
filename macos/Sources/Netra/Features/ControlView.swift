@@ -35,7 +35,11 @@ struct ControlView: View {
                          .init(title: "Kind", key: "kind"), .init(title: "Created", key: "metadata.creationTimestamp")]
         case .features: [.init(title: "Feature", key: "title"), .init(title: "On", key: "enabled"), .init(title: "Scope", key: "scope"),
                          .init(title: "Source", key: "source"), .init(title: "Note", key: "note")]
-        default: captureTab == 0
+        default: captureTab == 2
+            ? [.init(title: "State", key: "state"), .init(title: "Node", key: "node"), .init(title: "Protocol", key: "protocol"),
+               .init(title: "Host", key: "host"), .init(title: "Frames", key: "frames"), .init(title: "Bytes", key: "bytes"),
+               .init(title: "Started", key: "startedAt")]
+            : captureTab == 0
             ? [.init(title: "Node", key: "node"), .init(title: "Backend", key: "backend"), .init(title: "Protocol", key: "protocol"),
                .init(title: "Host", key: "host"), .init(title: "Port", key: "port"), .init(title: "Started", key: "startedAt")]
             : [.init(title: "Node", key: "node"), .init(title: "Reason", key: "reason"), .init(title: "Trigger", key: "triggerKind"),
@@ -53,7 +57,7 @@ struct ControlView: View {
                 HSplitView {
                     VStack(spacing: 0) {
                         if section == .capture {
-                            Picker("", selection: $captureTab) { Text("Active").tag(0); Text("History").tag(1) }
+                            Picker("", selection: $captureTab) { Text("Active").tag(0); Text("History").tag(1); Text("Summaries").tag(2) }
                                 .pickerStyle(.segmented).padding(8)
                         }
                         if let error { Text(error).foregroundStyle(.red).font(.callout).padding(8) }
@@ -197,7 +201,10 @@ struct ControlView: View {
             case .rules: rows = try await c.rules()
             case .policies: rows = try await c.policies()
             case .features: rows = try await c.features()
-            default: rows = captureTab == 0 ? try await c.captureActive() : try await c.captureHistory()
+            default:
+                if captureTab == 2 {
+                    rows = OpsData.summaryRows(try JSONDecoder().decode(JSONValue.self, from: await c.send(c.request("GET", "api/v1/capture/summaries"))))
+                } else { rows = captureTab == 0 ? try await c.captureActive() : try await c.captureHistory() }
             }
             error = nil
         } catch { rows = []; self.error = "\(error)" }
