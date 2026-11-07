@@ -26,6 +26,12 @@ public final class ActivityLog {
     }
 }
 
+public struct ResultSummary: Sendable, Equatable {
+    public let text: String
+    public let isFailure: Bool
+    public init(_ text: String, isFailure: Bool) { self.text = text; self.isFailure = isFailure }
+}
+
 /// Describes one guarded mutation. `preview` is a non-mutating dry run (or a read) that must
 /// succeed before `execute` is allowed. `execute` receives whether to send X-Netra-Confirm-Risk.
 public struct MutationSpec: Sendable {
@@ -41,12 +47,17 @@ public struct MutationSpec: Sendable {
     public var executeWithPreview: (@Sendable (_ preview: JSONValue, _ confirmRisk: Bool) -> URLRequest)?
     /// When set, the risk the server reported in the preview overrides `risk` (never below it).
     public var riskFromPreview: (@Sendable (JSONValue) -> Risk)?
+    /// Optional: parses the 2xx response body into a human summary. `isFailure` marks partial or total
+    /// failure that HTTP 200 hides (e.g. bulk imports); the activity log then records `.failed`.
+    public var resultSummary: (@Sendable (JSONValue) -> ResultSummary?)?
     public init(title: String, risk: Risk, expectedPhrase: String, leaseBound: Bool,
                 preview: @escaping @Sendable () -> URLRequest,
                 summarize: @escaping @Sendable (JSONValue) -> String = { $0.summary },
                 executeWithPreview: (@Sendable (JSONValue, Bool) -> URLRequest)? = nil,
                 riskFromPreview: (@Sendable (JSONValue) -> Risk)? = nil,
+                resultSummary: (@Sendable (JSONValue) -> ResultSummary?)? = nil,
                 execute: @escaping @Sendable (Bool) -> URLRequest) {
+        self.resultSummary = resultSummary
         self.executeWithPreview = executeWithPreview; self.riskFromPreview = riskFromPreview
         self.title = title; self.risk = risk; self.expectedPhrase = expectedPhrase; self.leaseBound = leaseBound
         self.preview = preview; self.summarize = summarize; self.execute = execute
@@ -129,9 +140,15 @@ public final class MutationFlow {
             log.append(title: spec.title, method: method, path: path, outcome: .attempted, detail: header ? "confirm-risk: high" : "")
             do {
                 let data = try await client.send(request(confirmRisk: header))
-                let msg = "HTTP OK, \(data.count) bytes"
-                log.append(title: spec.title, method: method, path: path, outcome: .succeeded, detail: msg)
-                phase = .done(msg)
+                let body = (try? JSONDecoder().decode(JSONValue.self, from: data)) ?? .null
+                if let r = spec.resultSummary?(body) {
+                    log.append(title: spec.title, method: method, path: path, outcome: r.isFailure ? .failed : .succeeded, detail: r.text)
+                    phase = r.isFailure ? .failed(r.text) : .done(r.text)
+                } else {
+                    let msg = "HTTP OK, \(data.count) bytes"
+                    log.append(title: spec.title, method: method, path: path, outcome: .succeeded, detail: msg)
+                    phase = .done(msg)
+                }
             } catch {
                 let m = Self.describe(error)
                 log.append(title: spec.title, method: method, path: path, outcome: .failed, detail: m)

@@ -16,6 +16,7 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
     case agents, surfaces, exports, artifacts, gitops, tenants, metricContexts
     case insightsDetail, processWatch, datapathDetail, fleetExporters
     case vms
+    case changes
 
     var id: String { rawValue }
 
@@ -46,6 +47,7 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .datapathDetail: "Datapath detail"
         case .fleetExporters: "Fleet flows & exporters"
         case .vms: "VMs"
+        case .changes: "What changed"
         default: rawValue.prefix(1).uppercased() + rawValue.dropFirst()
         }
     }
@@ -118,6 +120,7 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .datapathDetail: "chart.bar.xaxis"
         case .fleetExporters: "externaldrive.connected.to.line.below"
         case .vms: "desktopcomputer"
+        case .changes: "clock.arrow.circlepath"
         }
     }
 
@@ -188,6 +191,7 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .datapathDetail: "api/v1/ebpf/reasons"
         case .fleetExporters: "api/v1/fleet/flows/history"
         case .vms: "api/v1/vms"
+        case .changes: nil
         }
     }
 }
@@ -203,7 +207,7 @@ struct SectionGroup: Identifiable {
         .init(title: "Workloads", sections: [.workloads, .pods, .vms, .l7, .tls]),
         .init(title: "Kernel", sections: [.diagnostics, .listenQueues, .sysctl, .nodeResources, .netlink, .attachments, .maps, .ipv6, .kernelNetwork, .ebpfCoverage, .datapathDetail]),
         .init(title: "Detect", sections: [.metrics, .metricContexts, .anomalies, .alerts, .insights, .incidents, .security, .intel, .insightsDetail, .processWatch, .explain, .investigate, .optimizer, .playbooks, .baselines]),
-        .init(title: "Record", sections: [.audit, .compliance, .report]),
+        .init(title: "Record", sections: [.audit, .compliance, .report, .changes]),
         .init(title: "Ask Netra", sections: [.aiBrief, .aiDigest, .aiSuggestions]),
         .init(title: "Platform", sections: [.agents, .surfaces, .exports, .artifacts, .gitops, .tenants, .fleetExporters]),
         .init(title: "Control", sections: [.lease, .rules, .policies, .features, .capture, .enforcement, .fleet]),

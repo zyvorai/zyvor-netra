@@ -158,6 +158,7 @@ public enum PolicyTools {
                 title: "Deny observed AI destinations", risk: .high, expectedPhrase: "deny ai destinations", leaseBound: true,
                 preview: { c.request("GET", "api/v1/ebpf/ai-destinations") },     // the read that lists exactly what would be denied
                 summarize: PolicyToolsData.aiDestinationSummary,
+                resultSummary: ResultSummary.bulkApplied,
                 execute: { _ in c.request("POST", "api/v1/ebpf/ai-destinations/deny") }))
         })
 
