@@ -77,7 +77,7 @@ final class TopologyModel {
         Vec2((p.x - size.width / 2 - pan.width) / zoom, (p.y - size.height / 2 - pan.height) / zoom)
     }
     func hit(_ p: CGPoint, in size: CGSize) -> String? {
-        var best: (String, Double)?
+        var best: (String, CGFloat)?
         for (id, pos) in layout.positions {
             let s = worldToScreen(pos, in: size)
             let d = hypot(s.x - p.x, s.y - p.y)
