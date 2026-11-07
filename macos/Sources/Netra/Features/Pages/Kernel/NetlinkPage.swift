@@ -52,6 +52,7 @@ struct NetlinkPage: View {
             }
         }
         .searchable(text: $query, prompt: "Filter by node, interface, comm")
+        .linkFilter(text: $query)
     }
 
     private func events(_ rows: [KernelData.NetlinkRow], all: [KernelData.NetlinkRow]) -> some View {

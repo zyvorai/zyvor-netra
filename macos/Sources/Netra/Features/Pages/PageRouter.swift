@@ -20,6 +20,7 @@ struct PageRouter: View {
         case .metricContexts: MetricsPages.view(for: section)
         case .exports, .artifacts, .gitops, .tenants: OpsPages.view(for: section)
         case .insightsDetail, .processWatch, .datapathDetail, .fleetExporters: CoveragePages.view(for: section)
+        case .vms: VMPages.view(for: section)
         default: JSONBrowserView(section: section).id(section)
         }
     }

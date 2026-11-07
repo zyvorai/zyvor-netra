@@ -51,6 +51,7 @@ struct MapsPage: View {
             }
         }
         .searchable(text: $query, prompt: "Filter maps and entries")
+        .linkFilter(text: $query)
     }
 
     @ViewBuilder private func detail(_ m: KernelData.MapPressure?) -> some View {

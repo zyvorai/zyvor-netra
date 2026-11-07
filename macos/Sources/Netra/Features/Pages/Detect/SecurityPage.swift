@@ -52,6 +52,7 @@ struct SecurityPage: View {
             }
         }
         .searchable(text: $query, prompt: "Filter by pod, node or evidence")
+        .linkFilter(text: $query)
     }
 
     private struct Detail: View {

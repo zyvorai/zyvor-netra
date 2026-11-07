@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 Zyvor AI Labs · https://zyvor.dev -->
+<!-- SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0 -->
+<!--
+  Entitlements for Netra.app. Applied by Packaging/build-app.sh together with `codesign` with the hardened runtime option
+  (hardened runtime). No hardened-runtime exceptions (JIT, unsigned memory, library validation) are requested.
+    * app-sandbox: the App Sandbox is on.
+    * network.client: outbound connections to the controller (HTTPS and WebSocket via URLSession).
+    * files.user-selected.read-write: files the user picks in NSSavePanel (PCAP, exports, history).
+  The Keychain needs no entitlement for a sandboxed app's own items (login keychain, default access group).
+  UserNotifications needs no entitlement; the user is prompted at runtime.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.app-sandbox</key><true/>
+  <key>com.apple.security.network.client</key><true/>
+  <key>com.apple.security.files.user-selected.read-write</key><true/>
+</dict>
+</plist>

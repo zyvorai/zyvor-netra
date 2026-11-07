@@ -40,6 +40,7 @@ struct AttachmentsPage: View {
             }
         }
         .searchable(text: $query, prompt: "Filter interfaces and programs")
+        .linkFilter(text: $query)
     }
 
     private func interfaceTable(_ rows: [KernelData.AttachRow]) -> some View {

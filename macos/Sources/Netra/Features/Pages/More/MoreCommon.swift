@@ -124,6 +124,7 @@ struct MoreRowsTable: View {
             }.frame(minWidth: 240, idealWidth: 300)
         }
         .searchable(text: $query, prompt: "Filter")
+        .linkFilter(text: $query)
     }
 }
 

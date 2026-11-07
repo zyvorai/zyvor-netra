@@ -15,6 +15,7 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
     case explain, investigate, optimizer, playbooks, baselines
     case agents, surfaces, exports, artifacts, gitops, tenants, metricContexts
     case insightsDetail, processWatch, datapathDetail, fleetExporters
+    case vms
 
     var id: String { rawValue }
 
@@ -44,6 +45,7 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .processWatch: "Process watch"
         case .datapathDetail: "Datapath detail"
         case .fleetExporters: "Fleet flows & exporters"
+        case .vms: "VMs"
         default: rawValue.prefix(1).uppercased() + rawValue.dropFirst()
         }
     }
@@ -115,6 +117,7 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .processWatch: "eye.trianglebadge.exclamationmark.fill"
         case .datapathDetail: "chart.bar.xaxis"
         case .fleetExporters: "externaldrive.connected.to.line.below"
+        case .vms: "desktopcomputer"
         }
     }
 
@@ -184,6 +187,7 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .processWatch: "api/v1/ebpf/capdrift"
         case .datapathDetail: "api/v1/ebpf/reasons"
         case .fleetExporters: "api/v1/fleet/flows/history"
+        case .vms: "api/v1/vms"
         }
     }
 }
@@ -196,7 +200,7 @@ struct SectionGroup: Identifiable {
     static let all: [SectionGroup] = [
         .init(title: "Now", sections: [.overview, .health, .scorecard, .slo]),
         .init(title: "Traffic", sections: [.flows, .talkers, .ports, .protocols, .drops, .dns, .topology, .tcpEvents, .connections, .pathDiag, .congestion]),
-        .init(title: "Workloads", sections: [.workloads, .pods, .l7, .tls]),
+        .init(title: "Workloads", sections: [.workloads, .pods, .vms, .l7, .tls]),
         .init(title: "Kernel", sections: [.diagnostics, .listenQueues, .sysctl, .nodeResources, .netlink, .attachments, .maps, .ipv6, .kernelNetwork, .ebpfCoverage, .datapathDetail]),
         .init(title: "Detect", sections: [.metrics, .metricContexts, .anomalies, .alerts, .insights, .incidents, .security, .intel, .insightsDetail, .processWatch, .explain, .investigate, .optimizer, .playbooks, .baselines]),
         .init(title: "Record", sections: [.audit, .compliance, .report]),

@@ -100,6 +100,7 @@ struct DataPageView<Header: View>: View {
         .navigationTitle(config.title)
         .navigationSubtitle(config.endpoint)
         .searchable(text: $query, prompt: "Filter")
+        .linkFilter(text: $query)
         .toolbar {
             if config.liveEvery != nil { Toggle("Live", systemImage: "dot.radiowaves.left.and.right", isOn: $live) }
             Button("Refresh", systemImage: "arrow.clockwise") { Task { await load() } }.disabled(loading)
@@ -203,4 +204,62 @@ private struct Inspector: View {
 
 private extension View {
     func monospacedDigit(_ on: Bool) -> some View { on ? AnyView(self.monospacedDigit()) : AnyView(self) }
+}
+
+// MARK: - Link-provided filters
+
+/// Seeds a page's search text from a deep link / palette filter, once, and shows an unmissable
+/// "Filtered by ..." chip with a clear button. Display-only: it never triggers a request.
+/// Mapping (see `FilterSeed`): one term from q > pod > namespace > node > protocol > action > direction.
+/// Pages with a dedicated field pass `dedicated` and `apply`; those keys go to `apply` instead of the text box.
+private struct LinkFilterModifier: ViewModifier {
+    @Binding var text: String
+    var dedicated: Set<String>
+    var apply: (FilterSeed.Plan) -> Void
+    var onClear: () -> Void
+    @Environment(AppModel.self) private var model
+    @State private var chip: FilterSeed.Plan?
+
+    private func consume() {
+        let f = LinkRouter.shared.consumeFilter(for: model.selection)
+        guard !f.isEmpty else { return }
+        let plan = FilterSeed.plan(f, dedicated: dedicated)
+        guard !plan.summary.isEmpty else { return }
+        text = plan.search
+        apply(plan)
+        chip = plan
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if let chip {
+                    HStack(spacing: 8) {
+                        Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                        Text("Filtered by \(chip.summary)").fontWeight(.semibold).lineLimit(1).truncationMode(.middle)
+                        if !chip.unapplied.isEmpty {
+                            Text("(\(chip.unapplied.joined(separator: ", ")) not applicable here)").font(.caption).opacity(0.8)
+                        }
+                        Spacer()
+                        Button("Clear filter", systemImage: "xmark.circle.fill") {
+                            text = ""; onClear(); self.chip = nil
+                        }.labelStyle(.titleAndIcon).buttonStyle(.borderless)
+                    }
+                    .font(.callout).padding(.horizontal, 12).padding(.vertical, 6)
+                    .foregroundStyle(.white).background(Color.accentColor)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("Filtered by \(chip.summary)")
+                }
+            }
+            .onAppear { consume() }
+            .onChange(of: LinkRouter.shared.filterSerial) { _, _ in consume() }
+    }
+}
+
+extension View {
+    /// Consume a pending deep-link filter into `text` (see `LinkFilterModifier`).
+    func linkFilter(text: Binding<String>, dedicated: Set<String> = [],
+                    apply: @escaping (FilterSeed.Plan) -> Void = { _ in }, onClear: @escaping () -> Void = {}) -> some View {
+        modifier(LinkFilterModifier(text: text, dedicated: dedicated, apply: apply, onClear: onClear))
+    }
 }

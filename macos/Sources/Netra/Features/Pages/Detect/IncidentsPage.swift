@@ -57,6 +57,7 @@ private struct IncidentClustersView: View {
             }
         }
         .searchable(text: $query, prompt: "Filter incidents")
+        .linkFilter(text: $query)
     }
 }
 

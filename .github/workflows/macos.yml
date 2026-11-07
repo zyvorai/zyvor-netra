@@ -1,0 +1,43 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+name: macOS
+# Build, unit tests and the API route-coverage gate for the macOS client in macos/.
+on:
+  push:
+    branches: [main]
+    paths:
+    - 'macos/**'
+    - 'scripts/ci-macos-route-coverage.sh'
+    - 'docs/macos-app.md'
+    - '.github/workflows/macos.yml'
+  pull_request:
+    paths:
+    - 'macos/**'
+    - 'scripts/ci-macos-route-coverage.sh'
+    - 'docs/macos-app.md'
+    - '.github/workflows/macos.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: macos-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  swift:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@v7
+    - name: Cache SwiftPM build
+      uses: actions/cache@v4
+      with:
+        path: macos/.build
+        key: macos-spm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('macos/Package.swift', 'macos/Package.resolved') }}
+        restore-keys: macos-spm-${{ runner.os }}-${{ runner.arch }}-
+    - name: swift build
+      run: swift build --package-path macos
+    - name: swift test
+      run: swift test --package-path macos
+    - name: Route coverage (controller routes vs macos/Sources and waivers)
+      # Same command locally: ./scripts/ci-macos-route-coverage.sh
+      run: ./scripts/ci-macos-route-coverage.sh
