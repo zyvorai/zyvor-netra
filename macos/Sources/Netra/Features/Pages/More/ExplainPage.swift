@@ -5,7 +5,7 @@ import NetraKit
 
 /// Explain a drop (read-only). GET /api/v1/ebpf/explain?namespace=&pod=&limit=: {summary:{text,policyDropPackets,policyDropFlows,
 /// conntrackEntries,exactFindings,probableFindings}, findings:[{source,confidence,node,namespace,pod,code,reason,direction,src,dst,
-/// packets,explanation,suggestion}], sources}. (/ai/explain is a POST, so it is not used here.)
+/// packets,explanation,suggestion}], sources}. (The "Explain in words" button separately POSTs /ai/explain and shows read-only text.)
 struct MoreExplainPage: View {
     @Environment(AppModel.self) private var model
     @State private var namespace = ""
@@ -14,6 +14,8 @@ struct MoreExplainPage: View {
     @State private var result: JSONValue?
     @State private var failure: MoreFailure?
     @State private var running = false
+    @State private var narrating = false
+    @State private var narration: AskData.Brief?
 
     var body: some View {
         Group {
@@ -27,7 +29,9 @@ struct MoreExplainPage: View {
                         Stepper("Limit \(limit)", value: $limit, in: 1...100, step: 10).fixedSize()
                         Button("Explain drops", systemImage: "questionmark.bubble") { Task { await run() } }
                             .keyboardShortcut(.defaultAction).disabled(running)
-                        if running { ProgressView().controlSize(.small) }
+                        Button("Explain in words", systemImage: "text.bubble") { Task { await narrate() } }
+                            .help("POST /api/v1/ai/explain: a read-only narration of these drops").disabled(running || narrating)
+                        if running || narrating { ProgressView().controlSize(.small) }
                         Spacer()
                     }.padding()
                     Divider()
@@ -43,6 +47,12 @@ struct MoreExplainPage: View {
         if let result {
             VStack(spacing: 0) {
                 if let failure { MoreBanner(text: "Showing the last result. Refresh failed: \(failure.text)") }
+                if let narration {
+                    GroupBox("AI explanation (read-only)") {
+                        Text([narration.headline, narration.summary].filter { !$0.isEmpty }.joined(separator: "\n\n"))
+                            .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                    }.padding([.horizontal, .top])
+                }
                 GroupBox {
                     Text(result.at("summary.text")?.string ?? "No summary.").textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
                 }.padding([.horizontal, .top])
@@ -65,6 +75,17 @@ struct MoreExplainPage: View {
             ContentUnavailableView(failure.featureOff ? "Explain is off" : "Couldn't explain drops",
                                    systemImage: "exclamationmark.triangle", description: Text(failure.text))
         } else { ProgressView().controlSize(.large).frame(maxHeight: .infinity) }
+    }
+
+    /// POST /api/v1/ai/explain (read-only narration of a finding). Never applies anything.
+    private func narrate() async {
+        guard let c = model.client else { return }
+        narrating = true; defer { narrating = false }
+        let subject = [namespace, pod].filter { !$0.isEmpty }.joined(separator: "/")
+        let body = AskData.explainBody(kind: "drops", subject: subject, message: result?.at("summary.text")?.string ?? "", page: "explain")
+        var req = c.request("POST", "api/v1/ai/explain", body: body); req.timeoutInterval = 60
+        do { narration = AskData.brief(try JSONDecoder().decode(JSONValue.self, from: await c.send(req))) }
+        catch { failure = MoreFailure(text: error.localizedDescription, featureOff: false) }
     }
 
     private func run() async {

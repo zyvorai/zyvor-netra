@@ -91,6 +91,7 @@ struct ControlView: View {
                 if section == .policies {
                     Button("Apply policy…", systemImage: "square.and.arrow.down") { policySheet = true }
                         .disabled(!model.gate.canMutate).help(model.gate.canMutate ? "Plan, then apply with a plan token" : "This token is read-only")
+                    TlToolsMenu(log: log) { Task { await load() } }
                     Button("Lock down…", systemImage: "lock.shield") { lockSheet = .lockdown }
                         .disabled(!model.gate.canMutate).help(model.gate.canMutate ? "Build a lockdown policy for a workload, then plan and apply it" : "This token is read-only")
                     Button("Unlock…", systemImage: "lock.open") { lockSheet = .unlock }

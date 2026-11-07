@@ -1,0 +1,47 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+#
+# Routes the app reaches through dynamically built paths, which the literal grep in
+# scripts/ci-macos-route-coverage.sh cannot see. Format: VERB /path # builder: file
+# Every entry MUST be produced by the named builder: Tests/NetraKitTests/RouteCoverageTests.swift
+# enumerates every kind/action/removal and asserts this file equals the produced set exactly.
+# Add a route here only after that test produces it; a route the builder cannot build stays uncovered.
+
+POST /api/v1/ebpf/deny # builder: RuleKinds.swift
+POST /api/v1/ebpf/allow # builder: RuleKinds.swift
+POST /api/v1/ebpf/cidr # builder: RuleKinds.swift
+POST /api/v1/ebpf/allow-cidr # builder: RuleKinds.swift
+POST /api/v1/ebpf/port # builder: RuleKinds.swift
+POST /api/v1/ebpf/allow-port # builder: RuleKinds.swift
+POST /api/v1/ebpf/process # builder: RuleKinds.swift
+POST /api/v1/ebpf/allow-process # builder: RuleKinds.swift
+POST /api/v1/ebpf/dns # builder: RuleKinds.swift
+POST /api/v1/ebpf/sni # builder: RuleKinds.swift
+POST /api/v1/ebpf/capability # builder: RuleKinds.swift
+POST /api/v1/ebpf/exehash-deny # builder: RuleKinds.swift
+POST /api/v1/ebpf/syn-drop # builder: RuleKinds.swift
+POST /api/v1/ebpf/syn-drop-cidr # builder: RuleKinds.swift
+POST /api/v1/ebpf/uid # builder: RuleKinds.swift
+POST /api/v1/ebpf/allow-uid # builder: RuleKinds.swift
+POST /api/v1/ebpf/cidr/delete # builder: RuleKinds.swift
+POST /api/v1/ebpf/allow-cidr/delete # builder: RuleKinds.swift
+POST /api/v1/ebpf/port/delete # builder: RuleKinds.swift
+POST /api/v1/ebpf/allow-port/delete # builder: RuleKinds.swift
+POST /api/v1/ebpf/process/delete # builder: RuleKinds.swift
+POST /api/v1/ebpf/allow-process/delete # builder: RuleKinds.swift
+POST /api/v1/ebpf/dns/delete # builder: RuleKinds.swift
+POST /api/v1/ebpf/sni/delete # builder: RuleKinds.swift
+POST /api/v1/ebpf/capability/delete # builder: RuleKinds.swift
+POST /api/v1/ebpf/exehash-deny/delete # builder: RuleKinds.swift
+POST /api/v1/ebpf/syn-drop/delete # builder: RuleKinds.swift
+POST /api/v1/ebpf/syn-drop-cidr/delete # builder: RuleKinds.swift
+DELETE /api/v1/ebpf/deny/{ip} # builder: RuleKinds.swift
+DELETE /api/v1/ebpf/allow/{ip} # builder: RuleKinds.swift
+DELETE /api/v1/ebpf/uid/{uid} # builder: RuleKinds.swift
+DELETE /api/v1/ebpf/allow-uid/{uid} # builder: RuleKinds.swift
+PUT /api/v1/ebpf/rate # builder: RuleKinds.swift
+DELETE /api/v1/ebpf/rate/{ip} # builder: RuleKinds.swift
+GET /api/v1/export/flows # builder: OpsData.swift
+GET /api/v1/export/events # builder: OpsData.swift
+GET /api/v1/export/blocks # builder: OpsData.swift
+GET /api/v1/export/audit # builder: OpsData.swift

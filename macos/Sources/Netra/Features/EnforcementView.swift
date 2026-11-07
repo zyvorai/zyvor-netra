@@ -13,7 +13,7 @@ struct EnforcementView: View {
     @State private var showActivity = false
 
     private var groups: [(String, [ControlAction])] {
-        let hits = ControlAction.all.filter {
+        let hits = (ControlAction.all + PolicyTools.actions).filter {
             query.isEmpty || [$0.title, $0.group, $0.summary].contains { $0.localizedCaseInsensitiveContains(query) }
         }
         var order: [String] = []

@@ -14,6 +14,7 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
     case tcpEvents, connections, pathDiag, congestion, ebpfCoverage
     case explain, investigate, optimizer, playbooks, baselines
     case agents, surfaces, exports, artifacts, gitops, tenants, metricContexts
+    case insightsDetail, processWatch, datapathDetail, fleetExporters
 
     var id: String { rawValue }
 
@@ -39,6 +40,10 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .gitops: "GitOps"
         case .ipv6: "IPv6"
         case .kernelNetwork: "Kernel network"
+        case .insightsDetail: "Insights detail"
+        case .processWatch: "Process watch"
+        case .datapathDetail: "Datapath detail"
+        case .fleetExporters: "Fleet flows & exporters"
         default: rawValue.prefix(1).uppercased() + rawValue.dropFirst()
         }
     }
@@ -106,6 +111,10 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .gitops: "arrow.triangle.2.circlepath"
         case .tenants: "building.2"
         case .metricContexts: "list.bullet.rectangle"
+        case .insightsDetail: "lightbulb.2"
+        case .processWatch: "eye.trianglebadge.exclamationmark.fill"
+        case .datapathDetail: "chart.bar.xaxis"
+        case .fleetExporters: "externaldrive.connected.to.line.below"
         }
     }
 
@@ -171,6 +180,10 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .gitops: "api/v1/policies/gitops/status"
         case .tenants: "api/v1/fleet/tenants"
         case .metricContexts: "api/v1/metrics/contexts"
+        case .insightsDetail: "api/v1/insights/red"
+        case .processWatch: "api/v1/ebpf/capdrift"
+        case .datapathDetail: "api/v1/ebpf/reasons"
+        case .fleetExporters: "api/v1/fleet/flows/history"
         }
     }
 }
@@ -184,11 +197,11 @@ struct SectionGroup: Identifiable {
         .init(title: "Now", sections: [.overview, .health, .scorecard, .slo]),
         .init(title: "Traffic", sections: [.flows, .talkers, .ports, .protocols, .drops, .dns, .topology, .tcpEvents, .connections, .pathDiag, .congestion]),
         .init(title: "Workloads", sections: [.workloads, .pods, .l7, .tls]),
-        .init(title: "Kernel", sections: [.diagnostics, .listenQueues, .sysctl, .nodeResources, .netlink, .attachments, .maps, .ipv6, .kernelNetwork, .ebpfCoverage]),
-        .init(title: "Detect", sections: [.metrics, .metricContexts, .anomalies, .alerts, .insights, .incidents, .security, .intel, .explain, .investigate, .optimizer, .playbooks, .baselines]),
+        .init(title: "Kernel", sections: [.diagnostics, .listenQueues, .sysctl, .nodeResources, .netlink, .attachments, .maps, .ipv6, .kernelNetwork, .ebpfCoverage, .datapathDetail]),
+        .init(title: "Detect", sections: [.metrics, .metricContexts, .anomalies, .alerts, .insights, .incidents, .security, .intel, .insightsDetail, .processWatch, .explain, .investigate, .optimizer, .playbooks, .baselines]),
         .init(title: "Record", sections: [.audit, .compliance, .report]),
         .init(title: "Ask Netra", sections: [.aiBrief, .aiDigest, .aiSuggestions]),
-        .init(title: "Platform", sections: [.agents, .surfaces, .exports, .artifacts, .gitops, .tenants]),
+        .init(title: "Platform", sections: [.agents, .surfaces, .exports, .artifacts, .gitops, .tenants, .fleetExporters]),
         .init(title: "Control", sections: [.lease, .rules, .policies, .features, .capture, .enforcement, .fleet]),
     ]
 }
