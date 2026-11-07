@@ -11,6 +11,9 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
     case audit, compliance, report
     case aiBrief, aiDigest, aiSuggestions
     case rules, policies, lease, features, capture, fleet, enforcement
+    case tcpEvents, connections, pathDiag, congestion, ebpfCoverage
+    case explain, investigate, optimizer, playbooks, baselines
+    case agents, surfaces, exports, artifacts, gitops, tenants, metricContexts
 
     var id: String { rawValue }
 
@@ -29,6 +32,11 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .attachments: "BPF attachments"
         case .maps: "BPF maps"
         case .sysctl: "Sysctl audit"
+        case .tcpEvents: "TCP events"
+        case .pathDiag: "Path & ICMP"
+        case .ebpfCoverage: "eBPF coverage"
+        case .metricContexts: "Metric contexts"
+        case .gitops: "GitOps"
         default: rawValue.prefix(1).uppercased() + rawValue.dropFirst()
         }
     }
@@ -77,6 +85,23 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .capture: "record.circle"
         case .fleet: "server.rack"
         case .enforcement: "shield.checkered"
+        case .tcpEvents: "arrow.left.arrow.right"
+        case .connections: "link"
+        case .pathDiag: "point.topleft.down.to.point.bottomright.curvepath"
+        case .congestion: "thermometer.medium"
+        case .ebpfCoverage: "checkmark.shield"
+        case .explain: "questionmark.bubble"
+        case .investigate: "magnifyingglass.circle"
+        case .optimizer: "slider.horizontal.below.rectangle"
+        case .playbooks: "book"
+        case .baselines: "chart.bar.doc.horizontal"
+        case .agents: "antenna.radiowaves.left.and.right"
+        case .surfaces: "square.grid.3x3"
+        case .exports: "square.and.arrow.up"
+        case .artifacts: "doc.zipper"
+        case .gitops: "arrow.triangle.2.circlepath"
+        case .tenants: "building.2"
+        case .metricContexts: "list.bullet.rectangle"
         }
     }
 
@@ -123,6 +148,23 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .features: "api/v1/features"
         case .capture: "api/v1/capture/status"
         case .fleet: "api/v1/fleet"
+        case .tcpEvents: "api/v1/ebpf/tcp-events"
+        case .connections: "api/v1/ebpf/connections"
+        case .pathDiag: "api/v1/ebpf/path"
+        case .congestion: "api/v1/namespaces/heat"
+        case .ebpfCoverage: "api/v1/ebpf/coverage"
+        case .explain: "api/v1/ebpf/explain"
+        case .investigate: "api/v1/investigate/connection"
+        case .optimizer: "api/v1/security/optimizer"
+        case .playbooks: "api/v1/playbooks"
+        case .baselines: "api/v1/baselines"
+        case .agents: "api/v1/agents"
+        case .surfaces: "api/v1/ebpf/capabilities"
+        case .exports: "api/v1/export/status"
+        case .artifacts: "api/v1/capture/artifacts"
+        case .gitops: "api/v1/policies/gitops"
+        case .tenants: "api/v1/tenants"
+        case .metricContexts: "api/v1/metrics/contexts"
         }
     }
 }
@@ -134,12 +176,13 @@ struct SectionGroup: Identifiable {
 
     static let all: [SectionGroup] = [
         .init(title: "Now", sections: [.overview, .health, .scorecard, .slo]),
-        .init(title: "Traffic", sections: [.flows, .talkers, .ports, .protocols, .drops, .dns, .topology]),
+        .init(title: "Traffic", sections: [.flows, .talkers, .ports, .protocols, .drops, .dns, .topology, .tcpEvents, .connections, .pathDiag, .congestion]),
         .init(title: "Workloads", sections: [.workloads, .pods, .l7, .tls]),
-        .init(title: "Kernel", sections: [.diagnostics, .listenQueues, .sysctl, .nodeResources, .netlink, .attachments, .maps]),
-        .init(title: "Detect", sections: [.metrics, .anomalies, .alerts, .insights, .incidents, .security, .intel]),
+        .init(title: "Kernel", sections: [.diagnostics, .listenQueues, .sysctl, .nodeResources, .netlink, .attachments, .maps, .ebpfCoverage]),
+        .init(title: "Detect", sections: [.metrics, .metricContexts, .anomalies, .alerts, .insights, .incidents, .security, .intel, .explain, .investigate, .optimizer, .playbooks, .baselines]),
         .init(title: "Record", sections: [.audit, .compliance, .report]),
         .init(title: "Ask Netra", sections: [.aiBrief, .aiDigest, .aiSuggestions]),
+        .init(title: "Platform", sections: [.agents, .surfaces, .exports, .artifacts, .gitops, .tenants]),
         .init(title: "Control", sections: [.lease, .rules, .policies, .features, .capture, .enforcement, .fleet]),
     ]
 }
