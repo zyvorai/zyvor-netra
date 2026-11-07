@@ -97,6 +97,68 @@ struct PolicyApplySheet: View {
     }
 }
 
+/// Lock a workload down (build -> plan -> apply, always high risk) or lift a lockdown.
+struct LockdownSheet: View {
+    enum Mode: String, Identifiable { case lockdown, unlock; var id: String { rawValue } }
+    var mode: Mode
+    var log: ActivityLog
+    var seed: (namespace: String, name: String)?
+    var onDone: () -> Void
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @State private var namespace = "default"
+    @State private var name = ""
+    @State private var kind = "pod"
+    @State private var flow: MutationFlow?
+    @State private var building = false
+    @State private var buildError: String?
+
+    var body: some View {
+        if let flow {
+            MutationSheet(flow: flow, onClose: { onDone(); dismiss() }) {
+                Text(mode == .lockdown
+                     ? "Blocks all ingress and all egress except DNS for \(namespace)/\(name). Netra plans first and applies only with the plan token; the policy is removed with Unlock."
+                     : "Removes the lockdown policy for \(namespace)/\(name).").font(.callout)
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(mode == .lockdown ? "Lock down a workload" : "Unlock a workload").font(.headline)
+                TextField("Namespace", text: $namespace).textFieldStyle(.roundedBorder)
+                TextField(kind == "vm" ? "VM name" : "Pod name", text: $name).textFieldStyle(.roundedBorder)
+                Picker("Kind", selection: $kind) { Text("Pod").tag("pod"); Text("VM").tag("vm") }.pickerStyle(.segmented)
+                if let buildError { Label(buildError, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).font(.callout) }
+                HStack {
+                    Spacer()
+                    Button("Cancel") { dismiss() }
+                    Button(building ? "Building…" : "Continue") { Task { await begin() } }
+                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || namespace.isEmpty || building || !model.gate.canMutate)
+                }
+            }
+            .padding().frame(width: 420)
+            .onAppear { if let seed { namespace = seed.namespace; name = seed.name } }
+        }
+    }
+
+    private func begin() async {
+        guard let c = model.client else { return }
+        let n = name.trimmingCharacters(in: .whitespaces)
+        buildError = nil
+        switch mode {
+        case .unlock:
+            flow = MutationFlow(spec: ControlMutations.unlockSpec(client: c, namespace: namespace, name: n, kind: kind),
+                                client: c, gate: model.gate, log: log)
+        case .lockdown:
+            building = true; defer { building = false }
+            do {
+                let manifest = try await ControlMutations.buildLockdown(client: c, namespace: namespace, name: n, kind: kind)
+                let id = ControlMutations.policyIdentity(manifest) ?? (namespace, n)
+                flow = MutationFlow(spec: ControlMutations.lockdownApplySpec(client: c, manifest: manifest, namespace: id.namespace, name: id.name),
+                                    client: c, gate: model.gate, log: log)
+            } catch { buildError = "\(error)" }
+        }
+    }
+}
+
 /// Switch datapath mode. Enforce is lease-bounded and fails open to observe.
 struct ModeSheet: View {
     var log: ActivityLog

@@ -23,6 +23,7 @@ struct ControlView: View {
     @State private var rollbackFlow: MutationFlow?
     @State private var captureSheet = false
     @State private var policySheet = false
+    @State private var lockSheet: LockdownSheet.Mode?
     @State private var actionFlow: MutationFlow?     // feature toggle / capture stop
     @State private var actionNote = ""
 
@@ -57,9 +58,9 @@ struct ControlView: View {
                         }
                         if let error { Text(error).foregroundStyle(.red).font(.callout).padding(8) }
                         table(rows, columns: columns, selection: $selection)
-                        if section == .rules, let sel = selectedRule {
+                        if let sel = selectedRule ?? selectedPolicyRow {
                             Divider()
-                            Text("History of \(sel.id)").font(.caption).padding(.top, 6)
+                            Text("History of \(sel.text("id").isEmpty ? policyKey(sel) : sel.text("id"))").font(.caption).padding(.top, 6)
                             table(history, columns: historyColumns, selection: $historySelection).frame(height: 160)
                         }
                     }
@@ -86,6 +87,13 @@ struct ControlView: View {
                 if section == .policies {
                     Button("Apply policy…", systemImage: "square.and.arrow.down") { policySheet = true }
                         .disabled(!model.gate.canMutate).help(model.gate.canMutate ? "Plan, then apply with a plan token" : "This token is read-only")
+                    Button("Lock down…", systemImage: "lock.shield") { lockSheet = .lockdown }
+                        .disabled(!model.gate.canMutate).help(model.gate.canMutate ? "Build a lockdown policy for a workload, then plan and apply it" : "This token is read-only")
+                    Button("Unlock…", systemImage: "lock.open") { lockSheet = .unlock }
+                        .disabled(!model.gate.canMutate).help("Lift a workload's lockdown")
+                    Button("Roll back…", systemImage: "arrow.uturn.backward") { startRollback() }
+                        .disabled(!model.gate.canMutate || selectedPolicyRow == nil || selectedRevision == nil)
+                        .help("Restore the selected revision of the selected policy")
                 }
                 if section == .features, let f = selectedRow {
                     let on = f.text("enabled") == "true"
@@ -106,6 +114,7 @@ struct ControlView: View {
         .task(id: selection) { await loadHistory() }
         .sheet(isPresented: $captureSheet) { CaptureStartSheet(log: log) { Task { await load() } } }
         .sheet(isPresented: $policySheet) { PolicyApplySheet(log: log) { Task { await load() } } }
+        .sheet(item: $lockSheet) { mode in LockdownSheet(mode: mode, log: log, seed: selectedPolicyRow.flatMap(lockSeed)) { Task { await load() } } }
         .sheet(isPresented: Binding(get: { actionFlow != nil }, set: { if !$0 { actionFlow = nil } })) {
             if let flow = actionFlow {
                 MutationSheet(flow: flow, onClose: { actionFlow = nil; Task { await load() } }) {
@@ -117,7 +126,9 @@ struct ControlView: View {
         .sheet(isPresented: Binding(get: { rollbackFlow != nil }, set: { if !$0 { rollbackFlow = nil } })) {
             if let flow = rollbackFlow {
             MutationSheet(flow: flow, onClose: { rollbackFlow = nil; Task { await load(); await loadHistory() } }) {
-                Text("Re-applies the 'after' state of the chosen revision as a new edit on this rule.").font(.callout)
+                Text(section == .policies
+                     ? "Re-applies the chosen recorded revision of this policy. Netra checkpoints the current state first and asks for confirmation when the plan is high risk."
+                     : "Re-applies the 'after' state of the chosen revision as a new edit on this rule.").font(.callout)
             }
             }
         }
@@ -143,6 +154,14 @@ struct ControlView: View {
     }
 
     private var selectedRule: ControlRow? { section == .rules ? rows.first { $0.id == selection } : nil }
+    private var selectedPolicyRow: ControlRow? { section == .policies ? rows.first { $0.id == selection } : nil }
+    private func policyKey(_ r: ControlRow) -> String { "\(r.text("metadata.namespace"))/\(r.text("metadata.name"))" }
+    /// Pre-fills the lockdown/unlock sheet from a selected `netra-lockdown-*` policy's workload label.
+    private func lockSeed(_ r: ControlRow) -> (namespace: String, name: String)? {
+        let w = r.value["metadata"]?["labels"]?["netra.zyvor.dev/workload"]?.string ?? ""
+        let ns = r.text("metadata.namespace")
+        return w.isEmpty || ns.isEmpty ? nil : (ns, w)
+    }
     private var selectedRevision: ControlRow? { history.first { $0.id == historySelection } }
 
     private func table(_ data: [ControlRow], columns: [ControlColumn], selection: Binding<ControlRow.ID?>) -> some View {
@@ -186,11 +205,22 @@ struct ControlView: View {
 
     private func loadHistory() async {
         history = []; historySelection = nil
-        guard section == .rules, let c = model.client, let id = selectedRule?.text("id"), !id.isEmpty else { return }
+        guard let c = model.client else { return }
+        if let pol = selectedPolicyRow {
+            history = (try? await c.policyHistory(namespace: pol.text("metadata.namespace"), name: pol.text("metadata.name"))) ?? []
+            return
+        }
+        guard section == .rules, let id = selectedRule?.text("id"), !id.isEmpty else { return }
         history = (try? await c.ruleHistory(id: id)) ?? []
     }
 
     private func startRollback() {
+        if let pol = selectedPolicyRow, let rev = selectedRevision, let c = model.client {
+            rollbackFlow = MutationFlow(spec: ControlMutations.policyRollbackSpec(client: c, namespace: pol.text("metadata.namespace"),
+                                                                                    name: pol.text("metadata.name"), revision: rev.text("id")),
+                                        client: c, gate: model.gate, log: log)
+            return
+        }
         guard let c = model.client, let rule = selectedRule, let rev = selectedRevision else { return }
         let rid = rule.text("id"), revID = rev.text("id")
         let spec = MutationSpec(title: "Roll back rule \(rid) to revision \(revID)", risk: .medium,

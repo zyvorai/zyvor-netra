@@ -138,9 +138,10 @@ public enum ControlMutations {
         return name.map { (ns, $0) }
     }
 
-    public static func policyApplySpec(client c: NetraClient, manifest: Data, namespace: String, name: String) -> MutationSpec {
+    public static func policyApplySpec(client c: NetraClient, manifest: Data, namespace: String, name: String,
+                                       title: String? = nil, minRisk: Risk = .medium) -> MutationSpec {
         MutationSpec(
-            title: "Apply policy \(namespace)/\(name)", risk: .medium, expectedPhrase: "apply \(namespace)/\(name)", leaseBound: false,
+            title: title ?? "Apply policy \(namespace)/\(name)", risk: minRisk, expectedPhrase: "apply \(namespace)/\(name)", leaseBound: false,
             preview: { c.request("POST", "api/v1/policies/plan", body: manifest) },
             summarize: { v in
                 let plan = v["plan"]
@@ -159,5 +160,69 @@ public enum ControlMutations {
             },
             riskFromPreview: { Risk(serverValue: $0["plan"]?["risk"]?.string) },
             execute: { _ in c.request("POST", "api/v1/policies/apply", body: manifest) })
+    }
+
+    // MARK: Policy lockdown: build (read-only) -> plan -> apply, and unlock
+
+    /// Body for POST /api/v1/policies/lockdown. The server builds the manifest only (it applies nothing);
+    /// an empty selector lets it derive the recommended one from the workload's labels.
+    public static func lockdownBuildBody(namespace: String, name: String, kind: String, selector: [String: String]) -> Data? {
+        var o: [String: Any] = ["namespace": namespace, "name": name, "kind": kind]
+        if !selector.isEmpty { o["selector"] = selector }
+        return try? JSONSerialization.data(withJSONObject: o)
+    }
+
+    /// Asks the server to build (not apply) a lockdown CiliumNetworkPolicy for a workload.
+    public static func buildLockdown(client c: NetraClient, namespace: String, name: String, kind: String,
+                                     selector: [String: String] = [:]) async throws -> Data {
+        guard let body = lockdownBuildBody(namespace: namespace, name: name, kind: kind, selector: selector) else {
+            throw NetraError.transport("could not encode lockdown request")
+        }
+        return try await c.send(c.request("POST", "api/v1/policies/lockdown", body: body))
+    }
+
+    /// Applies a built lockdown manifest through the normal plan-token flow. It cuts all ingress and all
+    /// egress but DNS, so it is never below `high`: a typed phrase and the confirm header are always required.
+    public static func lockdownApplySpec(client c: NetraClient, manifest: Data, namespace: String, name: String) -> MutationSpec {
+        policyApplySpec(client: c, manifest: manifest, namespace: namespace, name: name,
+                        title: "Lock down \(namespace)/\(name)", minRisk: .high)
+    }
+
+    /// Lifts a lockdown (deletes the workload's `netra-lockdown-*` policy; the server keeps a checkpoint).
+    public static func unlockSpec(client c: NetraClient, namespace: String, name: String, kind: String) -> MutationSpec {
+        MutationSpec(
+            title: "Unlock \(namespace)/\(name)", risk: .medium, expectedPhrase: "unlock \(namespace)/\(name)", leaseBound: false,
+            preview: { c.request("GET", "api/v1/workloads/\(kind)/\(namespace)/\(name)") },
+            summarize: { v in
+                let policy = v["lockdownPolicy"]?.string ?? "the lockdown policy"
+                if case .bool(false)? = v["lockedDown"] { return "\(namespace)/\(name) is not locked down; unlocking will return 404." }
+                return "Deletes \(policy), restoring the workload's previous network access. A checkpoint is kept for rollback."
+            },
+            execute: { _ in c.request("DELETE", "api/v1/policies/lockdown/\(namespace)/\(name)") })
+    }
+
+    // MARK: Policy rollback to a recorded revision
+
+    /// Rollback uses `?dryRun=true` for its preview and a `confirmRisk=<risk>` query (not a header) to apply.
+    public static func policyRollbackSpec(client c: NetraClient, namespace: String, name: String, revision: String) -> MutationSpec {
+        let path = "api/v1/policies/\(namespace)/\(name)/rollback/\(revision)"
+        return MutationSpec(
+            title: "Roll back \(namespace)/\(name) to revision \(revision)", risk: .medium,
+            expectedPhrase: "rollback \(namespace)/\(name) \(revision)", leaseBound: false,
+            preview: { c.request("POST", path, query: [.init(name: "dryRun", value: "true")]) },
+            summarize: { v in
+                let risk = v["plan"]?["risk"]?.string ?? "unknown"
+                let passed: Bool = { if case .bool(let b)? = v["dryRun"]?["passed"] { b } else { false } }()
+                var s = "Plan risk: \(risk). Kubernetes dry-run \(passed ? "passed" : "FAILED\(v["dryRun"]?["error"]?.string.map { ": " + $0 } ?? "")")."
+                if case .array(let w)? = v["plan"]?["warnings"], !w.isEmpty { s += " Warnings: " + w.map(\.summary).joined(separator: "; ") }
+                return s + " The current state is checkpointed first."
+            },
+            executeWithPreview: { preview, _ in
+                let risk = Risk(serverValue: preview["plan"]?["risk"]?.string)
+                let q: [URLQueryItem] = risk.requiresTypedConfirmation ? [.init(name: "confirmRisk", value: risk.confirmHeaderValue)] : []
+                return c.request("POST", path, query: q)
+            },
+            riskFromPreview: { Risk(serverValue: $0["plan"]?["risk"]?.string) },
+            execute: { _ in c.request("POST", path) })
     }
 }

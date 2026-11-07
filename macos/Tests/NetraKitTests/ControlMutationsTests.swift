@@ -119,3 +119,79 @@ final class ControlMutationsTests: XCTestCase {
         XCTAssertNil(ControlMutations.policyIdentity(Data("kind: X".utf8)))
     }
 }
+
+@MainActor
+final class PolicyLockdownTests: XCTestCase {
+    private func client() -> NetraClient {
+        let cfg = URLSessionConfiguration.ephemeral; cfg.protocolClasses = [StubURLProtocol.self]
+        StubURLProtocol.seen = []
+        return NetraClient(profile: .init(baseURL: URL(string: "http://stub.invalid")!, token: "t"), session: URLSession(configuration: cfg))
+    }
+
+    func testLockdownBuildBodyHasOnlyServerFields() throws {
+        let b = try XCTUnwrap(ControlMutations.lockdownBuildBody(namespace: "web", name: "api", kind: "pod", selector: [:]))
+        let o = try XCTUnwrap(JSONSerialization.jsonObject(with: b) as? [String: Any])
+        XCTAssertEqual(Set(o.keys), ["namespace", "name", "kind"])
+        let b2 = try XCTUnwrap(ControlMutations.lockdownBuildBody(namespace: "web", name: "api", kind: "vm", selector: ["app": "x"]))
+        XCTAssertEqual(Set((try JSONSerialization.jsonObject(with: b2) as! [String: Any]).keys), ["namespace", "name", "kind", "selector"])
+    }
+
+    func testBuildLockdownSendsNothingButTheBuildCall() async throws {
+        StubURLProtocol.handler = { _ in (200, #"{"metadata":{"name":"netra-lockdown-api","namespace":"web"}}"#) }
+        let c = client()
+        let m = try await ControlMutations.buildLockdown(client: c, namespace: "web", name: "api", kind: "pod")
+        XCTAssertEqual(StubURLProtocol.seen.map(\.url?.path), ["/api/v1/policies/lockdown"])
+        XCTAssertEqual(ControlMutations.policyIdentity(m)?.name, "netra-lockdown-api")
+    }
+
+    func testLockdownApplyAlwaysNeedsPhraseAndHighHeader() async {
+        // The plan says "medium" but lockdown is floored at high.
+        StubURLProtocol.handler = { r in
+            r.url!.path.hasSuffix("/plan") ? (200, #"{"plan":{"risk":"medium"},"dryRun":{"passed":true},"receipt":{"token":"tk"}}"#) : (200, "{}")
+        }
+        let c = client()
+        let flow = MutationFlow(spec: ControlMutations.lockdownApplySpec(client: c, manifest: Data("{}".utf8), namespace: "web", name: "netra-lockdown-api"),
+                                client: c, gate: .init(canMutate: true), log: ActivityLog())
+        await flow.runPreview()
+        XCTAssertEqual(flow.effectiveRisk, .high)
+        await flow.confirm()
+        XCTAssertEqual(StubURLProtocol.seen.count, 1)           // no phrase: refused
+        flow.typedPhrase = "apply web/netra-lockdown-api"; await flow.confirm()
+        let apply = StubURLProtocol.seen.last!
+        XCTAssertEqual(apply.url?.path, "/api/v1/policies/apply")
+        XCTAssertEqual(apply.value(forHTTPHeaderField: "X-Netra-Plan-Token"), "tk")
+        XCTAssertEqual(apply.value(forHTTPHeaderField: "X-Netra-Confirm-Risk"), "high")
+    }
+
+    func testUnlockPreviewsThenDeletes() async {
+        StubURLProtocol.handler = { r in r.httpMethod == "GET" ? (200, #"{"lockedDown":true,"lockdownPolicy":"netra-lockdown-api"}"#) : (200, #"{"deleted":true}"#) }
+        let c = client()
+        let flow = MutationFlow(spec: ControlMutations.unlockSpec(client: c, namespace: "web", name: "api", kind: "pod"),
+                                client: c, gate: .init(canMutate: true), log: ActivityLog())
+        await flow.confirm()
+        XCTAssertEqual(StubURLProtocol.seen.count, 0)
+        await flow.runPreview()
+        XCTAssertEqual(StubURLProtocol.seen.last?.url?.path, "/api/v1/workloads/pod/web/api")
+        flow.typedPhrase = "unlock web/api"; await flow.confirm()
+        XCTAssertEqual(StubURLProtocol.seen.last?.httpMethod, "DELETE")
+        XCTAssertEqual(StubURLProtocol.seen.last?.url?.path, "/api/v1/policies/lockdown/web/api")
+    }
+
+    func testRollbackDryRunThenConfirmRiskQuery() async {
+        StubURLProtocol.handler = { r in
+            r.url?.query?.contains("dryRun=true") == true
+                ? (200, #"{"revision":{"id":3},"plan":{"risk":"high","warnings":["widens egress"]},"dryRun":{"passed":true}}"#) : (200, "{}")
+        }
+        let c = client()
+        let flow = MutationFlow(spec: ControlMutations.policyRollbackSpec(client: c, namespace: "web", name: "p", revision: "3"),
+                                client: c, gate: .init(canMutate: true), log: ActivityLog())
+        await flow.runPreview()
+        XCTAssertEqual(StubURLProtocol.seen.last?.url?.path, "/api/v1/policies/web/p/rollback/3")
+        XCTAssertEqual(StubURLProtocol.seen.last?.httpMethod, "POST")
+        XCTAssertEqual(flow.effectiveRisk, .high)
+        flow.typedPhrase = "rollback web/p 3"; await flow.confirm()
+        let go = StubURLProtocol.seen.last!
+        XCTAssertNil(go.url?.query?.range(of: "dryRun"))
+        XCTAssertEqual(go.url?.query, "confirmRisk=high")
+    }
+}
