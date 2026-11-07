@@ -11,8 +11,8 @@ struct NetraApp: App {
     var body: some Scene {
         WindowGroup("Netra", id: "main") {
             RootView()
-                .environment(model)
                 .linkRouting()
+                .environment(model)
                 .frame(minWidth: 960, minHeight: 600)
                 .task { await model.connect() }
         }

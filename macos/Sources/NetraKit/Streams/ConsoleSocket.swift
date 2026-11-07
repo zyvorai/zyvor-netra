@@ -34,6 +34,9 @@ public final class ConsoleSocket: NSObject, URLSessionWebSocketDelegate, @unchec
         task.delegate = self
     }
 
+    /// Raise the per-message cap (default 4 MiB). VNC raw updates of large screens can exceed that.
+    public func setMaximumMessageSize(_ bytes: Int) { task.maximumMessageSize = max(1 << 20, min(bytes, 32 << 20)) }
+
     public func connect() {
         task.resume()
         receiver = Task { [weak self] in

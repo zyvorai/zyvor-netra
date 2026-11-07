@@ -12,6 +12,10 @@ final class LinkRouter {
     static let shared = LinkRouter()
     /// Filter carried by the last link or palette choice, for pages that want to apply it.
     var pendingFilter: [String: String] = [:]
+    /// Section the pending filter is for; a page only consumes it when it is the selected section.
+    private(set) var pendingSection: NavSection?
+    /// Bumped on every link so an already-visible page notices a new filter.
+    private(set) var filterSerial = 0
     var lastError: String?
 
     static let validSections = Set(NavSection.allCases.map(\.rawValue))
@@ -19,8 +23,23 @@ final class LinkRouter {
     func open(_ link: DeepLink, model: AppModel) {
         guard let s = NavSection(rawValue: link.section) else { return }
         pendingFilter = link.query
+        pendingSection = s
+        filterSerial += 1
         lastError = nil
         model.selection = s
+        // Not sticky: if no page consumed it shortly after, drop it.
+        let serial = filterSerial
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            if let self, self.filterSerial == serial { self.pendingFilter = [:] }
+        }
+    }
+
+    /// Takes the pending filter for `section` (and clears it). Empty when none or when it targets another section.
+    func consumeFilter(for section: NavSection?) -> [String: String] {
+        guard !pendingFilter.isEmpty, let section, pendingSection == section else { return [:] }
+        defer { pendingFilter = [:] }
+        return pendingFilter
     }
 
     func open(url: URL, model: AppModel) {

@@ -57,14 +57,23 @@ struct ConnectionBadge: View {
             Circle().fill(color).frame(width: 9, height: 9)
             VStack(alignment: .leading, spacing: 0) {
                 Text(label).font(.callout.weight(.medium))
-                Text(model.baseURLText).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                Text([model.activeProfile?.name, model.baseURLText].compactMap { $0 }.joined(separator: " · ")).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
         }
         .padding(8)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
         .onTapGesture { model.showConnect = true }
-        .help("Click to edit connection")
+        .contextMenu {
+            ForEach(model.profiles) { p in
+                Button { Task { await model.switchProfile(p.id) } } label: {
+                    Label(p.name, systemImage: p.id == model.activeProfileID ? "checkmark" : "server.rack")
+                }
+            }
+            Divider()
+            Button("Edit connection…") { model.showConnect = true }
+        }
+        .help("Click to edit connection; right-click to switch profile")
     }
     private var color: Color {
         switch model.connection {
@@ -87,32 +96,115 @@ struct ConnectionBadge: View {
 struct ConnectForm: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
     @State private var url = ""
     @State private var token = ""
+    @State private var issuer = ""
+    @State private var clientID = ""
+    @State private var scopes = "openid profile email offline_access"
+    @State private var useAccessToken = false
+    @State private var creating = false
+    @State private var error: String?
+    @State private var confirmDelete = false
+
+    private var oidc: OIDCSettings {
+        OIDCSettings(issuer: issuer, clientID: clientID, scopes: scopes, useAccessToken: useAccessToken)
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Connect to Netra").font(.title2.bold())
-            Text("The token is stored in your Keychain and sent only as a Bearer header.")
-                .font(.callout).foregroundStyle(.secondary)
-            TextField("Controller URL", text: $url).textFieldStyle(.roundedBorder)
-            SecureField("API token (blank if auth is off)", text: $token).textFieldStyle(.roundedBorder)
-            if url.hasPrefix("https") {
-                Button("Forget pinned certificate", role: .destructive) { model.forgetPin() }
-                    .buttonStyle(.link).font(.caption)
+            HStack {
+                Picker("Profile", selection: Binding(
+                    get: { creating ? "" : (model.activeProfileID ?? "") },
+                    set: { id in if !id.isEmpty { creating = false; Task { await model.switchProfile(id); load() } } })) {
+                    if creating { Text("New profile").tag("") }
+                    ForEach(model.profiles) { Text($0.name).tag($0.id) }
+                }
+                Button { creating = true; name = ""; url = ""; token = ""; issuer = ""; clientID = ""; error = nil } label: { Image(systemName: "plus") }
+                    .help("New profile")
+                Button(role: .destructive) { confirmDelete = true } label: { Image(systemName: "trash") }
+                    .disabled(creating || model.profiles.count < 2).help("Delete this profile and its stored token")
             }
-            if case .failed(let m) = model.connection {
+            Text("Each profile keeps its own token in your Keychain; switching servers never carries a token or pinned certificate across.")
+                .font(.callout).foregroundStyle(.secondary)
+            TextField("Profile name", text: $name).textFieldStyle(.roundedBorder)
+            TextField("Controller URL", text: $url).textFieldStyle(.roundedBorder)
+            SecureField(creating ? "API token (blank if auth is off)" : "API token (blank keeps the stored one)", text: $token).textFieldStyle(.roundedBorder)
+            DisclosureGroup("Single sign-on (OIDC)") {
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("Issuer (https://…)", text: $issuer).textFieldStyle(.roundedBorder)
+                    TextField("Client ID (public client)", text: $clientID).textFieldStyle(.roundedBorder)
+                    TextField("Scopes", text: $scopes).textFieldStyle(.roundedBorder)
+                    Toggle("Send the access token instead of the ID token", isOn: $useAccessToken)
+                    Text("Register the redirect URI \(OIDCFlow.redirectURI) with the IdP. The controller must have NETRA_OIDC_ISSUER/AUDIENCE set; its audience must appear in the token sent.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Button("Sign in with SSO") {
+                        Task {
+                            guard await saveOnly() else { return }
+                            await model.signInWithSSO()
+                            if case .connected = model.connection { dismiss() }
+                        }
+                    }.disabled(issuer.isEmpty || clientID.isEmpty || url.isEmpty)
+                }.padding(.top, 4)
+            }
+            HStack {
+                if !creating, url.hasPrefix("https") {
+                    Button("Forget pinned certificate", role: .destructive) { model.forgetPin() }.buttonStyle(.link).font(.caption)
+                }
+                if !creating {
+                    Button("Clear stored token") { model.clearToken() }.buttonStyle(.link).font(.caption)
+                }
+            }
+            if let error { Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).font(.callout) }
+            else if case .failed(let m) = model.connection {
                 Label(m, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).font(.callout)
             }
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)
                 Button("Connect") {
-                    Task { await model.saveAndConnect(url: url, token: token)
-                        if case .connected = model.connection { dismiss() } }
+                    Task {
+                        if await connectNow(), case .connected = model.connection { dismiss() }
+                    }
                 }.keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
             }
         }
-        .onAppear { url = model.baseURLText }
+        .onAppear(perform: load)
+        .confirmationDialog("Delete this profile?", isPresented: $confirmDelete) {
+            Button("Delete profile", role: .destructive) {
+                if let id = model.activeProfileID { Task { await model.deleteProfile(id); load() } }
+            }
+        }
+    }
+
+    private func load() {
+        guard let p = model.activeProfile else { return }
+        name = p.name; url = p.urlString; token = ""; error = nil
+        issuer = p.oidc?.issuer ?? ""; clientID = p.oidc?.clientID ?? ""
+        scopes = p.oidc?.scopes ?? "openid profile email offline_access"; useAccessToken = p.oidc?.useAccessToken ?? false
+    }
+
+    /// Persist the form without connecting (creating switches to the new profile). Returns false on a validation error.
+    private func saveOnly() async -> Bool {
+        error = nil
+        if creating {
+            do {
+                let p = try model.saveProfile(ServerProfile(name: name, urlString: url, oidc: oidc), token: token)
+                creating = false
+                await model.switchProfile(p.id)   // also connects; SSO callers reconnect after sign-in
+            } catch { self.error = error.localizedDescription; return false }
+        } else if var p = model.activeProfile {
+            p.name = name; p.urlString = url; p.oidc = oidc
+            do { try model.saveProfile(p, token: token) } catch { self.error = error.localizedDescription; return false }
+        }
+        return true
+    }
+
+    private func connectNow() async -> Bool {
+        error = nil
+        if creating { return await saveOnly() }
+        await model.saveAndConnect(url: url, token: token, name: name, oidc: oidc)
+        return true
     }
 }

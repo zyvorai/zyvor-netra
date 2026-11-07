@@ -43,6 +43,7 @@ struct SysctlPage: View {
             }
         }
         .searchable(text: $query, prompt: "Filter sysctls")
+        .linkFilter(text: $query)
     }
 
     private func findings(_ all: [KernelData.SysctlRow]) -> some View {

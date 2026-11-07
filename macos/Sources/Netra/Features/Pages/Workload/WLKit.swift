@@ -66,6 +66,7 @@ struct WLPage<Content: View>: View {
         .navigationTitle(title)
         .navigationSubtitle(subtitle)
         .searchable(text: $query, prompt: "Filter")
+        .linkFilter(text: $query)
         .toolbar {
             if let updated { Text("Updated \(updated, style: .time)").font(.caption).foregroundStyle(.secondary) }
             if liveEvery != nil { Toggle("Live", systemImage: "dot.radiowaves.left.and.right", isOn: $live).help("Refresh automatically") }

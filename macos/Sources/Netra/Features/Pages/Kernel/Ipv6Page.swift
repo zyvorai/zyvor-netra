@@ -70,5 +70,6 @@ struct Ipv6Page: View {
             }
         }
         .searchable(text: $query, prompt: "Filter nodes, hooks")
+        .linkFilter(text: $query)
     }
 }

@@ -44,6 +44,11 @@ struct FlowsLiveView: View {
         }
         .task(id: reconnectKey) { flows.start(client: model.client) }
         .onDisappear { flows.stop() }
+        // Deep link: direction/action drive the existing pickers (already sent by this page); the rest seeds the box.
+        .linkFilter(text: $query, dedicated: ["direction", "action"], apply: { plan in
+            if let d = plan.fields["direction"].flatMap(FilterSeed.flowDirection) { flows.filter.direction = d }
+            if let v = plan.fields["action"].flatMap(FilterSeed.flowVerdict) { flows.filter.verdict = v }
+        }, onClear: { flows.filter.direction = ""; flows.filter.verdict = "" })
     }
 
     private var reconnectKey: String { model.baseURLText + "|" + "\(flows.filter.hashValueKey)" }

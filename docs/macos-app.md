@@ -98,13 +98,54 @@ dynamically (the rule-mutation family in `NetraKit/API/RuleKinds.swift` and
 asserts the file equals exactly what the builders produce, so a listed route is one the app
 really sends. The script prints literal, dynamic, waived and uncovered counts. Waive only what is not a
 client concern (agent-only ingest, browser session routes); do not waive a route to go green.
-It is not yet a CI step.
+It runs in CI as a step of `.github/workflows/macos.yml`. Two routes are waived pending a page: `GET /api/v1/handoff` and the capture WebSocket relay `GET /api/v1/vms/{node}/capture/ws` (a separate, commented waiver line to delete once the app covers it).
+
+## Packaging and release
+
+Local build (macOS, Xcode command line tools):
+
+```bash
+macos/Packaging/build-app.sh   # macos/dist/Netra.app: release build, universal arm64+x86_64 when the toolchain allows
+macos/Packaging/make-dmg.sh    # macos/dist/Netra.dmg
+```
+
+`build-app.sh` falls back to the host architecture with a printed note if the universal build fails.
+Version comes from `git describe` (or `NETRA_VERSION`), build number from the commit count (or `NETRA_BUILD`);
+`OUT_DIR`, `BUILD_PATH` and `UNIVERSAL=0` are also honoured. The bundle is signed with
+`CODESIGN_IDENTITY` (default ad-hoc `-`), hardened runtime, and `Packaging/Netra.entitlements`. An app icon is
+included only if `Packaging/Netra.icns` exists; none is shipped yet. `make-dmg.sh` signs the dmg when the identity is not
+ad-hoc and notarizes (`notarytool submit --wait`, `stapler staple`, then `spctl --assess`) only when `NOTARY_*` variables
+(`NOTARY_KEYCHAIN_PROFILE`, or `NOTARY_APPLE_ID`/`NOTARY_TEAM_ID`/`NOTARY_PASSWORD`, or `NOTARY_API_KEY_PATH`/`NOTARY_API_KEY_ID`/`NOTARY_API_ISSUER`) are set;
+otherwise it says so and skips. No certificate or credential is in the repository.
+
+Entitlements: App Sandbox, `network.client` (controller HTTPS and WebSocket), `files.user-selected.read-write`
+(NSSavePanel exports). The Keychain (token, TLS pins) and UserNotifications need none. Sandbox caveats to check on a
+signed build: "Open in Wireshark" launches `/Applications/Wireshark.app` via NSWorkspace and hands it a pcap written to
+the temporary directory (the sandbox container's own tmp); Wireshark, being outside the sandbox, may be unable to read that container path.
+Connecting to a controller on the local network may show the macOS Local Network prompt. Neither has been verified.
+
+CI: `.github/workflows/macos.yml` (build, test, route coverage) on changes under `macos/`.
+`.github/workflows/macos-release.yml` runs on tag `macos-v*` or manual dispatch, uploads the dmg as an artifact and, on a tag,
+attaches it to a draft GitHub release. Signing and notarization happen only when these repository secrets exist:
+
+| Secret | Purpose |
+|---|---|
+| `MACOS_CERT_P12_BASE64` | base64 Developer ID Application certificate and key (.p12) |
+| `MACOS_CERT_PASSWORD` | password of the .p12 |
+| `MACOS_SIGN_IDENTITY` | identity name, e.g. `Developer ID Application: Name (TEAMID)` |
+| `NOTARY_API_KEY_BASE64` | base64 App Store Connect API key (.p8) |
+| `NOTARY_API_KEY_ID`, `NOTARY_API_ISSUER` | API key id and issuer id |
+
+Not verified: Developer ID signing, notarization, stapling and Gatekeeper assessment (need secrets), the release workflow itself
+(never run), sandboxed runtime behaviour beyond launch, and a Developer ID build on a clean Mac.
+
+Deployment target: `Package.swift` and `Info.plist` say macOS 15. The build machine used for this change has Xcode 27.2
+(SDK 27.2), so newer SDKs are available; the target was deliberately not raised.
 
 ## Known gaps
 
 - Not live-verified: built and unit tested, but not exercised against a running controller
   across every page.
-- No packaging, code signing or notarization; no installer.
+- Packaging scripts exist (see Packaging and release) but signing and notarization are untested without secrets.
 - No OIDC sign-in yet; authentication is a bearer token.
 - Some API routes have no page yet; the route-coverage script prints the current list.
-- No macOS CI job is defined yet.

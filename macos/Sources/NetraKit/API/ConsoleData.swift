@@ -72,6 +72,15 @@ public enum ConsoleData {
                                                     expectedPhrase: execPhrase(namespace: namespace, name: name))
     }
 
+    /// Phrase the operator must type before a VNC session opens.
+    public static func vncPhrase(namespace: String, name: String) -> String { "vnc \(namespace)/\(name)" }
+    /// VNC is high risk (screen and input of the guest): same availability as exec plus a typed phrase.
+    public static func vncDecision(whoami: WhoAmI?, consoleEnabled: Bool?, typed: String, namespace: String, name: String) -> GateDecision {
+        if case .disabled(let r) = availability(consoleEnabled: consoleEnabled, whoami: whoami) { return .blocked(reason: r) }
+        return MutationGate(canMutate: true).decide(risk: .high, previewed: true, typedPhrase: typed,
+                                                    expectedPhrase: vncPhrase(namespace: namespace, name: name))
+    }
+
     public enum Notice: Equatable, Sendable { case none, execError(String), execStatus(String) }
     /// Classifies a server text frame (frames are notices, never stdout).
     public static func classify(textFrame s: String) -> Notice {

@@ -52,6 +52,7 @@ struct KernelNetworkPage: View {
             }
         }
         .searchable(text: $query, prompt: "Filter findings")
+        .linkFilter(text: $query)
     }
 
     private func findings(_ rows: [Ipv6Data.Finding], total: Int) -> some View {
