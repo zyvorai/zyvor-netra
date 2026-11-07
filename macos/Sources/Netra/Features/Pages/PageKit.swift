@@ -69,6 +69,11 @@ struct DataPageView<Header: View>: View {
                 ContentUnavailableView("Not connected", systemImage: "bolt.slash", description: Text("Connect to a Netra controller first."))
             } else if let value {
                 VStack(spacing: 0) {
+                    if let error {
+                        Label("Showing the last good data. Refresh failed: \(error)", systemImage: "exclamationmark.triangle.fill")
+                            .font(.callout).foregroundStyle(.orange).padding(8).frame(maxWidth: .infinity, alignment: .leading)
+                            .background(.orange.opacity(0.1))
+                    }
                     if !config.stats.isEmpty { StatRow(stats: config.stats, value: value).padding([.horizontal, .top]) }
                     header(value)
                     let r = rows
@@ -113,7 +118,7 @@ struct DataPageView<Header: View>: View {
             var req = c.request("GET", config.endpoint, query: config.query)
             req.timeoutInterval = 20
             value = try JSONDecoder().decode(JSONValue.self, from: await c.send(req)); error = nil
-        } catch NetraError.http(let s, let m) { error = "HTTP \(s): \(m)"; if value == nil { value = nil } }
+        } catch NetraError.http(let s, let m) { error = "HTTP \(s): \(m)" }
         catch { self.error = error.localizedDescription }
     }
 }

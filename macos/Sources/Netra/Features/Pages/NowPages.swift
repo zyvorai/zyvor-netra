@@ -3,11 +3,16 @@
 import SwiftUI
 import NetraKit
 
-/// Bespoke views for: health, scorecard, slo, audit, compliance, report.
-/// Sections not built yet fall back to the JSON browser.
+/// Bespoke views for: health, scorecard, slo, audit, compliance, report. All read-only.
 enum NowPages {
     @MainActor @ViewBuilder static func view(for section: NavSection) -> some View {
         switch section {
+        case .health: HealthPage().id(section)
+        case .scorecard: ScorecardPage().id(section)
+        case .slo: SLOPage().id(section)
+        case .audit: AuditPage().id(section)
+        case .compliance: CompliancePage().id(section)
+        case .report: ReportPage().id(section)
         default: JSONBrowserView(section: section).id(section)
         }
     }

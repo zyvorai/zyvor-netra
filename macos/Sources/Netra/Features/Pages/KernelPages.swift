@@ -4,10 +4,16 @@ import SwiftUI
 import NetraKit
 
 /// Bespoke views for: listenQueues, sysctl, nodeResources, netlink, attachments, maps.
-/// Sections not built yet fall back to the JSON browser.
+/// All read-only observe surfaces; anything else falls back to the JSON browser.
 enum KernelPages {
     @MainActor @ViewBuilder static func view(for section: NavSection) -> some View {
         switch section {
+        case .listenQueues: ListenQueuesPage().id(section)
+        case .sysctl: SysctlPage().id(section)
+        case .nodeResources: NodeResourcesPage().id(section)
+        case .netlink: NetlinkPage().id(section)
+        case .attachments: AttachmentsPage().id(section)
+        case .maps: MapsPage().id(section)
         default: JSONBrowserView(section: section).id(section)
         }
     }
