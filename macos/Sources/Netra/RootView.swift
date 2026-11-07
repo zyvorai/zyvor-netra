@@ -30,7 +30,7 @@ struct RootView: View {
             case .rules, .policies, .features, .capture: ControlView(section: model.selection ?? .rules)
             case .topology: TopologyView()
             case .enforcement: EnforcementView()
-            case let s: JSONBrowserView(section: s).id(s)
+            case let s: PageRouter(section: s).id(s)
             }
         }
         .paletteOverlay()
