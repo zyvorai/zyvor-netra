@@ -29,6 +29,7 @@ struct RootView: View {
             case .metrics, .anomalies, .alerts: MetricsView(section: model.selection ?? .metrics)
             case .rules, .policies, .features, .capture: ControlView(section: model.selection ?? .rules)
             case .topology: TopologyView()
+            case .enforcement: EnforcementView()
             case let s: JSONBrowserView(section: s).id(s)
             }
         }
