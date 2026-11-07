@@ -85,6 +85,24 @@ enum Form {
     }
 }
 
+extension ResultSummary {
+    /// Go bulk-deny shape: {applied, failed, results:[{index, ok, error?}], note?}. Shared by deny-import,
+    /// intel-apply and ai-destinations-deny. Returns nil when the body has no counts (not a bulk reply).
+    public static func bulkApplied(_ v: JSONValue) -> ResultSummary? {
+        let results = v["results"]?.controlItems ?? []
+        guard let applied = v["applied"]?.controlInt ?? (results.isEmpty ? nil : results.filter { $0["ok"] == .bool(true) }.count) else { return nil }
+        let failed = v["failed"]?.controlInt ?? results.filter { $0["ok"] == .bool(false) }.count
+        var s = "Applied \(applied), failed \(failed)"
+        if failed > 0 {
+            let errs = results.filter { $0["ok"] != .bool(true) }.prefix(3).map { r in
+                "entry \((r["index"]?.controlInt ?? 0) + 1): \(r["error"]?.string ?? "rejected")"
+            }
+            if !errs.isEmpty { s += " (" + errs.joined(separator: "; ") + (failed > errs.count ? "; +\(failed - errs.count) more" : "") + ")" }
+        } else if applied == 0, let n = v["note"]?.string { s += ": \(n)" }
+        return .init(s, isFailure: failed > 0)
+    }
+}
+
 // MARK: - workload scope (shared by scope, conn-rate, netpol, default-deny)
 
 public struct WorkloadScope: Sendable, Equatable {
@@ -530,6 +548,7 @@ extension ControlAction {
                         let n = r["items"]?.controlItems.count ?? r.controlItems.count
                         return "Adds \(breakdown) to the \(n) existing rule(s). Every entry was validated locally; the server reports any it still rejects."
                     },
+                    resultSummary: ResultSummary.bulkApplied,
                     execute: { _ in c.request("POST", "api/v1/ebpf/deny/import", body: data) }))
             }),
     ]
@@ -623,6 +642,7 @@ extension ControlAction {
                             + (matched ? "Only entries that matched live traffic become denies." : "Every entry becomes a deny rule.")
                             + " Requires enforce mode with an active lease."
                     },
+                    resultSummary: ResultSummary.bulkApplied,
                     execute: { confirm in c.request("POST", "api/v1/intel/apply", query: q, confirmRisk: confirm) }))
             }),
     ]

@@ -19,7 +19,7 @@ struct PaletteView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            TextField("Go to, or search pods, workloads, IPs, rules, incidents…", text: $query)
+            TextField("Go to, search, or try: drops on ns payments last hour…", text: $query)
                 .textFieldStyle(.plain).font(.title3).padding(12).focused($focused)
                 .onSubmit { choose(index) }
                 .onKeyPress(.downArrow) { index = min(index + 1, max(results.count - 1, 0)); return .handled }
@@ -61,7 +61,16 @@ struct PaletteView: View {
     private func choose(_ i: Int) {
         guard results.indices.contains(i) else { return }
         let router = LinkRouter.shared
-        switch results[i] {
+        let entry = results[i]
+        if case .recent(let t) = entry { query = t; return }   // refill, stay open
+        switch entry {
+        case .intent, .askAI, .object: store.recents.record(query)
+        default: break
+        }
+        switch entry {
+        case .recent: break
+        case .intent(let it): router.open(it.link, model: model)
+        case .askAI(let t): router.open(AskFallback.link(for: t), model: model)   // navigation only; user presses Ask
         case .section(let s): router.open(DeepLink(section: s.rawValue), model: model)
         case .object(let o): router.open(DeepLink(section: o.section, query: o.query), model: model)
         case .openWeb: router.openInWeb(model: model)

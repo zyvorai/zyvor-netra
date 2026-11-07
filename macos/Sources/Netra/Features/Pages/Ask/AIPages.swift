@@ -31,6 +31,11 @@ struct AIPage: View {
         }
         .navigationTitle(section.title).navigationSubtitle(section.endpoint ?? "")
         .toolbar { Button("Refresh", systemImage: "arrow.clockwise") { Task { await load() } }.disabled(loading) }
+        // Palette "Ask Netra AI: ..." row: prefill only, never auto-send.
+        .onAppear { if let q = LinkRouter.shared.consumeFilter(for: model.selection)["q"], !q.isEmpty { question = q } }
+        .onChange(of: LinkRouter.shared.filterSerial) { _, _ in
+            if let q = LinkRouter.shared.consumeFilter(for: model.selection)["q"], !q.isEmpty { question = q }
+        }
         .task(id: section) { value = nil; error = nil; await load() }
     }
 
