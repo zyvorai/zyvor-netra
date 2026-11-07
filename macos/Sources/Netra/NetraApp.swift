@@ -12,6 +12,7 @@ struct NetraApp: App {
         WindowGroup("Netra", id: "main") {
             RootView()
                 .environment(model)
+                .linkRouting()
                 .frame(minWidth: 960, minHeight: 600)
                 .task { await model.connect() }
         }
@@ -34,6 +35,12 @@ struct NetraApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Settings { ConnectForm().environment(model).frame(width: 440).padding() }
+        Settings {
+            TabView {
+                ConnectForm().environment(model).padding().tabItem { Label("Connection", systemImage: "network") }
+                NotificationSettingsView().padding().tabItem { Label("Notifications", systemImage: "bell") }
+            }
+            .frame(width: 440)
+        }
     }
 }

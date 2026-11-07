@@ -28,6 +28,7 @@ private struct MxContextsTab: View {
     @State private var contexts = Poller<[MetricContext]>()
     @State private var nodes = Poller<[MetricNodeInfo]>()
     @State private var data = Poller<MetricResult>()
+    @State private var live = LiveFeed()
     @State private var selected: String?
     @State private var range: MetricRange = .m15
     @State private var node = ""
@@ -63,6 +64,8 @@ private struct MxContextsTab: View {
         }
         .task { await slowLoop() }
         .task(id: "\(selected ?? "")|\(range.rawValue)|\(node)") { await fastLoop() }
+        .task(id: "\(selected ?? "")|\(range.rawValue)|\(node)|\(live.paused)") { await liveLoop() }
+        .onChange(of: live.lastFrame) { if live.delivering, let r = live.result { data.value = r; data.error = nil } }
     }
 
     @ViewBuilder private var detail: some View {
@@ -74,6 +77,7 @@ private struct MxContextsTab: View {
                     Text("All nodes").tag("")
                     ForEach(nodes.value ?? []) { Text($0.node).tag($0.node) }
                 }.frame(width: 160)
+                LiveBadge(feed: live)
                 RangePicker(range: $range)
             }
             if let c = current {
@@ -116,9 +120,14 @@ private struct MxContextsTab: View {
         let secs = range.seconds, n = node
         while !Task.isCancelled {
             guard let c = model.client else { return }
-            await data.refresh { try await c.metricsData(context: ctx, seconds: secs, nodes: n.isEmpty ? [] : [n]) }
+            if !live.delivering { await data.refresh { try await c.metricsData(context: ctx, seconds: secs, nodes: n.isEmpty ? [] : [n]) } }
             try? await Task.sleep(for: .seconds(5))
         }
+    }
+
+    private func liveLoop() async {
+        guard let ctx = selected, let c = model.client else { return }
+        await live.run(client: c, context: ctx, seconds: range.seconds, nodes: node.isEmpty ? [] : [node])
     }
 }
 

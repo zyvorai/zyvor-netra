@@ -41,6 +41,7 @@ From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.30.0):
 | **Netlink findings and alerts** | Default route removed, gateway unreachable, uplink down, MTU changed, derived from the recorded changes. |
 | **Who made the change** | An `fentry` on `rtnetlink_rcv_msg` attributes each modifying netlink request to the process that sent it. |
 | **BPF attachment inventory** | Netra notices when its own hooks have silently gone, for example after a NIC or bond is recreated. [Docs →](docs/bpf-attachments.md) |
+| **macOS app** | A native SwiftUI client for a controller: observe pages, certificate pinning and a guarded control flow. [Docs →](docs/macos-app.md) |
 | **One UX contract** | Dashboard and docs site follow one design contract; Apple light by default, dark one click away. |
 | **Stable controller certificate** | `tls.existingSecret` serves a `kubernetes.io/tls` Secret so clients can pin the controller certificate. |
 

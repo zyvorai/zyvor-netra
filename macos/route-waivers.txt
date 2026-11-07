@@ -1,0 +1,15 @@
+# Copyright 2026 Zyvor AI Labs · https://zyvor.dev
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+#
+# Routes the macOS app deliberately does not call. Format: VERB /path # reason
+# Checked by scripts/ci-macos-route-coverage.sh. Waive only what is not a client concern;
+# a route the app should show belongs in macos/Sources instead.
+
+# Agent-only ingest: node agents push to these with an agent token, the operator client never does.
+POST /api/v1/agents/report # agent heartbeat/ingest, authenticated by the agent token, not an operator surface
+POST /api/v1/agents/metrics # agent per-second metrics ingest, agent token only
+GET /api/v1/agents/capture/stream # agent-to-controller capture stream upload, agent token only
+
+# Browser session and login flow: the app authenticates with a bearer token (OIDC is a known gap).
+POST /api/v1/session # browser cookie session creation for the web UI
+DELETE /api/v1/session # browser cookie session teardown for the web UI

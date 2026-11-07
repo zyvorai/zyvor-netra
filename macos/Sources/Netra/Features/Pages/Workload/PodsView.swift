@@ -53,6 +53,7 @@ struct PodsPage: View {
                             ("Started", CellFormat.text(row.value.at("started"), .time)),
                         ])
                         if !ns.isEmpty, !name.isEmpty { WorkloadDetailView(kind: "pod", namespace: ns, name: name, allowLogs: true) }
+                        if !ns.isEmpty, !name.isEmpty { ConOpenButton(namespace: ns, name: name) }
                         LabelsView(pairs: WorkloadData.labelPairs(row.value.at("labels")))
                         RawJSON(value: row.value)
                     }

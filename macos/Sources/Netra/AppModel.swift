@@ -24,6 +24,8 @@ final class AppModel {
     var lease: LeaseStatus?
     var leaseFetchedAt = Date()
     var healthScore: Double?
+    /// Worst raised, un-acked, un-silenced metric alert (menu bar).
+    var topAlert: MetricAlert?
     var selection: NavSection? = .overview
     var showConnect = false
     private var pollTask: Task<Void, Never>?
@@ -78,6 +80,7 @@ final class AppModel {
         do {
             connection = .connected(try await c.whoami())
             startPolling()
+            NotificationService.shared.start(client: { [weak self] in self?.client }, canMutate: { [weak self] in self?.whoami?.canMutate ?? false }, lease: { [weak self] in self?.lease })
         } catch NetraError.unauthorized {
             connection = .failed("Unauthorized — check the API token")
         } catch NetraError.transport(let m) {
@@ -102,7 +105,8 @@ final class AppModel {
 
     func disconnect() {
         pollTask?.cancel()
-        connection = .disconnected; lease = nil; healthScore = nil
+        NotificationService.shared.stop()
+        connection = .disconnected; lease = nil; healthScore = nil; topAlert = nil
     }
 
     private func startPolling() {
@@ -115,6 +119,10 @@ final class AppModel {
                     let h = try? await c.json("api/v1/ebpf/health")
                     self.lease = l; self.leaseFetchedAt = Date()
                     self.healthScore = h?["summary"]?["healthScore"]?.double
+                    if let a = try? await c.metricsAlerts() {
+                        self.topAlert = a.active.filter { $0.acked != true && $0.silenced != true && DetectData.severityRank($0.status) >= 2 }
+                            .max { DetectData.severityRank($0.status) < DetectData.severityRank($1.status) }
+                    }
                     delay = 5
                 } catch NetraError.unauthorized {
                     self.connection = .failed("Session expired — reconnect"); return

@@ -6,7 +6,7 @@ import SwiftUI
 enum NavSection: String, CaseIterable, Identifiable, Hashable {
     case overview, health, scorecard, slo
     case flows, talkers, ports, protocols, drops, dns, topology, workloads, pods, l7, tls
-    case diagnostics, listenQueues, sysctl, nodeResources, netlink, attachments, maps
+    case diagnostics, listenQueues, sysctl, nodeResources, netlink, attachments, maps, ipv6, kernelNetwork
     case metrics, anomalies, alerts, insights, incidents, security, intel
     case audit, compliance, report
     case aiBrief, aiDigest, aiSuggestions
@@ -37,6 +37,8 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .ebpfCoverage: "eBPF coverage"
         case .metricContexts: "Metric contexts"
         case .gitops: "GitOps"
+        case .ipv6: "IPv6"
+        case .kernelNetwork: "Kernel network"
         default: rawValue.prefix(1).uppercased() + rawValue.dropFirst()
         }
     }
@@ -65,6 +67,8 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .netlink: "arrow.triangle.branch"
         case .attachments: "paperclip"
         case .maps: "map"
+        case .ipv6: "6.circle"
+        case .kernelNetwork: "cpu.fill"
         case .metrics: "chart.xyaxis.line"
         case .anomalies: "waveform.badge.exclamationmark"
         case .alerts: "bell.badge"
@@ -130,6 +134,8 @@ enum NavSection: String, CaseIterable, Identifiable, Hashable {
         case .netlink: "api/v1/netlink"
         case .attachments: "api/v1/ebpf/attachments"
         case .maps: "api/v1/ebpf/maps"
+        case .ipv6: "api/v1/ebpf/ipv6"
+        case .kernelNetwork: "api/v1/ebpf/kernel-network"
         case .metrics: "api/v1/metrics/summary"
         case .anomalies: "api/v1/metrics/anomalies"
         case .alerts: "api/v1/metrics/alerts"
@@ -178,7 +184,7 @@ struct SectionGroup: Identifiable {
         .init(title: "Now", sections: [.overview, .health, .scorecard, .slo]),
         .init(title: "Traffic", sections: [.flows, .talkers, .ports, .protocols, .drops, .dns, .topology, .tcpEvents, .connections, .pathDiag, .congestion]),
         .init(title: "Workloads", sections: [.workloads, .pods, .l7, .tls]),
-        .init(title: "Kernel", sections: [.diagnostics, .listenQueues, .sysctl, .nodeResources, .netlink, .attachments, .maps, .ebpfCoverage]),
+        .init(title: "Kernel", sections: [.diagnostics, .listenQueues, .sysctl, .nodeResources, .netlink, .attachments, .maps, .ipv6, .kernelNetwork, .ebpfCoverage]),
         .init(title: "Detect", sections: [.metrics, .metricContexts, .anomalies, .alerts, .insights, .incidents, .security, .intel, .explain, .investigate, .optimizer, .playbooks, .baselines]),
         .init(title: "Record", sections: [.audit, .compliance, .report]),
         .init(title: "Ask Netra", sections: [.aiBrief, .aiDigest, .aiSuggestions]),
