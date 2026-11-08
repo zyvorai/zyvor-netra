@@ -16,9 +16,9 @@ public enum AskData {
     }
 
     /// Exact body for POST /api/v1/ai/explain (ai.ExplainRequest). Empty fields are omitted.
-    public static func explainBody(kind: String, subject: String = "", message: String = "", severity: String = "", page: String = "") -> Data {
+    public static func explainBody(kind: String, subject: String = "", message: String = "", severity: String = "", page: String = "", question: String = "") -> Data {
         var o: [String: Any] = ["kind": kind]
-        for (k, v) in [("subject", subject), ("message", message), ("severity", severity), ("page", page)] where !v.isEmpty { o[k] = v }
+        for (k, v) in [("subject", subject), ("message", message), ("severity", severity), ("page", page), ("question", question)] where !v.isEmpty { o[k] = v }
         return (try? JSONSerialization.data(withJSONObject: o, options: [.sortedKeys])) ?? Data("{}".utf8)
     }
 
