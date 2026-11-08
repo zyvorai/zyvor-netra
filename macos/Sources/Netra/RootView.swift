@@ -34,7 +34,8 @@ struct RootView: View {
             }
         }
         .paletteOverlay()
-        .sheet(item: Binding(get: { model.pendingTrust.map(TrustItem.init) }, set: { if $0 == nil { model.pendingTrust = nil } })) { item in
+        // While the connect form is open it shows the fingerprint inline, so don't stack a second sheet on top.
+        .sheet(item: Binding(get: { model.showConnect ? nil : model.pendingTrust.map(TrustItem.init) }, set: { if $0 == nil { model.pendingTrust = nil } })) { item in
             TrustPrompt(probe: item.probe,
                         onTrust: { Task { await model.trustPending() } },
                         onCancel: { model.pendingTrust = nil })
@@ -106,6 +107,7 @@ struct ConnectForm: View {
     @State private var creating = false
     @State private var error: String?
     @State private var confirmDelete = false
+    @State private var importNote: String?
 
     private var oidc: OIDCSettings {
         OIDCSettings(issuer: issuer, clientID: clientID, scopes: scopes, useAccessToken: useAccessToken)
@@ -131,6 +133,11 @@ struct ConnectForm: View {
             TextField("Profile name", text: $name).textFieldStyle(.roundedBorder)
             TextField("Controller URL", text: $url).textFieldStyle(.roundedBorder)
             SecureField(creating ? "API token (blank if auth is off)" : "API token (blank keeps the stored one)", text: $token).textFieldStyle(.roundedBorder)
+            HStack {
+                Button("Import from file…") { importFromFile() }
+                    .help("Pick a netractl env file or api-key file (usually ~/.netra/env or ~/.netra/api-key) to fill the URL and token")
+                if let importNote { Text(importNote).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
+            }
             DisclosureGroup("Single sign-on (OIDC)") {
                 VStack(alignment: .leading, spacing: 8) {
                     TextField("Issuer (https://…)", text: $issuer).textFieldStyle(.roundedBorder)
@@ -156,6 +163,11 @@ struct ConnectForm: View {
                     Button("Clear stored token") { model.clearToken() }.buttonStyle(.link).font(.caption)
                 }
             }
+            if let probe = model.pendingTrust {
+                TrustCard(probe: probe,
+                          onTrust: { Task { await model.trustPending(); if case .connected = model.connection { dismiss() } } },
+                          onCancel: { model.pendingTrust = nil })
+            }
             if let error { Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).font(.callout) }
             else if case .failed(let m) = model.connection {
                 Label(m, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).font(.callout)
@@ -176,6 +188,32 @@ struct ConnectForm: View {
                 if let id = model.activeProfileID { Task { await model.deleteProfile(id); load() } }
             }
         }
+    }
+
+    /// Fills the URL and token from a netractl config file the user picks. The app is sandboxed, so it can only read what
+    /// the user selects. NETRA_TLS_INSECURE is never honoured; the certificate is pinned instead.
+    private func importFromFile() {
+        let panel = NSOpenPanel()
+        panel.title = "Import netractl config"
+        panel.message = "Choose ~/.netra/env and/or ~/.netra/api-key"
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.showsHiddenFiles = true
+        if let pw = getpwuid(getuid()) {
+            let dir = URL(fileURLWithPath: String(cString: pw.pointee.pw_dir)).appendingPathComponent(".netra")
+            if FileManager.default.fileExists(atPath: dir.path) { panel.directoryURL = dir }
+        }
+        guard panel.runModal() == .OK else { return }
+        let configs = panel.urls.compactMap { try? String(contentsOf: $0, encoding: .utf8) }.map(NetractlConfig.parse)
+        let merged = NetractlConfig.merge(configs)
+        guard !merged.isEmpty else { importNote = "Nothing usable found in that file."; return }
+        if let u = merged.url { url = u }
+        if let k = merged.apiKey { token = k }
+        var parts: [String] = []
+        if merged.url != nil { parts.append("URL") }
+        if merged.apiKey != nil { parts.append("token") }
+        importNote = "Imported " + parts.joined(separator: " and ") + "."
+            + (merged.requestedInsecureTLS ? " Ignored NETRA_TLS_INSECURE: you'll verify the certificate fingerprint instead." : "")
     }
 
     private func load() {
