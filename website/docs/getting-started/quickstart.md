@@ -40,7 +40,7 @@ curl -skf https://127.0.0.1:30870/livez
 netractl status    # loopback skips self-signed verify automatically
 ```
 
-Open `https://127.0.0.1:30870` (self-signed TLS by default, so expect a browser warning). Sign in with `admin` / `Admin@321` when the controller API key matches that demo token (or paste your `auth.apiKey` as the password). The nav bar: **Overview**, **Pods**, **VMs**, **Network Health**, **Path Diagnostics**, **Drop Diagnostics**, **L7 Metadata**, **Surfaces**, **Features**, **Insights**, **Firewall**, **Live flows**, **Policies**, **Audit**.
+Open `https://127.0.0.1:30870` (self-signed TLS by default, so expect a browser warning). Sign in as `admin` with the controller API key as the password (`deploy-remote.sh` writes it to `~/.netra/api-key` on the host). The nav bar: **Overview**, **Pods**, **VMs**, **Network Health**, **Path Diagnostics**, **Drop Diagnostics**, **L7 Metadata**, **Surfaces**, **Features**, **Insights**, **Firewall**, **Live flows**, **Policies**, **Audit**.
 
 See [netractl CLI](./netractl) for PATH install, `~/.netra/env`, and
 `NETRA_TLS_INSECURE` when talking to a NodePort over a non-loopback address.

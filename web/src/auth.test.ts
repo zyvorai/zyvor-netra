@@ -23,18 +23,20 @@ describe('auth', () => {
     store.clear();
   });
 
-  it('returns the demo API token for default credentials', () => {
-    expect(checkCredentials('admin', 'Admin@321')).toBe('Admin@321');
-    expect(bearerCandidates('admin', 'Admin@321')).toEqual(['Admin@321']);
-  });
-
-  it('treats a non-demo password as a NETRA_API_KEY candidate', () => {
+  it('uses the password as the NETRA_API_KEY bearer', () => {
+    expect(checkCredentials('admin', 'deadbeef')).toBe('deadbeef');
     expect(bearerCandidates('admin', 'deadbeef')).toEqual(['deadbeef']);
   });
 
+  it('has no built-in credential: no password maps to a different token', () => {
+    for (const pw of ['Admin@321', 'admin', 'password']) {
+      expect(bearerCandidates('admin', pw)).toEqual([pw]);
+    }
+  });
+
   it('rejects a wrong username', () => {
-    expect(checkCredentials('nobody', 'Admin@321')).toBeNull();
-    expect(bearerCandidates('nobody', 'Admin@321')).toEqual([]);
+    expect(checkCredentials('nobody', 'deadbeef')).toBeNull();
+    expect(bearerCandidates('nobody', 'deadbeef')).toEqual([]);
   });
 
   it('rejects empty password', () => {
@@ -42,7 +44,7 @@ describe('auth', () => {
   });
 
   it('logout clears the stored token', () => {
-    store.set('netra-token', 'Admin@321');
+    store.set('netra-token', 'deadbeef');
     logout();
     expect(store.get('netra-token')).toBeUndefined();
   });

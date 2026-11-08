@@ -47,7 +47,7 @@ Example `~/.netra/env` (created by deploy):
 ```bash
 NETRA_URL=https://212.8.248.187:30870
 NETRA_TLS_INSECURE=true
-NETRA_API_KEY=Admin@321
+NETRA_API_KEY=<key from ~/.netra/api-key on the host>
 ```
 
 Manual equivalent:
@@ -113,8 +113,7 @@ netractl features enable NAME --yes --api   # live env patch via API
 
 ## Dashboard login
 
-Same bearer as the CLI. Demo pair when the key is `Admin@321`:
-`admin` / `Admin@321`. See [`dashboard-login.md`](dashboard-login.md).
+Same bearer as the CLI: sign in as `admin` with the API key as the password. See [`dashboard-login.md`](dashboard-login.md).
 
 ## Datapath maps
 
