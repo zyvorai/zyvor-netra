@@ -89,10 +89,10 @@ if [[ -z "${TARGET}" ]]; then
 fi
 
 ALLOW_UNAUTH_LOCAL="${NETRA_ALLOW_UNAUTHENTICATED:-false}"
-# Default matches web/src/auth.ts demo login (admin / Admin@321 → bearer
-# Admin@321). Override with NETRA_API_KEY for production; operators can also
-# sign in as admin using that key as the password (UI probes /api/v1/fleet).
-API_KEY_LOCAL="${NETRA_API_KEY:-Admin@321}"
+# No well-known default: a published admin key on a reachable NodePort is an open door.
+# Unless NETRA_API_KEY is set, mint a random one. It is written to ~/.netra/api-key on the host;
+# sign in to the dashboard as admin with that key as the password (the UI probes /api/v1/fleet).
+API_KEY_LOCAL="${NETRA_API_KEY:-$(openssl rand -hex 24)}"
 AGENT_KEY_LOCAL="${NETRA_AGENT_KEY:-$(openssl rand -hex 32)}"
 # Node agent is required for dashboard data. Default on for k3s/k8s deploys;
 # --quick and explicit NETRA_AGENT_ENABLED=false leave it off.
