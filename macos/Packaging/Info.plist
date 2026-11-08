@@ -14,6 +14,7 @@
 <dict>
   <key>CFBundleIdentifier</key><string>dev.zyvor.netra</string>
   <key>CFBundleName</key><string>Netra</string>
+  <key>CFBundleIconFile</key><string>Netra</string>
   <key>CFBundleExecutable</key><string>Netra</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>0.1.0</string>

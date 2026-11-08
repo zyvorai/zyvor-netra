@@ -13,24 +13,28 @@ public enum MetricAlertActions {
         !s.isEmpty && s.count <= 64 && s.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") }
     }
 
-    /// Accepts a Go duration such as `90m`, `2h` or `1h30m`; the server allows up to 30 days.
+    /// Accepts a Go `time.ParseDuration` string such as `90m`, `2h`, `1h30m` or `1.5s`, with the same
+    /// units (ns, us, µs, μs, ms, s, m, h), an optional sign, and bare `0`. The server allows up to 30 days.
     public static func parseDuration(_ s: String) -> TimeInterval? {
-        let t = s.trimmingCharacters(in: .whitespaces)
+        var t = Substring(s.trimmingCharacters(in: .whitespaces))
+        var sign = 1.0
+        if let f = t.first, f == "+" || f == "-" { if f == "-" { sign = -1 }; t = t.dropFirst() }
         guard !t.isEmpty else { return nil }
-        let units: [String: Double] = ["ms": 0.001, "s": 1, "m": 60, "h": 3600]
-        var total = 0.0, num = "", unit = "", seenAny = false
-        func flush() -> Bool {
-            guard !num.isEmpty, let n = Double(num), let u = units[unit] else { return false }
-            total += n * u; num = ""; unit = ""; seenAny = true; return true
+        if t == "0" { return 0 }
+        let units: [String: Double] = ["ns": 1e-9, "us": 1e-6, "\u{00B5}s": 1e-6, "\u{03BC}s": 1e-6,
+                                       "ms": 1e-3, "s": 1, "m": 60, "h": 3600]
+        var total = 0.0
+        var i = t.startIndex
+        while i < t.endIndex {
+            var num = ""
+            while i < t.endIndex, let c = t[i].asciiValue, (c >= 48 && c <= 57) || c == 46 { num.append(t[i]); i = t.index(after: i) }
+            guard !num.isEmpty, num != ".", let n = Double(num) else { return nil }
+            var unit = ""
+            while i < t.endIndex, !(t[i].asciiValue.map { ($0 >= 48 && $0 <= 57) || $0 == 46 } ?? false) { unit.append(t[i]); i = t.index(after: i) }
+            guard let u = units[unit] else { return nil }
+            total += n * u
         }
-        for ch in t {
-            if ch.isNumber || ch == "." {
-                if !unit.isEmpty { guard flush() else { return nil } }
-                num.append(ch)
-            } else { guard !num.isEmpty else { return nil }; unit.append(ch) }
-        }
-        guard flush(), seenAny else { return nil }
-        return total
+        return sign * total
     }
 
     public static let maxSilence: TimeInterval = 30 * 24 * 3600

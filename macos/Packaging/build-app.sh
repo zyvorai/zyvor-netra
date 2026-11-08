@@ -62,12 +62,10 @@ plist="$app/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleExecutable Netra" "$plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $short" "$plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $build" "$plist"
-if [ -f "$here/Netra.icns" ]; then
-  cp "$here/Netra.icns" "$app/Contents/Resources/Netra.icns"
-  /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string Netra" "$plist"
-else
-  echo "    no Packaging/Netra.icns; building without an app icon"
-fi
+icns="$here/Netra.icns"
+[ -f "$icns" ] || "$here/make-icon.sh" "$icns"
+cp "$icns" "$app/Contents/Resources/Netra.icns"
+/usr/libexec/PlistBuddy -c "Set :CFBundleIconFile Netra" "$plist"
 # SwiftPM resource bundles (none today) sit next to the binary.
 for b in "$bin_dir"/*.bundle; do
   [ -e "$b" ] && cp -R "$b" "$app/Contents/Resources/"
