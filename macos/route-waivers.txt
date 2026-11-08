@@ -14,7 +14,4 @@ GET /api/v1/agents/capture/stream # agent-to-controller capture stream upload, a
 POST /api/v1/session # browser cookie session creation for the web UI
 DELETE /api/v1/session # browser cookie session teardown for the web UI
 
-# Operator handoff pack: a read-only Markdown/JSON export (GET /api/v1/handoff?format=markdown|json) meant to be
-# pasted into a ticket or shift note; the app has no handoff page yet. Waived as not yet built, verified in internal/api/ops_fleet.go.
-GET /api/v1/handoff # shift-handoff report export (markdown/json); no macOS page yet
 

@@ -22,6 +22,7 @@ struct PageRouter: View {
         case .insightsDetail, .processWatch, .datapathDetail, .fleetExporters: CoveragePages.view(for: section)
         case .vms: VMPages.view(for: section)
         case .changes: ChangesPage()
+        case .handoff: HandoffPage()
         default: JSONBrowserView(section: section).id(section)
         }
     }
