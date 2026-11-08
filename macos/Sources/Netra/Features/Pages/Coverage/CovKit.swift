@@ -149,6 +149,7 @@ struct CovTable: View {
                 CovInspector(row: r.first { $0.id == selection }).frame(minWidth: 240, idealWidth: 300)
             }
         }
+        .linkFilter(text: $query)
     }
 }
 

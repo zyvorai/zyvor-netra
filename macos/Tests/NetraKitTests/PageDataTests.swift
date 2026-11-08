@@ -70,3 +70,41 @@ final class PageDataTests: XCTestCase {
         XCTAssertTrue(CellFormat.less(nil, .number(1), .bytes))                          // missing sorts first
     }
 }
+
+final class EmptyColumnReportTests: XCTestCase {
+    private func rows(_ s: String) -> [ControlRow] {
+        try! JSONDecoder().decode(JSONValue.self, from: Data(s.utf8)).rows(at: "")
+    }
+    private let cols: [(title: String, path: String, kind: CellKind)] = [("Name", "name", .text), ("Pod", "pod", .text), ("Seen", "seen", .time)]
+
+    func testNoRowsNoReport() {
+        XCTAssertTrue(EmptyColumnReport.compute(rows: [], columns: cols).isEmpty)
+    }
+
+    func testDetectsEmptyColumnsAndListsKeysOnly() {
+        let r = EmptyColumnReport.compute(rows: rows(#"[{"name":"a","pod":"","seen":"0001-01-01T00:00:00Z","secret":"hunter2"},{"name":"b","pod":null,"secret":"x"}]"#), columns: cols)
+        XCTAssertEqual(r.items.map(\.title), ["Pod", "Seen"])
+        XCTAssertEqual(r.items[0].message, "No data for Pod: server returned keys: name, pod, secret, seen")
+        XCTAssertFalse(r.items.map(\.message).joined().contains("hunter2"))
+    }
+
+    func testPartiallyFilledColumnIsNotReported() {
+        let r = EmptyColumnReport.compute(rows: rows(#"[{"name":"a"},{"name":"b","pod":"p"}]"#), columns: cols)
+        XCTAssertEqual(r.items.map(\.title), ["Seen"])
+    }
+
+    func testEmptyArrayCountsAsEmptyAndKeysCapped() {
+        var o = (0..<40).map { String(format: "\"k%02d\":1", $0) }
+        o.append("\"pod\":[]")
+        let r = EmptyColumnReport.compute(rows: rows("[{" + o.joined(separator: ",") + "}]"), columns: [("Pod", "pod", .text)])
+        XCTAssertEqual(r.keys.count, 30)
+        XCTAssertEqual(r.omittedKeys, 11)
+        XCTAssertTrue(r.items[0].message.hasSuffix("+11 more"))
+    }
+
+    func testNonObjectRow() {
+        let r = EmptyColumnReport.compute(rows: rows(#"["x"]"#), columns: [("Pod", "pod", .text)])
+        XCTAssertEqual(r.items.count, 1)
+        XCTAssertTrue(r.items[0].message.contains("none"))
+    }
+}

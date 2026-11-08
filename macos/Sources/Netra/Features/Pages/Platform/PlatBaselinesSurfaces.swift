@@ -5,6 +5,7 @@ import NetraKit
 
 /// Behaviour and rate baseline age. Read-only: capturing or clearing a baseline is a separate, mutating action.
 struct PlatBaselinesPage: View {
+    @State private var query = ""
     var body: some View {
         JSONLoader(title: "Baselines", path: "api/v1/baselines") { json in
             let b = PlatformData.baselines(json)
@@ -27,6 +28,7 @@ struct PlatBaselinesPage: View {
                 }.padding()
             }
         }
+        .linkFilter(text: $query)
     }
 
     private func side(_ s: PlatformData.BaselineSide) -> some View {
@@ -91,5 +93,6 @@ struct PlatBoardView: View {
                 }
             }.padding(.top, 4)
         }
+        .linkFilter(text: $query)
     }
 }

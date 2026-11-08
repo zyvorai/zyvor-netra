@@ -56,9 +56,14 @@ struct DataPageView<Header: View>: View {
         self.config = config; self.header = header
     }
 
-    private var rows: [ControlRow] {
+    /// Every row before the search filter, so a filter that hides rows never looks like missing data.
+    private var allRows: [ControlRow] {
         guard let value else { return [] }
-        var r = config.rowsAreMap ? value.mapRows(at: config.rowsPath) : value.rows(at: config.rowsPath, fallbacks: config.rowFallbacks, idKeys: config.idKeys)
+        return config.rowsAreMap ? value.mapRows(at: config.rowsPath) : value.rows(at: config.rowsPath, fallbacks: config.rowFallbacks, idKeys: config.idKeys)
+    }
+
+    private var rows: [ControlRow] {
+        var r = allRows
         if !query.isEmpty { r = r.filter { row in config.columns.contains { CellFormat.text(row.value.at($0.path), $0.kind).localizedCaseInsensitiveContains(query) } } }
         return r.sorted(using: sort)
     }
@@ -77,6 +82,7 @@ struct DataPageView<Header: View>: View {
                     if !config.stats.isEmpty { StatRow(stats: config.stats, value: value).padding([.horizontal, .top]) }
                     header(value)
                     let r = rows
+                    EmptyColumnsBadge(report: EmptyColumnReport.compute(rows: allRows, columns: config.columns.map { ($0.title, $0.path, $0.kind) }))
                     HSplitView {
                         if r.isEmpty {
                             ContentUnavailableView(query.isEmpty ? config.emptyText : "No matches", systemImage: "tray")
@@ -126,6 +132,30 @@ struct DataPageView<Header: View>: View {
 
 extension DataPageView where Header == EmptyView {
     init(_ config: PageConfig) { self.init(config, header: { _ in EmptyView() }) }
+}
+
+/// Unobtrusive notice when a column is blank for every row; the popover lists the key names the server sent (never values).
+struct EmptyColumnsBadge: View {
+    let report: EmptyColumnReport
+    @State private var shown = false
+    var body: some View {
+        if !report.isEmpty {
+            HStack {
+                Button { shown.toggle() } label: {
+                    Label("\(report.items.count) empty column\(report.items.count == 1 ? "" : "s")", systemImage: "questionmark.circle")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless).foregroundStyle(.secondary)
+                .popover(isPresented: $shown, arrowEdge: .bottom) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(report.items) { Text($0.message).font(.callout).textSelection(.enabled).fixedSize(horizontal: false, vertical: true) }
+                    }.padding().frame(maxWidth: 380, alignment: .leading)
+                }
+                .help("Some columns have no data in any row")
+                Spacer()
+            }.padding(.horizontal).padding(.vertical, 2)
+        }
+    }
 }
 
 struct ColumnComparator: SortComparator, Hashable {

@@ -94,6 +94,7 @@ private struct IntelHitsView: View {
             }
         }
         .searchable(text: $query, prompt: "Filter hits")
+        .linkFilter(text: $query)
     }
 }
 
@@ -120,6 +121,7 @@ private struct IntelFeedView: View {
             }
         }
         .searchable(text: $query, prompt: "Filter entries")
+        .linkFilter(text: $query)
     }
 }
 
