@@ -10,6 +10,8 @@ The latest 20 entries. The full history is in [CHANGELOG.md](https://github.com/
 
 ## Unreleased
 
+- **Security: no built-in admin key.** `scripts/deploy-remote.sh` no longer defaults `NETRA_API_KEY` to the published `Admin@321`; it mints a random key (still written to `~/.netra/api-key`) unless `NETRA_API_KEY` is set. The dashboard login no longer maps `admin` / `Admin@321` to a baked-in token: the password is the API key. Controllers deployed with the old default should rotate their key. Docs: `docs/dashboard-login.md`.
+
 ## 0.32.0 — 2026-10-19
 
 - **Per-node agent mTLS identity (opt-in).** With `NETRA_AGENT_MTLS_BIND_NODE`, the reported node must match the client certificate (URI SAN `spiffe://netra.local/node/<name>`, else DNS SAN, else CN). Optional `NETRA_AGENT_MTLS_DENY_SERIALS` hot-reloads revoked serials. Shared-cert mode stays the default. Helm: `mtls.bindNode`, `mtls.denySerialsSecret`. Docs: `docs/agent-mtls.md`.
