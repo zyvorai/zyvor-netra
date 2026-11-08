@@ -136,3 +136,37 @@ public enum CellFormat {
         }
     }
 }
+
+/// Diagnostics for columns that render blank for every row: usually a server field rename.
+public struct EmptyColumnReport: Equatable, Sendable {
+    public struct Item: Equatable, Sendable, Identifiable {
+        public let title: String
+        public let path: String
+        public var id: String { path + title }
+        /// Popover text: "No data for X: server returned keys: a, b, c". Key names only, never values.
+        public let message: String
+    }
+    public static let keyCap = 30
+    public let items: [Item]
+    public var isEmpty: Bool { items.isEmpty }
+    /// Sorted top-level key names of the first row (capped) and how many were left out.
+    public let keys: [String]
+    public let omittedKeys: Int
+
+    /// `columns` are (title, path, kind). Only reports when `rows` is non-empty.
+    public static func compute(rows: [ControlRow], columns: [(title: String, path: String, kind: CellKind)]) -> EmptyColumnReport {
+        guard let first = rows.first else { return EmptyColumnReport(items: [], keys: [], omittedKeys: 0) }
+        var all: [String] = []
+        if case .object(let o) = first.value { all = o.keys.sorted() }
+        let keys = Array(all.prefix(keyCap)), omitted = all.count - keys.count
+        let list = keys.isEmpty ? "none (row is not an object)" : keys.joined(separator: ", ") + (omitted > 0 ? ", +\(omitted) more" : "")
+        let items = columns.filter { c in rows.allSatisfy { isBlank($0.value.at(c.path), c.kind) } }
+            .map { Item(title: $0.title, path: $0.path, message: "No data for \($0.title): server returned keys: \(list)") }
+        return EmptyColumnReport(items: items, keys: keys, omittedKeys: omitted)
+    }
+
+    static func isBlank(_ v: JSONValue?, _ kind: CellKind) -> Bool {
+        if case .array(let a)? = v, a.isEmpty { return true }
+        return CellFormat.text(v, kind).isEmpty
+    }
+}

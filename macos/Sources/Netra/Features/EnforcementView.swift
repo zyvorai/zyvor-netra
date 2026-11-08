@@ -46,6 +46,7 @@ struct EnforcementView: View {
         }
         .navigationTitle("Enforcement")
         .searchable(text: $query, prompt: "Find an action")
+        .linkFilter(text: $query)
         .toolbar { Toggle("Activity", systemImage: "list.bullet.rectangle", isOn: $showActivity) }
         .sheet(item: $chosen) { a in ActionFormSheet(action: a, log: log) }
     }

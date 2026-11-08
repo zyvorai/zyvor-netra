@@ -64,6 +64,7 @@ private struct ComplianceBody: View {
                 }.frame(minHeight: 320)
             }
         }
+        .linkFilter(text: $query)
     }
 }
 
