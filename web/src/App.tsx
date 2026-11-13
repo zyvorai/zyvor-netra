@@ -39,6 +39,9 @@ import MetricAlerts from './pages/MetricAlerts';
 import InvestigateConnection from './pages/InvestigateConnection';
 import FlowObservePage from './pages/FlowObservePage';
 import AI from './pages/AI';
+import Handoff from './pages/Handoff';
+import SLO from './pages/SLO';
+import DropReasons from './pages/DropReasons';
 import TlsFingerprints from './pages/TlsFingerprints';
 import EbpfMaps from './pages/EbpfMaps';
 import PageHero, { type HeroTint } from './components/PageHero';
@@ -70,6 +73,24 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     title: 'Briefs, drafts and the agent graph.',
     lede: 'Read-only natural-language triage over live aggregates. Optional LLM rewrite; never applies mode, rules or policy.',
     tint: 'purple',
+  },
+  handoff: {
+    eyebrow: 'Handoff',
+    title: 'Pass the pager cleanly.',
+    lede: 'On-call pack: report, playbook, coverage, fleet, audit and drop reasons. Observe-only — never extends a lease.',
+    tint: 'amber',
+  },
+  slo: {
+    eyebrow: 'SLO',
+    title: 'Error budgets from live series.',
+    lede: 'Workload SLO burn windows from observed traffic. Never applies policy or extends a lease.',
+    tint: 'green',
+  },
+  'drop-reasons': {
+    eyebrow: 'Drop reasons',
+    title: 'Why the datapath said no.',
+    lede: 'FastPath action/reason histogram across agents. Metadata only — no payloads.',
+    tint: 'amber',
   },
   'tls-fingerprints': {
     eyebrow: 'TLS',
@@ -384,6 +405,9 @@ export default function App() {
     'metric-anomalies': <MetricAnomalies />,
     'metric-alerts': <MetricAlerts />,
     ai: <AI />,
+    handoff: <Handoff />,
+    slo: <SLO />,
+    'drop-reasons': <DropReasons />,
   }[page];
 
   const hero = pageHero[page];

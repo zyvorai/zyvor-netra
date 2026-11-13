@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import PagePulse from '../components/kit/PagePulse';
+import { navigate } from '../hooks/useInvestigation';
 
 type MapView = {
   id?: string;
@@ -86,6 +87,25 @@ export default function EbpfMaps() {
             </select>
           </label>
           <span className="kit-caption">revision {data?.revision ?? '—'}</span>
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={!data}
+            onClick={() => {
+              const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'netra-ebpf-maps.json';
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            Export JSON
+          </button>
+          <button type="button" className="btn-secondary" onClick={() => navigate('ai', { query: 'Which eBPF maps are filled vs empty?' })}>
+            Ask about maps
+          </button>
         </div>
       </section>
       <section className="card span3">

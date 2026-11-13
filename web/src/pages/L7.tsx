@@ -14,6 +14,8 @@ export default function L7() {
   const [err, setErr] = useState('');
   const [tlsFP, setTlsFP] = useState<any>();
   const [encDNS, setEncDNS] = useState<any>();
+  const [sampled, setSampled] = useState<any>();
+  const [l7tls, setL7tls] = useState<any>();
 
   const [downgrades, setDowngrades] = useState<any>();
 
@@ -23,8 +25,10 @@ export default function L7() {
     api<any>('/api/v1/insights/protocol-downgrades'),
     api<any>('/api/v1/ebpf/tls-fingerprints?limit=30'),
     api<any>('/api/v1/ebpf/encrypted-dns?limit=30'),
-  ]).then(([d, c, dg, fp, ed]) => {
-    setData(d); setCfg(c); setDowngrades(dg); setTlsFP(fp); setEncDNS(ed); setErr('');
+    api<any>('/api/v1/l7/sampled?limit=30').catch(() => null),
+    api<any>('/api/v1/l7/tls?limit=30').catch(() => null),
+  ]).then(([d, c, dg, fp, ed, samp, lt]) => {
+    setData(d); setCfg(c); setDowngrades(dg); setTlsFP(fp); setEncDNS(ed); setSampled(samp); setL7tls(lt); setErr('');
   }).catch(e => setErr(String(e)));
 
   useEffect(() => { void load(); const t = setInterval(load, 5000); return () => clearInterval(t); }, []);
@@ -127,6 +131,26 @@ export default function L7() {
           </div>
         );
       })()}
+    </section>
+
+    <section className="card span3">
+      <p className="eyebrow">L7 SAMPLED OPS</p>
+      <h2 className="card-title">{(sampled?.items || sampled?.ops || sampled?.samples || []).length} recent samples</h2>
+      <p>GET /api/v1/l7/sampled — cleartext HTTP / TLS SNI samples. No payloads.</p>
+      <div className="list">
+        {!(sampled?.items || sampled?.ops || sampled?.samples || []).length && <p className="empty-state">No sampled L7 ops yet.</p>}
+        {(sampled?.items || sampled?.ops || sampled?.samples || []).slice(0, 12).map((s: any, i: number) => (
+          <div className="agent wide" key={i}>
+            <b>{s.method || s.kind || s.sni || s.host || 'sample'}</b>
+            <small>{[s.host || s.sni, s.node, s.namespace && s.pod ? `${s.namespace}/${s.pod}` : ''].filter(Boolean).join(' · ')}</small>
+          </div>
+        ))}
+      </div>
+      {(l7tls?.items || l7tls?.fingerprints || l7tls?.samples || []).length > 0 && (
+        <p className="kit-caption" style={{ marginTop: '0.5rem' }}>
+          l7/tls samples: {(l7tls?.items || l7tls?.fingerprints || l7tls?.samples || []).length} (observe-only ClientHello metadata)
+        </p>
+      )}
     </section>
 
     <section className="card span3">

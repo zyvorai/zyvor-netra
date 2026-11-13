@@ -264,7 +264,7 @@ func run(args []string) error {
 
 func aiCmd() error {
 	if len(os.Args) < 3 {
-		return fmt.Errorf("ai status|brief|digest|suggestions|congestion|ask|agent|draft|explain")
+		return fmt.Errorf("ai status|brief|digest|suggestions|congestion|ask|agent|draft|explain|forget")
 	}
 	switch os.Args[2] {
 	case "status":
@@ -301,6 +301,15 @@ func aiCmd() error {
 			return err
 		}
 		return request("POST", "/api/v1/ai/"+os.Args[2], b)
+	case "forget":
+		if len(os.Args) < 4 {
+			return fmt.Errorf("ai forget CONVERSATION_ID")
+		}
+		b, err := json.Marshal(map[string]any{"conversationId": os.Args[3]})
+		if err != nil {
+			return err
+		}
+		return request("POST", "/api/v1/ai/forget", b)
 	case "explain":
 		if len(os.Args) < 4 {
 			return fmt.Errorf("ai explain KIND [MESSAGE...]")
@@ -315,7 +324,7 @@ func aiCmd() error {
 		}
 		return request("POST", "/api/v1/ai/explain", b)
 	default:
-		return fmt.Errorf("ai status|brief|digest|suggestions|congestion|ask|agent|draft|explain")
+		return fmt.Errorf("ai status|brief|digest|suggestions|congestion|ask|agent|draft|explain|forget")
 	}
 }
 func policy() error {

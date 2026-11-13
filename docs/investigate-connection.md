@@ -25,6 +25,12 @@ Response:
 - `confidence` — sensor availability, stale agents, retention gaps
 - `limitations[]` — honest contract (no decrypt, no rule-ID-at-time-T)
 
+## UX
+
+Console: `#page=investigate` (`web/src/pages/InvestigateConnection.tsx`).
+Deep-link scope via `namespace` / `pod` / `query` (peer) / `node` hash params.
+Copy view link and JSON export are on the page. MCP prompt: `netra_investigate_connection`.
+
 ## CLI / MCP
 
 ```bash

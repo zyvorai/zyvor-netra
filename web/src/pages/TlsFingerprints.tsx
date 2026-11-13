@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
+import ExplainFinding from '../components/ExplainFinding';
 import { navigate } from '../hooks/useInvestigation';
 import PagePulse from '../components/kit/PagePulse';
 import { countTone } from '../components/kit/tone';
@@ -35,6 +36,8 @@ export default function TlsFingerprints() {
   const [risk, setRisk] = useState<RiskBoard>();
   const [err, setErr] = useState('');
   const [filter, setFilter] = useState('');
+  const [sev, setSev] = useState('');
+  const [echOnly, setEchOnly] = useState(false);
   const [tab, setTab] = useState<'risk' | 'all'>('risk');
   const [tick, setTick] = useState(0);
 
@@ -60,28 +63,33 @@ export default function TlsFingerprints() {
   const q = filter.trim().toLowerCase();
   const riskRows = useMemo(
     () =>
-      (risk?.items || []).filter(
-        (r) =>
-          !q ||
+      (risk?.items || []).filter((r) => {
+        if (echOnly && !r.ech) return false;
+        if (sev && String(r.severity || '').toLowerCase() !== sev) return false;
+        if (!q) return true;
+        return (
           (r.ja3 || '').toLowerCase().includes(q) ||
           (r.ja4 || '').toLowerCase().includes(q) ||
           (r.sni || '').toLowerCase().includes(q) ||
           (r.node || '').toLowerCase().includes(q) ||
           (r.reasons || []).some((x) => x.toLowerCase().includes(q))
-      ),
-    [risk, q]
+        );
+      }),
+    [risk, q, sev, echOnly]
   );
   const allRows = useMemo(
     () =>
-      (board?.fingerprints || []).filter(
-        (r) =>
-          !q ||
+      (board?.fingerprints || []).filter((r) => {
+        if (echOnly && !r.ech) return false;
+        if (!q) return true;
+        return (
           (r.ja3 || '').toLowerCase().includes(q) ||
           (r.ja4 || '').toLowerCase().includes(q) ||
           (r.sni || '').toLowerCase().includes(q) ||
           (r.node || '').toLowerCase().includes(q)
-      ),
-    [board, q]
+        );
+      }),
+    [board, q, echOnly]
   );
 
   const rare = risk?.rare || 0;
@@ -113,6 +121,34 @@ export default function TlsFingerprints() {
             All ({allRows.length})
           </button>
           <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter JA3 / SNI / node…" aria-label="Filter fingerprints" />
+          <label>
+            Severity{' '}
+            <select value={sev} onChange={(e) => setSev(e.target.value)} aria-label="Severity filter">
+              <option value="">all</option>
+              <option value="critical">critical</option>
+              <option value="high">high</option>
+              <option value="warning">warning</option>
+              <option value="info">info</option>
+            </select>
+          </label>
+          <label>
+            <input type="checkbox" checked={echOnly} onChange={(e) => setEchOnly(e.target.checked)} /> ECH only
+          </label>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => {
+              const blob = new Blob([JSON.stringify({ board, risk }, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'netra-tls-fingerprints.json';
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            Export JSON
+          </button>
           <button type="button" className="btn-secondary" onClick={() => navigate('detect')}>
             Detect
           </button>
@@ -163,6 +199,15 @@ export default function TlsFingerprints() {
             </tbody>
           </table>
           {riskRows.length === 0 && <p className="empty-state">No risk-ranked fingerprints match this filter.</p>}
+          {riskRows[0] && (
+            <ExplainFinding
+              page="tls-fingerprints"
+              kind="ja3-risk"
+              subject={riskRows[0].sni || riskRows[0].ja3 || 'tls'}
+              message={`Top risk row: ${(riskRows[0].reasons || []).join('; ') || riskRows[0].severity || 'rare fingerprint'}`}
+              severity={riskRows[0].severity || 'warning'}
+            />
+          )}
         </section>
       ) : (
         <section className="card span3">

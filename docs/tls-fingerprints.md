@@ -3,6 +3,11 @@
 P1 surfaces that close the “encrypted traffic” story **without** HTTPS
 break or DPI. Parent catalog: [`p0-p5-surfaces.md`](p0-p5-surfaces.md).
 
+## UX
+
+Dedicated console page: `#page=tls-fingerprints` (`web/src/pages/TlsFingerprints.tsx`).
+Surfaces still boards Encrypted → TLS / JA3 risk; L7 deep-links into Surfaces.
+
 ## JA3 / JA4 (`internal/tlsfp`)
 
 Fingerprints are parsed from **single-skb ClientHello** bytes from two

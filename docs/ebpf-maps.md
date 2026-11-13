@@ -24,6 +24,7 @@ Authorization: Bearer <NETRA_API_KEY>
 ```
 
 MCP (read-only): `netra_ebpf_maps` → same JSON as the API.
+Resource: `netra://ebpf/maps`. Console: `#page=ebpf-maps` (`web/src/pages/EbpfMaps.tsx`).
 
 ## What you see
 

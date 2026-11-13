@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { api, wsURL } from '../api';
 import CaptureHistory from '../components/CaptureHistory';
+import CaptureSummaries from '../components/CaptureSummaries';
 import TerminalFrame from '../components/TerminalFrame';
 import Sparkline from '../components/Sparkline';
 import PagePulse from '../components/kit/PagePulse';
@@ -553,6 +554,7 @@ export default function Capture() {
         )}
       </section>
 
+      <CaptureSummaries />
       <CaptureHistory onRepeat={repeat} />
     </div>
   );

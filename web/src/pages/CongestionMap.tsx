@@ -311,6 +311,88 @@ export function conntrackCeiling(nodes: KernelNode[]): string | null {
 
 type Brief = { headline: string; severity: string; summary: string };
 
+function ListenQueuesStrip() {
+  const [rows, setRows] = useState<Array<{ node?: string; listen?: number; synRecv?: number; backlog?: number; address?: string }>>([]);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    const load = () =>
+      api<any>('/api/v1/listen-queues')
+        .then((d) => {
+          const list = d?.top || d?.queues || d?.items || d?.nodes || [];
+          setRows(Array.isArray(list) ? list.slice(0, 12) : []);
+          setErr('');
+        })
+        .catch((e) => setErr(String(e.message || e)));
+    load();
+    const t = setInterval(load, 15000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <section className="card span3">
+      <p className="eyebrow">LISTEN QUEUES</p>
+      <h2 className="card-title">inet_diag backlog depth</h2>
+      <p>Observe-only TCP listen queue snapshots. Never changes backlog tunables.</p>
+      {err && <p className="warning">{err}</p>}
+      {!err && rows.length === 0 && <p className="empty-state">No listen-queue samples yet.</p>}
+      <div className="list">
+        {rows.map((r, i) => (
+          <div className="agent wide" key={i}>
+            <b>{r.node || r.address || `queue ${i + 1}`}</b>
+            <small>
+              {[r.address, r.listen != null ? `listen ${r.listen}` : '', r.synRecv != null ? `synRecv ${r.synRecv}` : '', r.backlog != null ? `backlog ${r.backlog}` : '']
+                .filter(Boolean)
+                .join(' · ')}
+            </small>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StackHistogramsStrip() {
+  const [nodes, setNodes] = useState<any[]>([]);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    const load = () =>
+      api<any>('/api/v1/ebpf/stack-histograms')
+        .then((d) => {
+          setNodes(Array.isArray(d?.nodes) ? d.nodes.slice(0, 8) : []);
+          setErr('');
+        })
+        .catch((e) => setErr(String(e.message || e)));
+    load();
+    const t = setInterval(load, 15000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <section className="card span3">
+      <p className="eyebrow">STACK HISTOGRAMS</p>
+      <h2 className="card-title">Softirq / softnet / listen-depth buckets</h2>
+      <p>Observe-only pressure buckets from agent reports — not entry→exit softirq latency.</p>
+      {err && <p className="warning">{err}</p>}
+      {!err && nodes.length === 0 && <p className="empty-state">No stack histogram samples yet.</p>}
+      <div className="list">
+        {nodes.map((n) => (
+          <div className="agent wide" key={n.node}>
+            <b>{n.node}</b>
+            <small>
+              {[
+                n.softirqNetRx != null ? `NET_RX ${n.softirqNetRx}` : '',
+                n.softnetDropped != null ? `softnet drop ${n.softnetDropped}` : '',
+                n.softnetTimeSqueeze != null ? `squeeze ${n.softnetTimeSqueeze}` : '',
+                n.listenOverflows != null ? `listen overflow ${n.listenOverflows}` : '',
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </small>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function CongestionMap() {
   const [kernel, setKernel] = useState<KernelResponse>();
   const [kernelWindow, setKernelWindow] = useState('5m');
@@ -420,6 +502,8 @@ export default function CongestionMap() {
           <p>{brief.summary}</p>
         </section>
       )}
+      <ListenQueuesStrip />
+      <StackHistogramsStrip />
       <section className="card span3">
         <p className="eyebrow">CONGESTION MAP</p>
         <h2 className="card-title">Where the stack is under pressure</h2>

@@ -38,11 +38,14 @@ GET  /api/v1/ai/status
 GET  /api/v1/ai/brief
 GET  /api/v1/ai/digest
 GET  /api/v1/ai/suggestions
+GET  /api/v1/ai/congestion-brief
 POST /api/v1/ai/ask
 POST /api/v1/ai/forget
 POST /api/v1/ai/draft
 POST /api/v1/ai/explain
 POST /api/v1/ai/agent
+
+`Classify` (drops/health/tls/netlink/…) is agent-internal — there is no public `/api/v1/ai/classify`; the intent is returned on `/ai/agent` as `intent`.
 Content-Type: application/json
 
 {"question":"why is DNS failing in kube-system?","namespace":"kube-system"}
@@ -146,7 +149,7 @@ The Overview page hosts a read-only **Ask Netra** card
 - If the question looks like deny/rate/allow, shows a rule preview (never an Apply button)
 - Copy on-call card + incident fingerprint from `/api/v1/ai/digest`
 
-The nav bar (`web/src/components/DigestChip.tsx`) shows a small severity/fingerprint chip, polling `GET /api/v1/ai/digest` every 30s while any page is open; clicking it jumps to Overview. Because the dashboard now polls this endpoint continuously, it's an active participant in the shared "last fingerprint" state described above alongside the alert poller and any interactive CLI/MCP calls.
+The nav bar (`web/src/components/DigestChip.tsx`) shows a small severity/fingerprint chip, polling `GET /api/v1/ai/digest` every 30s while any page is open; clicking it jumps to **Ask Netra** (`#page=ai`). “New conversation” also calls `POST /api/v1/ai/forget` for the tab’s conversation id. Because the dashboard now polls digest continuously, it's an active participant in the shared "last fingerprint" state described above alongside the alert poller and any interactive CLI/MCP calls. First-class pages also exist for Investigate, Flow observe, TLS/JA3, eBPF Maps, and Handoff.
 
 Every **Explain** popover (`web/src/components/ExplainFinding.tsx`, on Health/Drops/Path/Insights/L7/Explain findings) can additionally try to draft a rule from that finding: it regex-extracts an IP, CIDR, or DNS/SNI name from the finding's kind/subject/message and, if found, offers a "Draft rule from this" button that calls `POST /api/v1/ai/draft` — same preview-only endpoint the Ask Netra card and `netractl ai draft` use, never applies anything.
 

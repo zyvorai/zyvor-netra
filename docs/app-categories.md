@@ -15,6 +15,8 @@ GET /api/v1/ebpf/app-categories
 netractl ebpf app-categories
 ```
 
+MCP tool: `netra_ebpf_app_categories`. Resource: `netra://ebpf/app-categories`.
+
 **UX:** Surfaces → App categories.
 
 See [competitive-quantum.md](competitive-quantum.md), [buyers guide](sales/buyers-guide.md).

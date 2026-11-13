@@ -36,8 +36,11 @@ func DefaultCatalog() []CatalogEntry {
 		{Suffix: "anthropic.com", Category: CatLLMSaaS, Label: "Anthropic"},
 		{Suffix: "api.anthropic.com", Category: CatLLMSaaS, Label: "Anthropic API"},
 		{Suffix: "claude.ai", Category: CatLLMSaaS, Label: "Claude"},
-		{Suffix: "googleapis.com", Category: CatAIInfra, Label: "Google APIs"},
 		{Suffix: "generativelanguage.googleapis.com", Category: CatLLMSaaS, Label: "Google Generative Language"},
+		{Suffix: "oaiusercontent.com", Category: CatAIInfra, Label: "OpenAI User Content"},
+		{Suffix: "copilotstudio.microsoft.com", Category: CatMCP, Label: "Copilot Studio"},
+		{Suffix: "bedrock-agent-runtime.amazonaws.com", Category: CatAIInfra, Label: "AWS Bedrock Agents"},
+		{Suffix: "bedrock-agent.amazonaws.com", Category: CatAIInfra, Label: "AWS Bedrock Agents"},
 		{Suffix: "openai.azure.com", Category: CatLLMSaaS, Label: "Azure OpenAI"},
 		{Suffix: "cognitiveservices.azure.com", Category: CatAIInfra, Label: "Azure Cognitive Services"},
 		{Suffix: "api.cohere.ai", Category: CatLLMSaaS, Label: "Cohere"},
@@ -94,6 +97,13 @@ func DefaultCatalog() []CatalogEntry {
 		{Suffix: "windsurf.com", Category: CatAIInfra, Label: "Windsurf"},
 		{Suffix: "codeium.com", Category: CatAIInfra, Label: "Codeium"},
 		{Suffix: "tabnine.com", Category: CatAIInfra, Label: "Tabnine"},
+		{Suffix: "gemini.google.com", Category: CatLLMSaaS, Label: "Google Gemini"},
+		{Suffix: "aistudio.google.com", Category: CatLLMSaaS, Label: "Google AI Studio"},
+		{Suffix: "studio.firebase.google.com", Category: CatAIInfra, Label: "Firebase Studio"},
+		{Suffix: "api.voyageai.com", Category: CatLLMSaaS, Label: "Voyage AI"},
+		{Suffix: "api.elevenlabs.io", Category: CatAIInfra, Label: "ElevenLabs"},
+		{Suffix: "api.stability.ai", Category: CatAIInfra, Label: "Stability AI"},
+		{Suffix: "api.midjourney.com", Category: CatAIInfra, Label: "Midjourney"},
 	}
 }
 

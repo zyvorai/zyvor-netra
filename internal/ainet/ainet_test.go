@@ -52,6 +52,12 @@ func TestCatalogSuffixes(t *testing.T) {
 		{"api.githubcopilot.com", CatMCP},
 		{"ide.windsurf.com", CatAIInfra},
 		{"api.tabnine.com", CatAIInfra},
+		{"files.oaiusercontent.com", CatAIInfra},
+		{"tenant.copilotstudio.microsoft.com", CatMCP},
+		{"x.bedrock-agent-runtime.amazonaws.com", CatAIInfra},
+		{"api.voyageai.com", CatLLMSaaS},
+		{"api.elevenlabs.io", CatAIInfra},
+		{"gemini.google.com", CatLLMSaaS},
 	}
 	for _, c := range cases {
 		e, ok := lookup(DefaultCatalog(), c.host)

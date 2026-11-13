@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
-import { useRoute } from '../hooks/useInvestigation';
+import { navigate, useRoute } from '../hooks/useInvestigation';
 import PagePulse from '../components/kit/PagePulse';
 
 type Board = {
@@ -36,6 +36,8 @@ const BOARDS: Board[] = [
   { id: 'compliance', label: 'Compliance', group: 'Ops', path: '/api/v1/compliance?limit=100', listKeys: ['packs', 'checks', 'items', 'findings'], empty: 'No compliance packs.' },
   { id: 'ainet', label: 'AI destinations', group: 'Ops', path: '/api/v1/ebpf/ai-destinations?limit=100', listKeys: ['hits', 'items', 'destinations'], empty: 'No GenAI destinations matched.' },
   { id: 'automitigate', label: 'Auto-mitigate', group: 'Ops', path: '/api/v1/ebpf/auto-mitigate', listKeys: ['recent', 'actions', 'items'], empty: 'No recent auto-mitigate actions.' },
+  { id: 'automitigate-preview', label: 'Auto-mitigate preview', group: 'Ops', path: '/api/v1/ebpf/auto-mitigate/preview', listKeys: ['candidates', 'preview', 'items', 'actions'], empty: 'No shadow auto-mitigate candidates.' },
+  { id: 'reasons', label: 'Drop reasons', group: 'Ops', path: '/api/v1/ebpf/reasons', listKeys: ['items', 'reasons', 'buckets'], empty: 'No reason buckets.' },
   { id: 'prevention', label: 'Prevention report', group: 'Ops', path: '/api/v1/report/prevention', listKeys: ['gaps', 'coverage', 'sections', 'items'], empty: 'Prevention report has no list rows — see headline/coverageScore above.' },
   { id: 'clusters', label: 'Fleet clusters', group: 'Fleet', path: '/api/v1/fleet/clusters', listKeys: ['clusters', 'items'], empty: 'No fleet clusters configured.' },
   { id: 'tenants', label: 'Fleet tenants', group: 'Fleet', path: '/api/v1/fleet/tenants', listKeys: ['tenants', 'items'], empty: 'No fleet tenants.' },
@@ -137,6 +139,12 @@ export default function Surfaces() {
     }
   }, [route.scope.query]);
 
+  useEffect(() => {
+    if (!active?.id) return;
+    if (route.scope.query === active.id) return;
+    navigate('surfaces', { query: active.id });
+  }, [active?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const boards = BOARDS.filter((b) => b.group === group);
   const active = BOARDS.find((b) => b.id === boardId) || boards[0] || BOARDS[0];
 
@@ -230,6 +238,42 @@ export default function Surfaces() {
         </div>
         <div className="filters" style={{ marginTop: '0.75rem' }}>
           <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter host / JA3 / severity…" aria-label="Filter board rows" />
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={!data}
+            onClick={() => {
+              const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `netra-surfaces-${active?.id || 'board'}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            Export JSON
+          </button>
+          {active?.id === 'tls' || active?.id === 'tls-risk' ? (
+            <button type="button" className="btn-secondary" onClick={() => navigate('tls-fingerprints')}>
+              TLS / JA3 page
+            </button>
+          ) : null}
+          {active?.id === 'ainet' || active?.id === 'appcat' || active?.id === 'shadow' ? (
+            <button type="button" className="btn-secondary" onClick={() => navigate('security-review')}>
+              Security Review
+            </button>
+          ) : null}
+          {active?.id === 'automitigate' || active?.id === 'automitigate-preview' ? (
+            <button type="button" className="btn-secondary" onClick={() => navigate('detect')}>
+              Detect
+            </button>
+          ) : null}
+          {active?.id === 'reasons' ? (
+            <button type="button" className="btn-secondary" onClick={() => navigate('drop-reasons')}>
+              Drop reasons page
+            </button>
+          ) : null}
         </div>
       </section>
 

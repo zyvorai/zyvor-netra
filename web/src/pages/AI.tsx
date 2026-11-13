@@ -3,6 +3,7 @@
 
 import AskNetra from '../components/AskNetra';
 import DigestChip from '../components/DigestChip';
+import { navigate } from '../hooks/useInvestigation';
 
 /** First-class AI workspace — same AskNetra agent as Overview, with digest chip. */
 export default function AI() {
@@ -12,8 +13,17 @@ export default function AI() {
         <p className="eyebrow">ON-CALL</p>
         <h2 className="card-title">Digest and ask</h2>
         <p>Read-only briefs, drafts and the in-process agent graph. Never applies mode, rules or policy.</p>
-        <div style={{ marginTop: '0.75rem' }}>
-          <DigestChip />
+        <div style={{ marginTop: '0.75rem' }} className="chips">
+          <DigestChip onOpen={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
+          <button type="button" className="btn-secondary" onClick={() => navigate('handoff')}>
+            Open handoff pack
+          </button>
+          <button type="button" className="btn-secondary" onClick={() => navigate('investigate')}>
+            Investigate connection
+          </button>
+          <button type="button" className="btn-secondary" onClick={() => navigate('flow-observe')}>
+            Flow observe
+          </button>
         </div>
       </section>
       <div className="span3">

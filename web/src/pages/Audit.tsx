@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import BlockedEvents from '../components/BlockedEvents';
+import SIEMExports from '../components/SIEMExports';
 import PagePulse from '../components/kit/PagePulse';
 import { auditActionClass } from '../lib/audit';
 
@@ -70,6 +71,7 @@ export default function Audit() {
         )}
       </section>
       <BlockedEvents />
+      <SIEMExports />
     </div>
   );
 }

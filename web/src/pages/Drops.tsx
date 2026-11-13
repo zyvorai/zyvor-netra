@@ -9,6 +9,8 @@ export default function Drops() {
   const [data, setData] = useState<any>();
   const [diag, setDiag] = useState<any>();
   const [kernel, setKernel] = useState<any>();
+  const [dropInfo, setDropInfo] = useState<any>();
+  const [tcpEvents, setTcpEvents] = useState<any>();
   const [kernelWindow, setKernelWindow] = useState('5m');
   const [err, setErr] = useState('');
   const load = () =>
@@ -16,14 +18,18 @@ export default function Drops() {
       api<any>('/api/v1/ebpf/drops?limit=100'),
       api<any>('/api/v1/ebpf/diagnose?limit=50'),
       api<any>(`/api/v1/ebpf/kernel-network?window=${encodeURIComponent(kernelWindow)}`),
+      api<any>('/api/v1/ebpf/drop-info').catch(() => null),
+      api<any>('/api/v1/ebpf/tcp-events').catch(() => null),
     ])
-      .then(([d, x, k]) => {
-        setData(d);
-        setDiag(x);
-        setKernel(k);
-        setErr('');
-      })
-      .catch((e) => setErr(String(e)));
+    .then(([d, x, k, di, te]) => {
+      setData(d);
+      setDiag(x);
+      setKernel(k);
+      setDropInfo(di);
+      setTcpEvents(te);
+      setErr('');
+    })
+    .catch((e) => setErr(String(e)));
   useEffect(() => {
     load();
     const t = setInterval(load, 5000);
@@ -60,6 +66,50 @@ export default function Drops() {
         ]}
       />
       {ds.text && <p className="kit-caption span3">{ds.text}</p>}
+      <section className="card span3">
+        <p className="eyebrow">DROP INFO · KERNEL SITES</p>
+        <h2 className="card-title">
+          {dropInfo?.totals?.drops ?? 0} attributed drops
+          {dropInfo?.nodesNotReporting ? ` · ${dropInfo.nodesNotReporting} nodes not reporting` : ''}
+        </h2>
+        <p>bpf drop-info attribution (reason + kernel function). Sensor may be off on some nodes.</p>
+        <div className="list">
+          {!(dropInfo?.reasons || []).length && <p className="empty-state">No drop-info reasons yet (sensor off or quiet).</p>}
+          {(dropInfo?.reasons || []).slice(0, 12).map((r: any, i: number) => (
+            <div className="agent wide" key={i}>
+              <b>{r.reason || 'reason'}</b>
+              <small>n={r.count ?? 0}</small>
+            </div>
+          ))}
+          {(dropInfo?.flows || []).slice(0, 8).map((f: any, i: number) => (
+            <div className="agent wide" key={`f-${i}`}>
+              <b>
+                {f.src}:{f.srcPort} → {f.dst}:{f.dstPort}
+              </b>
+              <span className="severity-badge warning">{f.reason || 'drop'}</span>
+              <small>
+                {[f.node, f.location, f.count != null ? `n=${f.count}` : ''].filter(Boolean).join(' · ')}
+              </small>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="card span3">
+        <p className="eyebrow">TCP EVENTS</p>
+        <h2 className="card-title">Retransmits / RST / state transitions</h2>
+        <p>Observe-only TCP tracepoint ring. May 409 when the sensor is disabled.</p>
+        <div className="list">
+          {!(tcpEvents?.events || tcpEvents?.items || []).length && <p className="empty-state">No TCP events in the ring (or sensor off).</p>}
+          {(tcpEvents?.events || tcpEvents?.items || []).slice(0, 12).map((e: any, i: number) => (
+            <div className="agent wide" key={i}>
+              <b>{e.type || e.kind || e.state || 'tcp'}</b>
+              <small>
+                {[e.node, e.comm, e.dst || e.peer, e.count != null ? `n=${e.count}` : ''].filter(Boolean).join(' · ')}
+              </small>
+            </div>
+          ))}
+        </div>
+      </section>
       <section className="card span3">
         <p className="eyebrow">KERNEL NETWORK PRESSURE</p>
         <h2 className="card-title">Buffers, queues, and congestion</h2>

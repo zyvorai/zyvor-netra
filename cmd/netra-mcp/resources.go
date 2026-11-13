@@ -30,6 +30,13 @@ func registerResources(srv *mcpserver.Server, c *client) error {
 		{"netra://security/incidents", "Security incidents", "Security-review incident correlation from /api/v1/security/incidents.", "/api/v1/security/incidents"},
 		{"netra://ebpf/ai-destinations", "AI destinations", "GenAI/MCP hostname catalog matches from /api/v1/ebpf/ai-destinations.", "/api/v1/ebpf/ai-destinations"},
 		{"netra://compliance", "Compliance packs", "Compliance pack controls from /api/v1/compliance.", "/api/v1/compliance"},
+		{"netra://ebpf/maps", "eBPF maps", "Controller-desired map inventory from /api/v1/ebpf/maps.", "/api/v1/ebpf/maps"},
+		{"netra://ebpf/app-categories", "App categories", "Heuristic app/category hits from /api/v1/ebpf/app-categories.", "/api/v1/ebpf/app-categories"},
+		{"netra://ebpf/tls-fingerprints", "TLS fingerprints", "JA3/JA4 samples from /api/v1/ebpf/tls-fingerprints.", "/api/v1/ebpf/tls-fingerprints"},
+		{"netra://flows/history", "Flow history", "Native flow history from /api/v1/flows/history?limit=100.", "/api/v1/flows/history?limit=100"},
+		{"netra://insights/red", "RED metrics", "Workload RED board from /api/v1/insights/red?window=5m.", "/api/v1/insights/red?window=5m"},
+		{"netra://insights/traces", "Inferred traces", "Inferred spans from /api/v1/insights/traces?since=15m.", "/api/v1/insights/traces?since=15m"},
+		{"netra://handoff", "On-call handoff", "JSON on-call pack from /api/v1/handoff?format=json.", "/api/v1/handoff?format=json"},
 	}
 	for _, it := range items {
 		it := it

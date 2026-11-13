@@ -33,6 +33,7 @@ export const navGroups: NavGroup[] = [
       { page: 'health', label: 'Health', blurb: 'RTT, retransmits, RTOs, resets, and cleartext DNS latency from the kernel.' },
       { page: 'path', label: 'Path', blurb: 'Measured active TCP establishment and cwnd/packets-out pressure.' },
       { page: 'drops', label: 'Drops', blurb: 'Kernel skb reasons, softnet pressure, policy-drop findings, and windowed kernel-network diagnostics — see also Congestion Map for where in the stack.' },
+      { page: 'drop-reasons', label: 'Drop reasons', blurb: 'FastPath action/reason histogram from agent reports. No payloads.' },
       { page: 'congestion', label: 'Congestion Map', blurb: 'A pictorial view of the Linux network stack, colored by where the cluster is congested right now.' },
       { page: 'sysctl-audit', label: 'Sysctl Audit', blurb: 'A flat, baseline-checked inventory of network hardening and tuning sysctls — security posture, IPv6, TCP lifecycle, conntrack timeouts, ARP/bridge — separate from Congestion Map’s evidence-correlated findings.' },
       { page: 'node-resources', label: 'Node Resources', blurb: 'Per-node CPU, memory, and load average, plus per-workload cgroup CPU/memory usage — a "top"-like view, attributed to workloads rather than raw PIDs.' },
@@ -55,6 +56,7 @@ export const navGroups: NavGroup[] = [
       { page: 'metrics', label: 'Metrics', blurb: 'Per-second host, network, workload, app and eBPF charts, generated from what the agents collect.' },
       { page: 'metric-anomalies', label: 'Anomalies', blurb: 'Per-dimension ML anomaly rates, and “what changed here?” for any window.' },
       { page: 'metric-alerts', label: 'Metric Alerts', blurb: 'Threshold and anomaly-rate rules with hysteresis, silences and acknowledgements.' },
+      { page: 'slo', label: 'SLO', blurb: 'Workload error-budget burn from observed series. Observe-only.' },
     ],
   },
   {
@@ -73,6 +75,7 @@ export const navGroups: NavGroup[] = [
     children: [
       { page: 'flows', label: 'Flows', blurb: 'Optional Hubble Relay live stream; native observe lives under Investigate → Flow observe.' },
       { page: 'ai', label: 'Ask Netra', blurb: 'Read-only briefs, digest, drafts and the in-process agent graph.' },
+      { page: 'handoff', label: 'Handoff', blurb: 'On-call shift pack: report, coverage, fleet, audit, drop reasons. Observe-only.' },
       { page: 'report', label: 'Report', blurb: 'A point-in-time health, drift, and incident briefing.' },
       { page: 'scorecard', label: 'Scorecard', blurb: 'Health, stale agents, and blocked events folded into a 0–100 board.' },
       { page: 'talkers', label: 'Talkers', blurb: 'Top destination IPs by packet count. No payloads.' },

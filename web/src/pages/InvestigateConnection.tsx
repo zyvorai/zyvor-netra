@@ -3,7 +3,9 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../api';
-import { useRoute } from '../hooks/useInvestigation';
+import ExplainFinding from '../components/ExplainFinding';
+import { navigate, useRoute } from '../hooks/useInvestigation';
+import { routeHash } from '../lib/investigation';
 
 type Event = {
   ts?: string;
@@ -17,7 +19,7 @@ type Gap = { stage?: string; reason?: string; link?: string };
 type Confidence = {
   overall?: string;
   sensorAvailability?: string[];
-  samplingLoss?: string[];
+  samplingBound?: string[];
   staleAttribution?: string[];
   retentionGaps?: string[];
   notes?: string[];
@@ -32,6 +34,16 @@ type Result = {
 
 const emptyForm = { namespace: '', pod: '', peer: '', port: '', node: '', window: '15m' };
 
+function downloadJSON(name: string, data: unknown) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function InvestigateConnection() {
   const route = useRoute();
   const [form, setForm] = useState({
@@ -44,6 +56,7 @@ export default function InvestigateConnection() {
   const [result, setResult] = useState<Result>();
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setForm((f) => ({
@@ -55,8 +68,18 @@ export default function InvestigateConnection() {
     }));
   }, [route.scope.namespace, route.scope.pod, route.scope.node, route.scope.query]);
 
+  const syncHash = (next = form) => {
+    navigate('investigate', {
+      namespace: next.namespace,
+      pod: next.pod,
+      node: next.node,
+      query: next.peer,
+    });
+  };
+
   const run = (e?: FormEvent) => {
     e?.preventDefault();
+    syncHash();
     setBusy(true);
     setErr('');
     const body: Record<string, unknown> = { window: form.window || '15m' };
@@ -78,6 +101,22 @@ export default function InvestigateConnection() {
         setErr(String(ex.message || ex));
         setBusy(false);
       });
+  };
+
+  const copyLink = () => {
+    const hash = routeHash('investigate', {
+      namespace: form.namespace,
+      pod: form.pod,
+      node: form.node,
+      query: form.peer,
+      direction: '',
+      protocol: '',
+      action: '',
+    });
+    void navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}${hash}`).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
   };
 
   return (
@@ -117,8 +156,29 @@ export default function InvestigateConnection() {
           <button type="submit" disabled={busy}>
             {busy ? 'Investigating…' : 'Investigate'}
           </button>
+          <button type="button" className="btn-secondary" onClick={copyLink}>
+            {copied ? 'Copied' : 'Copy view link'}
+          </button>
+          {result && (
+            <button type="button" className="btn-secondary" onClick={() => downloadJSON('netra-investigate.json', result)}>
+              Export JSON
+            </button>
+          )}
+          <button type="button" className="btn-secondary" onClick={() => navigate('flow-observe', { namespace: form.namespace, pod: form.pod, query: form.peer })}>
+            Flow observe
+          </button>
+          <button type="button" className="btn-secondary" onClick={() => navigate('ai')}>
+            Ask Netra
+          </button>
         </form>
         {err && <p className="warning">{err}</p>}
+        <div className="chips" style={{ marginTop: '0.75rem' }}>
+          {['Why did this connection fail?', 'Any DNS failure before the drop?', 'Is netlink churn involved?'].map((q) => (
+            <button key={q} type="button" className="btn-secondary" onClick={() => navigate('ai', { query: q })}>
+              {q}
+            </button>
+          ))}
+        </div>
       </section>
 
       {result && (
@@ -137,6 +197,13 @@ export default function InvestigateConnection() {
             {(result.confidence?.staleAttribution || []).length > 0 && (
               <p className="warning">Stale attribution: {(result.confidence?.staleAttribution || []).join('; ')}</p>
             )}
+            <ExplainFinding
+              page="investigate"
+              kind="investigate-connection"
+              subject={[form.namespace, form.pod, form.peer].filter(Boolean).join('/')}
+              message={`Investigate confidence ${result.confidence?.overall || 'unknown'} with ${(result.events || []).length} events and ${(result.gaps || []).length} gaps.`}
+              severity={result.confidence?.overall === 'low' ? 'warning' : 'info'}
+            />
           </section>
 
           <section className="card span3">
@@ -153,7 +220,23 @@ export default function InvestigateConnection() {
                   <span className="truncate" title={ev.summary}>
                     {ev.summary}
                   </span>
-                  <small>{ev.ts ? new Date(ev.ts).toLocaleString() : ''}{ev.source ? ` · ${ev.source}` : ''}</small>
+                  <small>
+                    {ev.ts ? new Date(ev.ts).toLocaleString() : ''}
+                    {ev.source ? ` · ${ev.source}` : ''}
+                    {ev.link ? (
+                      <>
+                        {' · '}
+                        <a href={ev.link.startsWith('#') || ev.link.startsWith('/') ? ev.link : undefined} onClick={(e) => {
+                          if (ev.link?.startsWith('#page=')) {
+                            e.preventDefault();
+                            window.location.hash = ev.link.slice(1);
+                          }
+                        }}>
+                          open
+                        </a>
+                      </>
+                    ) : null}
+                  </small>
                 </div>
               ))}
             </div>
@@ -167,6 +250,22 @@ export default function InvestigateConnection() {
               {(result.gaps || []).map((g, i) => (
                 <li key={`${g.stage}-${i}`}>
                   <b>{g.stage || 'gap'}</b> — {g.reason}
+                  {g.link ? (
+                    <>
+                      {' '}
+                      <a
+                        href={g.link.startsWith('#') || g.link.startsWith('/') ? g.link : undefined}
+                        onClick={(e) => {
+                          if (g.link?.startsWith('#page=')) {
+                            e.preventDefault();
+                            window.location.hash = g.link.slice(1);
+                          }
+                        }}
+                      >
+                        open
+                      </a>
+                    </>
+                  ) : null}
                 </li>
               ))}
             </ul>

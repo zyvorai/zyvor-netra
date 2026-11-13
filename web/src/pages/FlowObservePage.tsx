@@ -45,6 +45,9 @@ export default function FlowObservePage() {
   const [namespace, setNamespace] = useState(route.scope.namespace || '');
   const [pod, setPod] = useState(route.scope.pod || '');
   const [peer, setPeer] = useState(route.scope.query || '');
+  const [protocol, setProtocol] = useState(route.scope.protocol || '');
+  const [app, setApp] = useState('');
+  const [node, setNode] = useState(route.scope.node || '');
   const [history, setHistory] = useState<History>();
   const [red, setRed] = useState<RED>();
   const [traces, setTraces] = useState<Traces>();
@@ -53,19 +56,26 @@ export default function FlowObservePage() {
   const [events, setEvents] = useState<WorkloadEvents>();
   const [err, setErr] = useState('');
   const [tick, setTick] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(() => {
     const hq = new URLSearchParams({ since, limit: String(limit) });
     if (namespace) hq.set('namespace', namespace);
     if (pod) hq.set('pod', pod);
     if (peer) hq.set('peer', peer);
+    if (protocol) hq.set('protocol', protocol);
+    if (app) hq.set('app', app);
+    if (node) hq.set('node', node);
     const weq = new URLSearchParams();
     if (namespace) weq.set('namespace', namespace);
     if (pod) weq.set('pod', pod);
+    const tq = new URLSearchParams({ since: '15m' });
+    if (namespace) tq.set('namespace', namespace);
+    if (pod) tq.set('pod', pod);
     Promise.all([
       api<History>(`/api/v1/flows/history?${hq}`),
       api<RED>('/api/v1/insights/red?window=5m'),
-      api<Traces>('/api/v1/insights/traces?since=15m'),
+      api<Traces>(`/api/v1/insights/traces?${tq}`),
       api<Profiles>('/api/v1/insights/profiles').catch(() => ({ profiles: [] })),
       api<KernelNotes>('/api/v1/insights/kernel-notes').catch(() => ({ notes: [] })),
       api<WorkloadEvents>(`/api/v1/insights/workload-events${weq.toString() ? `?${weq}` : ''}`).catch(() => ({ events: [] })),
@@ -81,7 +91,7 @@ export default function FlowObservePage() {
         setTick((n) => n + 1);
       })
       .catch((e) => setErr(String(e.message || e)));
-  }, [since, limit, namespace, pod, peer]);
+  }, [since, limit, namespace, pod, peer, protocol, app, node]);
 
   useEffect(() => {
     load();
@@ -129,8 +139,51 @@ export default function FlowObservePage() {
             Peer
             <input value={peer} onChange={(e) => setPeer(e.target.value)} />
           </label>
+          <label>
+            Protocol
+            <input value={protocol} onChange={(e) => setProtocol(e.target.value)} placeholder="tcp|udp" />
+          </label>
+          <label>
+            App
+            <input value={app} onChange={(e) => setApp(e.target.value)} placeholder="http|dns…" />
+          </label>
+          <label>
+            Node
+            <input value={node} onChange={(e) => setNode(e.target.value)} />
+          </label>
           <button type="button" onClick={load}>
             Refresh
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => {
+              navigate('flow-observe', { namespace, pod, query: peer, protocol, node });
+              void navigator.clipboard.writeText(window.location.href).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              });
+            }}
+          >
+            {copied ? 'Copied' : 'Copy link'}
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => {
+              const blob = new Blob([JSON.stringify({ history, red, traces, profiles, kernel, events }, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'netra-flow-observe.json';
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            Export JSON
+          </button>
+          <button type="button" className="btn-secondary" onClick={() => navigate('ai')}>
+            Ask Netra
           </button>
           <button type="button" className="btn-secondary" onClick={() => navigate('flows')}>
             Hubble stream

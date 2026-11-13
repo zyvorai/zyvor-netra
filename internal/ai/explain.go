@@ -131,6 +131,10 @@ func explainNextSteps(req ExplainRequest) []string {
 		return []string{
 			"Open TLS / JA3 risk and Detect to correlate rare fingerprints with DNS/scan findings — observe only.",
 		}
+	case page == "investigate" || page == "flow-observe" || strings.Contains(kind, "investigate"):
+		return []string{
+			"Open Investigate (#page=investigate) or Flow observe; gaps listed by the API are visibility boundaries, not missing proof of delivery.",
+		}
 	case page == "shadow-saas" || page == "ai-destinations" || strings.Contains(kind, "shadow") || strings.Contains(kind, "genai"):
 		return []string{
 			"Open Surfaces → Shadow SaaS / AI destinations. Catalog matches are hostname metadata only — no payload DPI.",

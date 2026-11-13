@@ -146,6 +146,48 @@ func registerPrompts(srv *mcpserver.Server) error {
 				Text: "Call netra_fleet, netra_fleet_clusters, and netra_metrics_fleet. Summarize cluster health. Stay read-only.",
 			}},
 		},
+		{
+			Name:        "netra_investigate_connection",
+			Description: "Compose a failed-connection timeline via netra_investigate_connection. Read-only.",
+			Arguments: []mcpserver.PromptArg{
+				{Name: "namespace", Description: "Pod namespace.", Required: false},
+				{Name: "pod", Description: "Pod name.", Required: false},
+				{Name: "peer", Description: "Peer IP or host.", Required: false},
+				{Name: "port", Description: "Peer port.", Required: false},
+			},
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_investigate_connection with namespace={{namespace}} pod={{pod}} peer={{peer}} port={{port}}. Present the timeline in order, quote confidence and gaps verbatim, and never invent a missing stage. Stay read-only.",
+			}},
+		},
+		{
+			Name:        "netra_flow_observe",
+			Description: "Review native flow history, RED, and inferred traces. Read-only.",
+			Arguments: []mcpserver.PromptArg{
+				{Name: "namespace", Description: "Optional namespace filter.", Required: false},
+				{Name: "pod", Description: "Optional pod filter.", Required: false},
+			},
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_flow_history, netra_insights_red, and netra_insights_traces scoped to namespace={{namespace}} pod={{pod}} when set. Summarize rate/errors/latency and inferred paths. No payloads. Stay read-only.",
+			}},
+		},
+		{
+			Name:        "netra_ebpf_maps_review",
+			Description: "Review controller-desired eBPF map inventory under /sys/fs/bpf/netra. Read-only.",
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_ebpf_maps. Summarize filled vs empty maps and notable deny/rate entries. Never touch Cilium-owned maps. Stay read-only.",
+			}},
+		},
+		{
+			Name:        "netra_suggest_then_ask",
+			Description: "Pull live suggestion chips then run the agent on the top question. Read-only.",
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_ai_suggestions first. Pick the most urgent suggestion and call netra_ai_agent with that question. Quote the brief and steps. Never call mutating tools.",
+			}},
+		},
 	}
 	for _, p := range prompts {
 		if err := srv.RegisterPrompt(p); err != nil {

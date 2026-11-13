@@ -301,6 +301,96 @@ func registerReadTools(srv *mcpserver.Server, c *client) error {
 			queryParams: []string{"limit"},
 		},
 		{
+			name: "netra_capture_history", method: "GET", path: "/api/v1/capture/history",
+			description: "Recent capture session history metadata (no PCAP bytes or payloads).",
+			schema:      objSchema(map[string]any{"limit": intProp("Max rows, 1-500. Default 50.")}),
+			queryParams: []string{"limit"},
+		},
+		{
+			name: "netra_capture_context", method: "GET", path: "/api/v1/capture/artifacts/{id}/context",
+			description: "Drop/flow context around one capture artifact id. Metadata only — no frame payloads.",
+			schema:      objSchema(map[string]any{"id": strProp("Capture artifact id.")}),
+			pathParams:  []string{"id"},
+		},
+		{
+			name: "netra_whoami", method: "GET", path: "/api/v1/whoami",
+			description: "Auth identity for the current API key / session. Observe-only.",
+			schema:      emptySchema(),
+		},
+		{
+			name: "netra_features", method: "GET", path: "/api/v1/features",
+			description: "Feature catalog and enablement state. Read-only listing; enabling features is not exposed via MCP.",
+			schema:      emptySchema(),
+		},
+		{
+			name: "netra_slo", method: "GET", path: "/api/v1/slo",
+			description: "Workload SLO status board from observed health signals. Observe-only.",
+			schema:      emptySchema(),
+		},
+		{
+			name: "netra_fleet_flows", method: "GET", path: "/api/v1/fleet/flows/history",
+			description: "Cross-cluster flow history rollup when fleet peers are configured. No payloads.",
+			schema:      objSchema(map[string]any{"limit": intProp("Max rows, 1-2000. Default 200.")}),
+			queryParams: []string{"limit"},
+		},
+		{
+			name: "netra_metrics_nodes", method: "GET", path: "/api/v1/metrics/nodes",
+			description: "Nodes reporting per-second metrics. Read-only.",
+			schema:      emptySchema(),
+		},
+		{
+			name: "netra_metrics_summary", method: "GET", path: "/api/v1/metrics/summary",
+			description: "Rollup of the metrics platform (series count, anomaly rate, alert count). Read-only.",
+			schema:      emptySchema(),
+		},
+		{
+			name: "netra_metrics_exporters", method: "GET", path: "/api/v1/metrics/exporters",
+			description: "Configured metric exporters and their health. Read-only.",
+			schema:      emptySchema(),
+		},
+		{
+			name: "netra_ebpf_kernel_network", method: "GET", path: "/api/v1/ebpf/kernel-network",
+			description: "Windowed kernel-network congestion diagnostics (rcvbuf, softnet, qdisc, listen). Observe-only.",
+			schema:      objSchema(map[string]any{"window": strProp("Lookback such as 5m or 1h.")}),
+			queryParams: []string{"window"},
+		},
+		{
+			name: "netra_ebpf_kernel_network_sparkline", method: "GET", path: "/api/v1/ebpf/kernel-network/sparkline",
+			description: "Per-node kernel-network rate sparkline points for Congestion Map. Observe-only.",
+			schema: objSchema(map[string]any{
+				"node":   strProp("Node name (required for a useful series)."),
+				"points": intProp("Number of points, default 30."),
+			}),
+			queryParams: []string{"node", "points"},
+		},
+		{
+			name: "netra_ebpf_drop_info", method: "GET", path: "/api/v1/ebpf/drop-info",
+			description: "Structured drop-info counters from the datapath. Observe-only; may 409 when the sensor is off.",
+			schema:      emptySchema(),
+		},
+		{
+			name: "netra_ebpf_tcp_events", method: "GET", path: "/api/v1/ebpf/tcp-events",
+			description: "Recent TCP lifecycle events from the agent ring. Observe-only; may 409 when disabled.",
+			schema:      emptySchema(),
+		},
+		{
+			name: "netra_l7_sampled", method: "GET", path: "/api/v1/l7/sampled",
+			description: "Sampled L7 metadata ops (cleartext HTTP/TLS SNI samples). No payloads.",
+			schema:      objSchema(map[string]any{"limit": intProp("Max items.")}),
+			queryParams: []string{"limit"},
+		},
+		{
+			name: "netra_l7_tls", method: "GET", path: "/api/v1/l7/tls",
+			description: "Sampled TLS ClientHello metadata (SNI/JA3 when available). Observe-only — no decrypt.",
+			schema:      objSchema(map[string]any{"limit": intProp("Max items.")}),
+			queryParams: []string{"limit"},
+		},
+		{
+			name: "netra_ebpf_node_isolation", method: "GET", path: "/api/v1/ebpf/node-isolation",
+			description: "Node-isolation inventory (observe GET only). Mutations are not exposed via MCP.",
+			schema:      emptySchema(),
+		},
+		{
 			name: "netra_ebpf_auto_mitigate_preview", method: "GET", path: "/api/v1/ebpf/auto-mitigate/preview",
 			description: "Shadow preview of volumetric auto-mitigate candidates from current scan findings and UDP deltas. Applies nothing. Metric anomalies never feed this path. Live actions still need an enforce lease.",
 			schema:      emptySchema(),

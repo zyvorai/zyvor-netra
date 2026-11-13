@@ -34,6 +34,12 @@ func TestCatalogSuffixes(t *testing.T) {
 		{"svc.run.app", CatCloud},
 		{"api.wise.com", CatFinance},
 		{"www.threads.net", CatSocial},
+		{"api.linear.app", CatSaaS},
+		{"xy123.snowflakecomputing.com", CatCloud},
+		{"adb.databricks.com", CatCloud},
+		{"app.calendly.com", CatSaaS},
+		{"ghcr.io", CatDev},
+		{"obj.r2.cloudflarestorage.com", CatCDN},
 	}
 	for _, c := range cases {
 		e, ok := lookup(DefaultCatalog(), c.host)

@@ -33,6 +33,7 @@ type AgentResult = {
   steps?: AgentStep[];
   engine?: string;
   conversationId?: string;
+  suggestions?: string[];
 };
 type Exchange = { question: string; brief: Brief; steps?: AgentStep[]; intent?: string };
 // Rendered scrollback is capped so a long-running tab doesn't grow an
@@ -153,6 +154,9 @@ export default function AskNetra() {
       const b = res.brief;
       setThread((prev) => [...prev, { question: text, brief: b, steps: res.steps, intent: res.intent }]);
       setQuestion('');
+      if (res.suggestions && res.suggestions.length) {
+        setChips(res.suggestions);
+      }
       if (res.draft && res.draft.understood) {
         setDraft(res.draft);
       } else if (looksLikeDraft(text)) {
@@ -169,9 +173,18 @@ export default function AskNetra() {
   }
 
   function newConversation() {
+    const id = conversationId.current;
     conversationId.current = null;
     setThread([]);
     setDraft(null);
+    setChips(ASK_SUGGESTIONS);
+    if (id) {
+      void api('/api/v1/ai/forget', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId: id }),
+      }).catch(() => undefined);
+    }
   }
 
   function onSubmit(e: FormEvent) {
