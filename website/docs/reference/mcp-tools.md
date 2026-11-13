@@ -7,7 +7,7 @@ sidebar_position: 2
 
 `netra-mcp` 0.32.0 registers **215 tools**: **155 read-only** and **60 mutating**. The mutating tools are not even listed unless `NETRA_MCP_ALLOW_MUTATIONS=true` is set, and they keep the controller's own guards (plan token, risk confirmation, leases).
 
-It also serves 19 prompts and 23 resources. See [MCP integration](../integrations/mcp-integration.md) for setup.
+It also serves 23 prompts and 32 resources. See [MCP integration](../integrations/mcp-integration.md) for setup.
 
 ## Read-only tools
 

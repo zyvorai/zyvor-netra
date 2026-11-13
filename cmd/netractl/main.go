@@ -816,7 +816,21 @@ func ebpf() error {
 	case "tcp-events":
 		return request("GET", "/api/v1/ebpf/tcp-events", nil)
 	case "listen-queues":
-		return request("GET", "/api/v1/listen-queues", nil)
+		return surfaceTableCmd("/api/v1/listen-queues", []string{"top"}, []string{"NODE", "ADDR", "PORT", "QUEUE", "MAX", "PEAK%", "SYNRECV"}, func(m map[string]any) []string {
+			addr := m["addr"]
+			if addr == nil || addr == "" {
+				addr = m["address"]
+			}
+			return []string{
+				fmt.Sprint(m["node"]),
+				fmt.Sprint(addr),
+				fmt.Sprint(m["port"]),
+				fmt.Sprint(m["queue"]),
+				fmt.Sprint(m["max"]),
+				fmt.Sprint(m["peakPct"]),
+				fmt.Sprint(m["synRecv"]),
+			}
+		}, os.Args[3:])
 	case "kernel-network", "sysctl":
 		if len(os.Args) >= 4 && os.Args[3] == "sparkline" {
 			return request("GET", "/api/v1/ebpf/kernel-network/sparkline", nil)
@@ -1181,7 +1195,16 @@ func ebpf() error {
 	case "topology":
 		return request("GET", "/api/v1/ebpf/topology", nil)
 	case "stack-histograms":
-		return request("GET", "/api/v1/ebpf/stack-histograms", nil)
+		return surfaceTableCmd("/api/v1/ebpf/stack-histograms", []string{"nodes", "items"}, []string{"NODE", "SOFTIRQ_RX", "SOFTNET_DROP", "SQUEEZE", "LISTEN_OVF", "LISTEN_DROP"}, func(m map[string]any) []string {
+			return []string{
+				fmt.Sprint(m["node"]),
+				fmt.Sprint(m["softirqNetRx"]),
+				fmt.Sprint(m["softnetDropped"]),
+				fmt.Sprint(m["softnetTimeSqueeze"]),
+				fmt.Sprint(m["listenOverflows"]),
+				fmt.Sprint(m["listenDrops"]),
+			}
+		}, os.Args[3:])
 	case "node-isolation":
 		if len(os.Args) < 4 || os.Args[3] == "list" {
 			return request("GET", "/api/v1/ebpf/node-isolation", nil)

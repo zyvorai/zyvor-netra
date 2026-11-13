@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import { navigate, useRoute } from '../hooks/useInvestigation';
+import { surfaceRowHandoff } from '../lib/surfaceHandoff';
 import PagePulse from '../components/kit/PagePulse';
 
 type Board = {
@@ -293,6 +294,7 @@ export default function Surfaces() {
             const label = rowLabel(row, active?.id || '') || `row ${i + 1}`;
             const meta = rowMeta(row, active?.id || '');
             const sev = String(row.severity || '').toLowerCase();
+            const handoff = active ? surfaceRowHandoff(active.id, row) : null;
             return (
               <div className={`agent wide${sev ? ` insightrow ${sev}` : ''}`} key={`${label}-${i}`}>
                 <b className="truncate" title={label}>
@@ -300,6 +302,15 @@ export default function Surfaces() {
                 </b>
                 {sev && <span className={`severity-badge ${sev === 'high' || sev === 'critical' ? 'warning' : 'info'}`}>{sev}</span>}
                 {meta && <small>{meta}</small>}
+                {handoff && (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => navigate(handoff.page, handoff.scope)}
+                  >
+                    {handoff.label} →
+                  </button>
+                )}
               </div>
             );
           })}

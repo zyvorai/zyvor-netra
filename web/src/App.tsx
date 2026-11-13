@@ -42,6 +42,9 @@ import AI from './pages/AI';
 import Handoff from './pages/Handoff';
 import SLO from './pages/SLO';
 import DropReasons from './pages/DropReasons';
+import ListenQueues from './pages/ListenQueues';
+import IncidentTimeline from './pages/IncidentTimeline';
+import ProcessIntegrity from './pages/ProcessIntegrity';
 import TlsFingerprints from './pages/TlsFingerprints';
 import EbpfMaps from './pages/EbpfMaps';
 import PageHero, { type HeroTint } from './components/PageHero';
@@ -90,6 +93,24 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     eyebrow: 'Drop reasons',
     title: 'Why the datapath said no.',
     lede: 'FastPath action/reason histogram across agents. Metadata only — no payloads.',
+    tint: 'amber',
+  },
+  'listen-queues': {
+    eyebrow: 'Listen queues',
+    title: 'Accept queues under pressure.',
+    lede: 'TCP listen depth and softirq/softnet histogram buckets from agents. Observe-only — never tunes the stack.',
+    tint: 'amber',
+  },
+  'incident-timeline': {
+    eyebrow: 'Incident timeline',
+    title: 'What happened, in order.',
+    lede: 'Audit actions and cluster-health signature transitions as a chronology. Never acks or applies.',
+    tint: 'purple',
+  },
+  'process-integrity': {
+    eyebrow: 'Process integrity',
+    title: 'Cap, netns and exe-hash drift.',
+    lede: 'Observe-only findings on datapath-tracked processes. Comm and pid only — never argv.',
     tint: 'amber',
   },
   'tls-fingerprints': {
@@ -408,6 +429,9 @@ export default function App() {
     handoff: <Handoff />,
     slo: <SLO />,
     'drop-reasons': <DropReasons />,
+    'listen-queues': <ListenQueues />,
+    'incident-timeline': <IncidentTimeline />,
+    'process-integrity': <ProcessIntegrity />,
   }[page];
 
   const hero = pageHero[page];

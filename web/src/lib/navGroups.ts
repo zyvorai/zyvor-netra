@@ -35,6 +35,8 @@ export const navGroups: NavGroup[] = [
       { page: 'drops', label: 'Drops', blurb: 'Kernel skb reasons, softnet pressure, policy-drop findings, and windowed kernel-network diagnostics — see also Congestion Map for where in the stack.' },
       { page: 'drop-reasons', label: 'Drop reasons', blurb: 'FastPath action/reason histogram from agent reports. No payloads.' },
       { page: 'congestion', label: 'Congestion Map', blurb: 'A pictorial view of the Linux network stack, colored by where the cluster is congested right now.' },
+      { page: 'listen-queues', label: 'Listen Queues', blurb: 'TCP accept-queue depth and stack histogram pressure. Observe-only.' },
+      { page: 'process-integrity', label: 'Process Integrity', blurb: 'Cap, netns and exe-hash drift on datapath-tracked processes. Comm/pid only.' },
       { page: 'sysctl-audit', label: 'Sysctl Audit', blurb: 'A flat, baseline-checked inventory of network hardening and tuning sysctls — security posture, IPv6, TCP lifecycle, conntrack timeouts, ARP/bridge — separate from Congestion Map’s evidence-correlated findings.' },
       { page: 'node-resources', label: 'Node Resources', blurb: 'Per-node CPU, memory, and load average, plus per-workload cgroup CPU/memory usage — a "top"-like view, attributed to workloads rather than raw PIDs.' },
       { page: 'l7', label: 'L7', blurb: 'Best-effort SNI and HTTP Host from the datapath.' },
@@ -64,6 +66,7 @@ export const navGroups: NavGroup[] = [
     children: [
       { page: 'security-review', label: 'Security Review', blurb: 'Threat feed lifecycle, deny predicate review, and exact-workload security evidence.' },
       { page: 'incidents', label: 'Incidents', blurb: 'Health, drift, exposure, drops, and audit signals joined by shared source.' },
+      { page: 'incident-timeline', label: 'Incident Timeline', blurb: 'Chronological audit + health-signature narrative. Observe-only.' },
       { page: 'surfaces', label: 'Surfaces', blurb: 'JA3 risk, ECH blindness, DNS intel, exfil/lateral drafts, compliance — observe-only.' },
       { page: 'ebpf', label: 'Firewall', blurb: 'Deny lists, DDoS shield, NetPol, and emergency controls in one place.' },
       { page: 'policies', label: 'Policies', blurb: 'Plan and apply CiliumNetworkPolicy when CRDs are present.' },

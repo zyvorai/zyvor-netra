@@ -188,6 +188,38 @@ func registerPrompts(srv *mcpserver.Server) error {
 				Text: "Call netra_ai_suggestions first. Pick the most urgent suggestion and call netra_ai_agent with that question. Quote the brief and steps. Never call mutating tools.",
 			}},
 		},
+		{
+			Name:        "netra_listen_pressure",
+			Description: "Triage TCP accept-queue and stack histogram pressure. Read-only.",
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_listen_queues and netra_ebpf_stack_histograms. Summarize saturated/full listeners and softnet pressure. Do not recommend sysctl changes as automatic fixes. Stay read-only.",
+			}},
+		},
+		{
+			Name:        "netra_process_integrity",
+			Description: "Review cap / netns / exe-hash drift findings. Observe-only.",
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_ebpf_capdrift, netra_ebpf_nsdrift, and netra_ebpf_exehash. Summarize findings and coverage gaps. Never apply exe-hash deny. Stay read-only.",
+			}},
+		},
+		{
+			Name:        "netra_policy_drafts",
+			Description: "Review insight policy packs and identity drafts. Never apply.",
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_insights_policy_packs (or related insight draft tools). Present packs as review-only sketches. Never call apply tools. Stay read-only.",
+			}},
+		},
+		{
+			Name:        "netra_fleet_flows",
+			Description: "Summarize multi-cluster flow history. Read-only.",
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_fleet_flows. Summarize recent deltas by cluster/namespace/pod. No payloads. Stay read-only.",
+			}},
+		},
 	}
 	for _, p := range prompts {
 		if err := srv.RegisterPrompt(p); err != nil {

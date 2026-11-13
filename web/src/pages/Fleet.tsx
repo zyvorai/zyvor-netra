@@ -3,6 +3,7 @@ import { api } from '../api';
 import PagePulse from '../components/kit/PagePulse';
 import { countTone } from '../components/kit/tone';
 import { classifyMissingMaps } from '../lib/missingMaps';
+import { navigate } from '../hooks/useInvestigation';
 
 type FleetNode = {
   node?: string; stale?: boolean; mode?: string; ageSeconds?: number; hooks?: number; programs?: number; attached?: number; workloads?: number; destinations?: number; events?: number;
@@ -19,16 +20,19 @@ export default function Fleet() {
   const [cov, setCov] = useState<Coverage>();
   const [clusters, setClusters] = useState<any>();
   const [tenants, setTenants] = useState<any>();
+  const [flows, setFlows] = useState<any>();
   const [err, setErr] = useState('');
   const load = () => Promise.all([
     api<Inventory>('/api/v1/fleet'),
     api<Coverage>('/api/v1/ebpf/coverage'),
     api<any>('/api/v1/fleet/clusters'),
     api<any>('/api/v1/fleet/tenants'),
-  ]).then(([i, c, cl, te]) => {
-    setInv(i); setCov(c); setClusters(cl); setTenants(te); setErr('');
+    api<any>('/api/v1/fleet/flows/history?limit=40').catch(() => null),
+  ]).then(([i, c, cl, te, fl]) => {
+    setInv(i); setCov(c); setClusters(cl); setTenants(te); setFlows(fl); setErr('');
   }).catch((e) => setErr(String(e)));
   useEffect(() => { load(); const t = setInterval(load, 20000); return () => clearInterval(t); }, []);
+  const flowRows = flows?.records || flows?.items || flows?.flows || [];
 
   const agents = inv?.agentCount ?? 0;
   const stale = inv?.staleAgents ?? 0;
@@ -133,6 +137,41 @@ export default function Fleet() {
               <span className="severity-badge info">{t.riskScore != null ? `risk ${t.riskScore}` : t.risk || '—'}</span>
               <small>
                 {[t.clusterCount != null ? `${t.clusterCount} clusters` : '', t.agentCount != null ? `${t.agentCount} agents` : '']
+                  .filter(Boolean)
+                  .join(' · ')}
+              </small>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card span3">
+        <p className="eyebrow">FLEET FLOW HISTORY</p>
+        <h2 className="card-title">{flowRows.length} recent deltas across peers</h2>
+        <p>
+          Fan-out of <code>GET /api/v1/fleet/flows/history</code> via <code>NETRA_FLEET_PEERS</code>. Observe-only.
+          CLI: <code>netractl fleet flows</code>.
+        </p>
+        <div className="chips">
+          <button type="button" className="btn-secondary" onClick={() => navigate('flow-observe')}>
+            Local flow observe →
+          </button>
+        </div>
+        <div className="list">
+          {flowRows.length === 0 && <p className="empty-state">No peer flow deltas yet (configure peers or wait for history).</p>}
+          {flowRows.slice(0, 40).map((r: any, i: number) => (
+            <div className="agent wide" key={i}>
+              <b>
+                {[r.cluster, r.namespace, r.pod].filter(Boolean).join('/') || r.node || `flow ${i + 1}`}
+              </b>
+              <small>
+                {[
+                  r.peer || r.destinationIp || r.dst,
+                  r.port || r.destinationPort,
+                  r.protocol,
+                  r.packets != null ? `${r.packets} pkts` : '',
+                  r.bytes != null ? `${r.bytes} B` : '',
+                ]
                   .filter(Boolean)
                   .join(' · ')}
               </small>

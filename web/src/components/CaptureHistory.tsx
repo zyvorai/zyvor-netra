@@ -66,6 +66,9 @@ async function downloadContext(id: string) {
 export default function CaptureHistory({ onRepeat }: { onRepeat: (e: HistoryEntry) => void }) {
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [page, setPage] = useState(0);
+  const [ctxId, setCtxId] = useState('');
+  const [ctx, setCtx] = useState<any>();
+  const [ctxErr, setCtxErr] = useState('');
 
   const load = () => api<{ entries?: HistoryEntry[] }>('/api/v1/capture/history?limit=100').then((x) => setEntries(x.entries || [])).catch(() => {});
   useEffect(() => { load(); }, []);
@@ -124,15 +127,48 @@ export default function CaptureHistory({ onRepeat }: { onRepeat: (e: HistoryEntr
                     {' '}
                     <button
                       className="btn-secondary"
+                      onClick={() => {
+                        setCtxId(e.artifactId!);
+                        setCtx(undefined);
+                        setCtxErr('');
+                        api<any>(`/api/v1/capture/artifacts/${encodeURIComponent(e.artifactId!)}/context`)
+                          .then(setCtx)
+                          .catch((err) => setCtxErr(String(err.message || err)));
+                      }}
+                    >
+                      View context
+                    </button>
+                    {' '}
+                    <button
+                      className="btn-secondary"
                       onClick={() => downloadContext(e.artifactId!).catch(() => {})}
                     >
-                      Context
+                      Download context
                     </button>
                   </>
                 )}
               </span>
             </div>
           ))}
+        </div>
+      )}
+      {ctxId && (
+        <div className="card" style={{ marginTop: '1rem' }}>
+          <p className="eyebrow">DROP / HOST CONTEXT</p>
+          <h3 className="card-title">
+            Artifact <code>{ctxId}</code>
+          </h3>
+          <p>Comm-only process tops beside the PCAP — no argv, environ or Secret contents.</p>
+          {ctxErr && <p className="warning">{ctxErr}</p>}
+          {!ctx && !ctxErr && <p className="empty-state">Loading context…</p>}
+          {ctx && (
+            <pre className="code" style={{ maxHeight: '20rem', overflow: 'auto' }}>
+              {JSON.stringify(ctx, null, 2)}
+            </pre>
+          )}
+          <button type="button" className="btn-secondary" onClick={() => { setCtxId(''); setCtx(undefined); setCtxErr(''); }}>
+            Close
+          </button>
         </div>
       )}
     </section>

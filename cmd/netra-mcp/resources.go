@@ -37,6 +37,15 @@ func registerResources(srv *mcpserver.Server, c *client) error {
 		{"netra://insights/red", "RED metrics", "Workload RED board from /api/v1/insights/red?window=5m.", "/api/v1/insights/red?window=5m"},
 		{"netra://insights/traces", "Inferred traces", "Inferred spans from /api/v1/insights/traces?since=15m.", "/api/v1/insights/traces?since=15m"},
 		{"netra://handoff", "On-call handoff", "JSON on-call pack from /api/v1/handoff?format=json.", "/api/v1/handoff?format=json"},
+		{"netra://slo", "Workload SLOs", "Error-budget burn from /api/v1/slo.", "/api/v1/slo"},
+		{"netra://listen-queues", "Listen queues", "TCP accept-queue pressure from /api/v1/listen-queues.", "/api/v1/listen-queues"},
+		{"netra://ebpf/stack-histograms", "Stack histograms", "Softirq/softnet/listen depth buckets from /api/v1/ebpf/stack-histograms.", "/api/v1/ebpf/stack-histograms"},
+		{"netra://ebpf/reasons", "Drop reasons", "FastPath action/reason histogram from /api/v1/ebpf/reasons.", "/api/v1/ebpf/reasons"},
+		{"netra://fleet/flows", "Fleet flow history", "Multi-cluster flow deltas from /api/v1/fleet/flows/history?limit=100.", "/api/v1/fleet/flows/history?limit=100"},
+		{"netra://ebpf/capdrift", "Capability drift", "Cap-change findings from /api/v1/ebpf/capdrift.", "/api/v1/ebpf/capdrift"},
+		{"netra://ebpf/nsdrift", "Namespace drift", "Netns-change findings from /api/v1/ebpf/nsdrift.", "/api/v1/ebpf/nsdrift"},
+		{"netra://ebpf/exehash", "Exe-hash drift", "Executable content-hash findings from /api/v1/ebpf/exehash.", "/api/v1/ebpf/exehash"},
+		{"netra://insights/policy-packs", "Policy packs", "Review-only policy packs from /api/v1/insights/policy-packs.", "/api/v1/insights/policy-packs"},
 	}
 	for _, it := range items {
 		it := it

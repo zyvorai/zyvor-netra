@@ -4,6 +4,7 @@ import BlockedEvents from '../components/BlockedEvents';
 import SIEMExports from '../components/SIEMExports';
 import PagePulse from '../components/kit/PagePulse';
 import { auditActionClass } from '../lib/audit';
+import { navigate } from '../hooks/useInvestigation';
 
 export default function Audit() {
   const [items, setItems] = useState<any[]>([]);
@@ -34,6 +35,14 @@ export default function Audit() {
         <p className="eyebrow">INCIDENT TIMELINE</p>
         <h2 className="card-title">What happened, in order</h2>
         <p>Merges the audit log with cluster-health-signature transitions into plain sentences — never raw counters.</p>
+        <div className="chips">
+          <button type="button" className="btn-secondary" onClick={() => navigate('incident-timeline')}>
+            Full timeline page →
+          </button>
+          <button type="button" className="btn-secondary" onClick={() => navigate('handoff')}>
+            Handoff
+          </button>
+        </div>
         {timeline?.prose && <p>{timeline.prose}</p>}
         <div className="list">
           {(timeline?.entries || []).length === 0 && <p className="empty-state">No timeline entries yet.</p>}
