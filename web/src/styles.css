@@ -696,11 +696,11 @@ main {
   mask-image: linear-gradient(to right, #000 45%, transparent 100%);
 }
 
-/* Contract: light theme has no ambient page gradient — the tinted glow is a
-   dark-theme-only treatment (color is deviation, not decoration). */
+/* Light theme keeps a soft product glow on heroes (graphics, not chrome).
+   Untinted pages stay nearly invisible; tinted pages carry Apple product color. */
 :root:not([data-theme="dark"]) .hero::before,
 :root:not([data-theme="dark"]) .page-hero::before {
-  display: none;
+  opacity: 0.85;
 }
 
 /* Slow, GPU-cheap drift of the hero glow's radial-gradient position — a
@@ -729,21 +729,65 @@ main {
    applied as a soft two-ellipse glow behind that page's hero. Default
    (untinted) pages keep the blue/cyan --hero-glow-a/-b from the root theme
    tokens above. */
-.hero-tint-green { --hero-glow-a: rgba(52, 199, 89, 0.16); --hero-glow-b: rgba(52, 199, 89, 0.08); }
-.hero-tint-amber { --hero-glow-a: rgba(255, 159, 10, 0.16); --hero-glow-b: rgba(255, 159, 10, 0.08); }
-.hero-tint-purple { --hero-glow-a: rgba(175, 82, 222, 0.16); --hero-glow-b: rgba(175, 82, 222, 0.08); }
-.hero-tint-red { --hero-glow-a: rgba(255, 59, 48, 0.14); --hero-glow-b: rgba(255, 59, 48, 0.07); }
-[data-theme="dark"] .hero-tint-green { --hero-glow-a: rgba(48, 209, 88, 0.22); --hero-glow-b: rgba(48, 209, 88, 0.11); }
-[data-theme="dark"] .hero-tint-amber { --hero-glow-a: rgba(255, 159, 10, 0.22); --hero-glow-b: rgba(255, 159, 10, 0.11); }
-[data-theme="dark"] .hero-tint-purple { --hero-glow-a: rgba(191, 90, 242, 0.22); --hero-glow-b: rgba(191, 90, 242, 0.11); }
-[data-theme="dark"] .hero-tint-red { --hero-glow-a: rgba(255, 69, 58, 0.2); --hero-glow-b: rgba(255, 69, 58, 0.1); }
+.hero-tint-green { --hero-glow-a: rgba(52, 199, 89, 0.22); --hero-glow-b: rgba(50, 173, 230, 0.12); --page-accent: var(--accent-green); --page-accent-text: var(--accent-green-text); --page-accent-bg: var(--success-bg); --page-accent-border: var(--success-border); }
+.hero-tint-amber { --hero-glow-a: rgba(255, 159, 10, 0.22); --hero-glow-b: rgba(255, 55, 95, 0.10); --page-accent: var(--accent-amber); --page-accent-text: var(--accent-amber-text); --page-accent-bg: var(--warning-bg); --page-accent-border: var(--warning-border); }
+.hero-tint-purple { --hero-glow-a: rgba(175, 82, 222, 0.22); --hero-glow-b: rgba(0, 113, 227, 0.12); --page-accent: var(--accent-purple); --page-accent-text: var(--accent-purple-text); --page-accent-bg: color-mix(in srgb, var(--accent-purple) 12%, var(--surface-1)); --page-accent-border: color-mix(in srgb, var(--accent-purple) 35%, var(--hairline-1)); }
+.hero-tint-red { --hero-glow-a: rgba(255, 59, 48, 0.20); --hero-glow-b: rgba(255, 159, 10, 0.10); --page-accent: var(--danger); --page-accent-text: var(--danger); --page-accent-bg: var(--danger-bg); --page-accent-border: color-mix(in srgb, var(--danger) 40%, var(--hairline-1)); }
+.hero-tint-cyan { --hero-glow-a: rgba(50, 173, 230, 0.24); --hero-glow-b: rgba(0, 113, 227, 0.14); --page-accent: var(--accent-cyan); --page-accent-text: var(--accent-cyan-text); --page-accent-bg: var(--info-bg); --page-accent-border: var(--info-border); }
+[data-theme="dark"] .hero-tint-green { --hero-glow-a: rgba(48, 209, 88, 0.28); --hero-glow-b: rgba(100, 210, 255, 0.16); }
+[data-theme="dark"] .hero-tint-amber { --hero-glow-a: rgba(255, 159, 10, 0.28); --hero-glow-b: rgba(255, 55, 95, 0.14); }
+[data-theme="dark"] .hero-tint-purple { --hero-glow-a: rgba(191, 90, 242, 0.28); --hero-glow-b: rgba(10, 132, 255, 0.16); }
+[data-theme="dark"] .hero-tint-red { --hero-glow-a: rgba(255, 69, 58, 0.26); --hero-glow-b: rgba(255, 159, 10, 0.14); }
+[data-theme="dark"] .hero-tint-cyan { --hero-glow-a: rgba(100, 210, 255, 0.30); --hero-glow-b: rgba(10, 132, 255, 0.18); }
 
 .eyebrow {
   font-size: 12px !important;
   letter-spacing: 0.14em;
   font-weight: 700;
-  color: var(--apple-blue) !important;
+  color: var(--page-accent-text, var(--apple-blue)) !important;
   text-transform: uppercase;
+}
+.page-hero .eyebrow { color: var(--page-accent-text, var(--apple-link)) !important; }
+
+/* Page body inherits the hero tint so cards, pulses and chips share one product color. */
+.page-tint {
+  --page-accent: var(--apple-blue);
+  --page-accent-text: var(--apple-link);
+  --page-accent-bg: var(--info-bg);
+  --page-accent-border: var(--info-border);
+}
+.page-tint-green { --page-accent: var(--accent-green); --page-accent-text: var(--accent-green-text); --page-accent-bg: var(--success-bg); --page-accent-border: var(--success-border); }
+.page-tint-amber { --page-accent: var(--accent-amber); --page-accent-text: var(--accent-amber-text); --page-accent-bg: var(--warning-bg); --page-accent-border: var(--warning-border); }
+.page-tint-purple { --page-accent: var(--accent-purple); --page-accent-text: var(--accent-purple-text); --page-accent-bg: color-mix(in srgb, var(--accent-purple) 12%, var(--surface-1)); --page-accent-border: color-mix(in srgb, var(--accent-purple) 35%, var(--hairline-1)); }
+.page-tint-red { --page-accent: var(--danger); --page-accent-text: var(--danger); --page-accent-bg: var(--danger-bg); --page-accent-border: color-mix(in srgb, var(--danger) 40%, var(--hairline-1)); }
+.page-tint-cyan { --page-accent: var(--accent-cyan); --page-accent-text: var(--accent-cyan-text); --page-accent-bg: var(--info-bg); --page-accent-border: var(--info-border); }
+
+.page-tint .card {
+  border-color: color-mix(in srgb, var(--page-accent) 22%, var(--hairline-1));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--page-accent) 7%, var(--bg-elevated)) 0%, var(--bg-elevated) 48px),
+    var(--bg-elevated);
+  box-shadow: var(--shadow-1);
+}
+.page-tint .card > .eyebrow,
+.page-tint .card > p.eyebrow {
+  color: var(--page-accent-text) !important;
+}
+.page-tint .chips button.primary,
+.page-tint button.primary {
+  background: var(--page-accent);
+  border-color: var(--page-accent);
+}
+.page-tint .chips button.primary:hover,
+.page-tint button.primary:hover {
+  filter: brightness(1.06);
+}
+.page-tint .kit-pulse {
+  border-color: color-mix(in srgb, var(--page-accent) 28%, var(--hairline-1));
+  background:
+    radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--page-accent) 14%, transparent), transparent 48%),
+    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--chart-5) 8%, transparent), transparent 40%),
+    var(--surface-1);
 }
 .login-shell {
   min-height: 100vh;
@@ -1358,11 +1402,14 @@ code {
    empty. Render this INSTEAD OF the header+rows, not alongside them. */
 .empty-state,
 .card .empty-state {
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   font-size: 15px;
   line-height: 1.45;
-  padding: 12px 0;
+  padding: 16px 18px;
   margin: 0;
+  border-radius: var(--radius-lg);
+  border: 1px dashed color-mix(in srgb, var(--page-accent, var(--apple-blue)) 28%, var(--hairline-1));
+  background: color-mix(in srgb, var(--page-accent, var(--apple-blue)) 6%, transparent);
 }
 
 /* Severity pill covering the full status range (critical/high/medium/low/
@@ -1385,27 +1432,35 @@ code {
 }
 .severity-badge.critical {
   color: #fff;
-  background: var(--danger);
+  background: linear-gradient(135deg, var(--danger), #ff6482);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 18%, transparent);
 }
 .severity-badge.high {
   color: #1d1d1f;
-  background: var(--accent-amber);
+  background: linear-gradient(135deg, var(--accent-amber), #ffd60a);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-amber) 18%, transparent);
 }
 .severity-badge.medium,
 .severity-badge.warning {
   color: var(--warning-text);
-  background: var(--warning-bg);
+  background: linear-gradient(135deg, var(--warning-bg), color-mix(in srgb, var(--accent-amber) 18%, var(--warning-bg)));
   border: 1px solid var(--warning-border);
 }
 .severity-badge.low {
   color: var(--accent-cyan-text);
-  background: rgba(50, 173, 230, 0.1);
-  border: 1px solid rgba(50, 173, 230, 0.3);
+  background: linear-gradient(135deg, rgba(50, 173, 230, 0.12), rgba(0, 113, 227, 0.10));
+  border: 1px solid rgba(50, 173, 230, 0.35);
 }
 .severity-badge.info {
-  color: var(--text-tertiary);
-  background: var(--bg-elevated-2);
-  border: 1px solid var(--border);
+  color: var(--accent-purple-text);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-purple) 12%, var(--bg-elevated-2)), var(--bg-elevated-2));
+  border: 1px solid color-mix(in srgb, var(--accent-purple) 28%, var(--border));
+}
+.severity-badge.ok {
+  color: var(--accent-green-text);
+  background: linear-gradient(135deg, rgba(52, 199, 89, 0.16), rgba(50, 173, 230, 0.10));
+  border: 1px solid var(--success-border);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-green) 14%, transparent);
 }
 
 /* Process/workload identity for an attributed policy-drop finding
@@ -1574,6 +1629,29 @@ code {
   gap: 8px;
   flex-wrap: wrap;
   margin-top: 14px;
+}
+.surfaces-group--encrypted:not(.primary) { color: var(--accent-cyan-text); border-color: color-mix(in srgb, var(--accent-cyan) 40%, var(--border)); }
+.surfaces-group--fit:not(.primary) { color: var(--accent-green-text); border-color: color-mix(in srgb, var(--accent-green) 40%, var(--border)); }
+.surfaces-group--threat:not(.primary) { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
+.surfaces-group--ops:not(.primary) { color: var(--accent-amber-text); border-color: color-mix(in srgb, var(--accent-amber) 40%, var(--border)); }
+.surfaces-group--fleet:not(.primary) { color: var(--accent-purple-text); border-color: color-mix(in srgb, var(--accent-purple) 40%, var(--border)); }
+.page-tint .surfaces-group--encrypted.primary { background: var(--accent-cyan) !important; border-color: var(--accent-cyan) !important; color: #fff; }
+.page-tint .surfaces-group--fit.primary { background: var(--accent-green) !important; border-color: var(--accent-green) !important; color: #fff; }
+.page-tint .surfaces-group--threat.primary { background: var(--danger) !important; border-color: var(--danger) !important; color: #fff; }
+.page-tint .surfaces-group--ops.primary { background: var(--accent-amber) !important; border-color: var(--accent-amber) !important; color: #1d1d1f; }
+.page-tint .surfaces-group--fleet.primary { background: var(--accent-purple) !important; border-color: var(--accent-purple) !important; color: #fff; }
+
+.page-tint .list .agent.wide,
+.page-tint .list > div {
+  border-left: 3px solid color-mix(in srgb, var(--page-accent) 40%, transparent);
+  padding-left: 12px;
+  border-radius: 0 8px 8px 0;
+  transition: background 0.15s var(--ease-apple), border-color 0.15s var(--ease-apple);
+}
+.page-tint .list .agent.wide:hover,
+.page-tint .list > div:hover {
+  background: color-mix(in srgb, var(--page-accent) 6%, transparent);
+  border-left-color: var(--page-accent);
 }
 /* Read-only display chip (e.g. "name · count" tags) — .chips previously
    only styled <button> remove-chips, leaving plain <span> children

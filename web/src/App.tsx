@@ -69,7 +69,7 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     eyebrow: 'Flow observe',
     title: 'History, RED and inferred paths.',
     lede: 'Native flow history without Hubble. App protocol is a port hint; process is comm/pid when TCP health matched. No payloads.',
-    tint: 'green',
+    tint: 'cyan',
   },
   ai: {
     eyebrow: 'Ask Netra',
@@ -117,7 +117,7 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     eyebrow: 'TLS',
     title: 'JA3 risk without decrypt.',
     lede: 'Client fingerprints, rare JA3 ranking and ECH sightings from the datapath. Observe only — never decrypts or applies policy.',
-    tint: 'amber',
+    tint: 'cyan',
   },
   'ebpf-maps': {
     eyebrow: 'eBPF Maps',
@@ -155,7 +155,7 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     eyebrow: 'Path Diagnostics',
     title: 'Connect latency and pressure.',
     lede: 'Measured active TCP establishment and cwnd/packets-out pressure from standalone sockops.',
-    tint: 'green',
+    tint: 'cyan',
   },
   drops: {
     eyebrow: 'Drop Diagnostics',
@@ -304,7 +304,7 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     eyebrow: 'Metrics',
     title: 'Every metric, every second.',
     lede: 'Host, network, workload, application and eBPF datapath metrics, collected per second on each node and streamed live. Dashboards build themselves from what the agents report.',
-    tint: 'green',
+    tint: 'cyan',
   },
   'metric-anomalies': {
     eyebrow: 'Metrics',
@@ -454,7 +454,7 @@ export default function App() {
             fadeRise/glow entrance animations — otherwise PageHero, being
             the same component type at the same tree position across page
             switches, would just update props with no visible transition. */}
-        <div key={page}>
+        <div key={page} className={hero?.tint ? `page-tint page-tint-${hero.tint}` : undefined}>
           {hero && <PageHero eyebrow={hero.eyebrow} title={hero.title} lede={hero.lede} tint={hero.tint} />}
           {body}
         </div>
