@@ -27,6 +27,11 @@ const TOUR: Shot[] = [
   {src: '/current/12-listen-queues.png', caption: 'Listen Queues'},
   {src: '/current/13-process-integrity.png', caption: 'Process Integrity'},
   {src: '/current/14-incident-timeline.png', caption: 'Incident Timeline'},
+  {src: '/current/15-congestion.png', caption: 'Congestion'},
+  {src: '/current/16-metric-anomalies.png', caption: 'Metric anomalies'},
+  {src: '/current/17-deny-preview.png', caption: 'Deny preview'},
+  {src: '/current/18-tls-fingerprints.png', caption: 'TLS fingerprints'},
+  {src: '/current/19-security-review.png', caption: 'Security Review'},
 ];
 
 function ShotCard({shot}: {shot: Shot}) {
@@ -49,9 +54,10 @@ export default function Gallery(): ReactNode {
         <div className="container">
           <Heading as="h1">Product tour</Heading>
           <p>
-            Fresh captures from a running lab (Surfaces, Handoff, SLO, Listen
-            Queues, Process Integrity, Incident Timeline). Archived v0.22 shots
-            stay under <code>docs/ux/v022/</code> for history only.
+            Fresh captures from a running lab (Surfaces through Security Review,
+            including Congestion, metric anomalies, Deny Preview and TLS/JA3).
+            Archived v0.22 shots stay under <code>docs/ux/v022/</code> for
+            history only.
           </p>
         </div>
       </header>
