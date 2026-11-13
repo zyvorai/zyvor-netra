@@ -134,9 +134,14 @@
       "position": 1
     },
     {
+      "src": "dashboard-login.md",
+      "dest": "access-and-security/dashboard-login",
+      "position": 2
+    },
+    {
       "src": "security-review.md",
       "dest": "access-and-security/security-review",
-      "position": 2
+      "position": 3
     },
     {
       "src": "siem-export.md",

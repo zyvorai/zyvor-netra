@@ -56,7 +56,7 @@ When enrichment succeeds, the agent also writes `startTimeJiffies` and `exe` ont
 - Unlike capability drift, there is no benign direction here — a live process changing network namespaces after start (a `setns(2)` call) is always `warning` (`nsdrift-netns-changed`), whether from a container-escape attempt or a debugging tool attaching across namespaces. Netra does not distinguish the two; it only reports that it happened.
 - Same coverage-gap honesty as capdrift: `internal/nsdrift.Build` emits `nsdrift-coverage-gap` (`info`) when an agent restarted within the last 2 minutes, since the in-memory `prevNetNS` diff state resets on restart.
 
-`GET /api/v1/ebpf/nsdrift`, `netractl ebpf nsdrift`, and the `netra_ebpf_nsdrift` MCP tool return the same `{anomalies, events}` shape as capdrift. No dashboard card yet — same `NETRA_PROCMETA_ENABLED=true` gate as everything else in this file.
+`GET /api/v1/ebpf/nsdrift`, `netractl ebpf nsdrift`, and the `netra_ebpf_nsdrift` MCP tool return the same `{anomalies, events}` shape as capdrift. The **Diagnostics → Process Integrity** board shows cap / netns / exe-hash findings together (Health still embeds the nsdrift/exehash widgets). Same `NETRA_PROCMETA_ENABLED=true` gate as everything else in this file.
 
 ## Exe-hash change watch (`internal/exehash`) — observe-only half of exe-hash leased deny
 
@@ -68,7 +68,7 @@ When enrichment succeeds, the agent also writes `startTimeJiffies` and `exe` ont
 - Always `warning` (`exehash-changed`), plus `exehash-coverage-gap` (`info`) on recent agent restart, same coverage-gap honesty as capdrift/nsdrift.
 - Hashing is capped at 64MiB per executable (`internal/procmeta.maxExeHashBytes`) to bound a single pathological case; oversized or unreadable executables report an empty hash rather than a partial/misleading one.
 
-`GET /api/v1/ebpf/exehash`, `netractl ebpf exehash`, and the `netra_ebpf_exehash` MCP tool return the same `{anomalies, events}` shape. No dashboard card yet — same `NETRA_PROCMETA_ENABLED=true` gate.
+`GET /api/v1/ebpf/exehash`, `netractl ebpf exehash`, and the `netra_ebpf_exehash` MCP tool return the same `{anomalies, events}` shape. Shown on **Diagnostics → Process Integrity** with the other drift boards. Same `NETRA_PROCMETA_ENABLED=true` gate.
 
 ## Limits
 

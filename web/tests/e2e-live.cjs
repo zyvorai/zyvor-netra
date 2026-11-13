@@ -28,11 +28,15 @@ const SEED_IP = process.env.SEED_IP || '203.0.113.5';
 fs.mkdirSync(OUT, { recursive: true });
 
 // Kept in step with web/src/lib/investigation.ts's `pages` const by a check below.
-const PAGES = ['overview', 'connections', 'workloads', 'explain', 'pods', 'vms', 'health', 'path', 'drops', 'l7',
-  'insights', 'topology', 'incidents', 'policies', 'flows', 'ebpf', 'audit', 'report', 'scorecard', 'talkers', 'fleet',
-  'surfaces', 'features', 'traffic', 'capture', 'congestion', 'sysctl-audit', 'node-resources',
-  'deny-preview', 'netlink', 'bpf-attachments', 'detect', 'security-review',
-  'metrics', 'metric-anomalies', 'metric-alerts'];
+const PAGES = [
+  'overview', 'connections', 'workloads', 'explain', 'pods', 'vms', 'investigate', 'flow-observe',
+  'health', 'path', 'drops', 'congestion', 'sysctl-audit', 'node-resources', 'l7', 'deny-preview',
+  'netlink', 'bpf-attachments', 'ebpf-maps', 'detect', 'surfaces', 'tls-fingerprints', 'features',
+  'insights', 'topology', 'incidents', 'incident-timeline', 'security-review', 'policies', 'flows',
+  'ebpf', 'audit', 'report', 'scorecard', 'talkers', 'fleet', 'traffic', 'capture', 'metrics',
+  'metric-anomalies', 'metric-alerts', 'ai', 'handoff', 'slo', 'drop-reasons', 'listen-queues',
+  'process-integrity',
+];
 
 const api = async (p, opts = {}) => {
   const r = await fetch(BASE + p, { ...opts, headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json', ...(opts.headers || {}) } });

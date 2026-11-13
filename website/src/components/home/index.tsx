@@ -152,8 +152,8 @@ const SHOTS = [
   {id: 'overview', label: 'Overview', src: '/current/00-overview.png', q: 'What is the cluster doing right now?', body: 'Live datapath diagram, Ask Netra and agent health — from a running lab deployment.', to: '/docs/getting-started/quickstart', cta: 'Quickstart'},
   {id: 'surfaces', label: 'Surfaces', src: '/current/01-surfaces.png', q: 'What encrypted and threat surfaces exist?', body: 'P1–P5 observe boards: TLS/JA3, encrypted DNS, shadow SaaS, destination risk — no decrypt.', to: '/docs/getting-started/features', cta: 'Feature map'},
   {id: 'handoff', label: 'Handoff', src: '/current/02-handoff.png', q: 'What should the next on-call see?', body: 'Observe-only shift pack: report, coverage, fleet, audit and drop reasons — never extends a lease.', to: '/docs/getting-started/features', cta: 'Feature map'},
-  {id: 'drops', label: 'Drop diagnostics', src: '/current/04-drops.png', q: 'Why was this connection dropped?', body: 'Kernel skb reasons, softnet pressure, interface counters and drop detective findings.', to: '/docs/diagnose/drop-diagnostics', cta: 'Drop diagnostics'},
-  {id: 'capture', label: 'Capture', src: '/current/07-capture.png', q: 'What is actually on the wire?', body: 'Filtered, time-bounded AF_PACKET capture with summaries — no payload retention beyond the session.', to: '/docs/diagnose/capture', cta: 'Packet capture'},
+  {id: 'listen', label: 'Listen Queues', src: '/current/12-listen-queues.png', q: 'Which accept queues are about to refuse?', body: 'TCP listen depth and softirq/softnet histogram buckets from each agent.', to: '/docs/diagnose/drop-diagnostics', cta: 'Drop diagnostics'},
+  {id: 'integrity', label: 'Process Integrity', src: '/current/13-process-integrity.png', q: 'Did a process change caps, netns or its binary?', body: 'Cap / netns / exe-hash drift on datapath-tracked processes — comm and pid only.', to: '/docs/getting-started/features', cta: 'Feature map'},
 ] as const;
 
 function Shot({src, alt}: {src: string; alt: string}): ReactNode {

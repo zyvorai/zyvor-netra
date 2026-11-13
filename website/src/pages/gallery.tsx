@@ -24,6 +24,9 @@ const TOUR: Shot[] = [
   {src: '/current/09-flow-observe.png', caption: 'Flow observe'},
   {src: '/current/10-ai.png', caption: 'Ask Netra'},
   {src: '/current/11-audit.png', caption: 'Audit / SIEM'},
+  {src: '/current/12-listen-queues.png', caption: 'Listen Queues'},
+  {src: '/current/13-process-integrity.png', caption: 'Process Integrity'},
+  {src: '/current/14-incident-timeline.png', caption: 'Incident Timeline'},
 ];
 
 function ShotCard({shot}: {shot: Shot}) {
@@ -46,9 +49,9 @@ export default function Gallery(): ReactNode {
         <div className="container">
           <Heading as="h1">Product tour</Heading>
           <p>
-            Fresh captures from a running lab (grouped nav, Surfaces, Handoff,
-            SLO, Investigate). Archived v0.22 shots stay under{' '}
-            <code>docs/ux/v022/</code> for history only.
+            Fresh captures from a running lab (Surfaces, Handoff, SLO, Listen
+            Queues, Process Integrity, Incident Timeline). Archived v0.22 shots
+            stay under <code>docs/ux/v022/</code> for history only.
           </p>
         </div>
       </header>

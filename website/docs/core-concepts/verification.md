@@ -22,7 +22,7 @@ tests and watching the job fail.
 | Exports and alerts | Webhook, Slack, Teams, HTTP bridge, SMTP, OTLP and syslog delivered to real receivers, with signatures, retries, the severity filter, and no secret in any body, log line or response |
 | Access control | OIDC and roles against a live controller; mutual TLS with a real agent, including certificate renewal under a running agent |
 | MCP and CLI | The MCP server over stdio against a live controller; every `netractl` command, including the mutating ones |
-| Web UI | A real browser signs in and out, loads all 28 pages against a real controller, sees seeded data, and adds a deny rule and a lease through the Firewall page |
+| Web UI | A real browser signs in and out, loads every page in `web/src/lib/investigation.ts` against a real controller, sees seeded data, and adds a deny rule and a lease through the Firewall page |
 
 Nightly, the whole suite also runs under the race detector, the parsers are fuzzed, the privileged suites
 run on each runner image, and images are built for both architectures. Dependency updates and known

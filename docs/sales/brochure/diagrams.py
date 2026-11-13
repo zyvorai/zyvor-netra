@@ -403,7 +403,7 @@ def testing():
         ("REAL CONTROLLER", "MCP, persistence, alert and export sinks, OIDC, mutual TLS, every netractl command", "#fff", LINE),
         ("REAL KERNEL", "enforcement, packet capture and the sensors on a veth pair: x86_64 and arm64, Linux 6.8 and 6.17", PALE, SIG),
         ("REAL CLUSTER", "install, upgrade from the previous release, rollback, the plain manifests, HA failover", PALE, SIG),
-        ("REAL BROWSER", "sign-in, all 28 dashboard pages against a live controller, firewall actions", "#fff", LINE),
+        ("REAL BROWSER", "sign-in, all dashboard pages against a live controller, firewall actions", "#fff", LINE),
         ("EVERY NIGHT", "the whole suite under the race detector, fuzzing, a kernel matrix, multi-arch images", GREY, LINE),
     ]
     for i, (t, b, f, s) in enumerate(tiles):

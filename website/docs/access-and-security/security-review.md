@@ -1,6 +1,6 @@
 ---
 title: "Security intelligence and review"
-sidebar_position: 2
+sidebar_position: 3
 custom_edit_url: https://github.com/zyvorai/zyvor-netra/edit/main/docs/security-review.md
 ---
 

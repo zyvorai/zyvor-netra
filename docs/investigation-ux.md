@@ -42,7 +42,7 @@ This is the first investigation UX release. Guided policy authoring, effective-p
 
 `scripts/ci-web-e2e.sh` (job `web-e2e`) builds the UI, runs a real `netrad` serving it, seeds an agent report
 and drives it with Chromium with **nothing intercepted**: sign-in is refused for a wrong key or username and
-accepted for the right one, all 28 pages load without an uncaught error, a 401 or a request to a missing API path
+accepted for the right one, all dashboard pages in `web/src/lib/investigation.ts` load without an uncaught error, a 401 or a request to a missing API path
 (the only failures allowed are the documented 502/409s of a controller with no Kubernetes, Hubble or Cilium),
 the seeded agent's node and traffic appear on the pages that show them, a deny rule and the enforcement lease
 work through the Firewall page, the Audit page shows them, and signing out clears the token. It found and fixed

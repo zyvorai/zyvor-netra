@@ -3,7 +3,7 @@
 The web dashboard is gated behind a login screen. **Testers: there is no
 built-in password.** `admin` / `Admin@321` will not work.
 
-![Sign in](ux/07-login.png)
+![Sign in](https://zyvorai.github.io/zyvor-netra/07-login.png)
 
 ## How to sign in (copy this)
 
