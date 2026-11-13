@@ -208,4 +208,27 @@ export const windows: { label: string; seconds: number }[] = [
 /** Live 1-second streaming is used up to one hour; longer windows poll. */
 export const streamMaxWindow = 3600;
 
-export const palette = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#14b8a6', '#6366f1', '#eab308'];
+/** Apple system product hues — kept as hex for canvas (CSS vars are resolved in MetricChart). */
+export const palette = [
+  '#0071e3',
+  '#34c759',
+  '#ff9f0a',
+  '#ff375f',
+  '#af52de',
+  '#32ade6',
+  '#ff6482',
+  '#30b0c7',
+  '#ffd60a',
+  '#5856d6',
+  '#64d2ff',
+  '#bf5af2',
+];
+
+/** Resolve --chart-N from the document when available so light/dark stay in sync. */
+export function chartColor(i: number): string {
+  if (typeof document !== 'undefined') {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(`--chart-${(i % 12) + 1}`).trim();
+    if (v) return v;
+  }
+  return palette[i % palette.length];
+}

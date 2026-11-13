@@ -65,8 +65,23 @@
   --terminal-text: #f5f5f7;
   --terminal-text-dim: #86868b;
   --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --hero-glow-a: rgba(0, 113, 227, 0.14);
-  --hero-glow-b: rgba(50, 173, 230, 0.12);
+  --hero-glow-a: rgba(0, 113, 227, 0.18);
+  --hero-glow-b: rgba(50, 173, 230, 0.16);
+  --hero-glow-c: rgba(175, 82, 222, 0.14);
+  --hero-glow-d: rgba(255, 55, 95, 0.10);
+  /* Product-color chart series (Apple system hues) — graphics only. */
+  --chart-1: #0071e3;
+  --chart-2: #34c759;
+  --chart-3: #ff9f0a;
+  --chart-4: #ff375f;
+  --chart-5: #af52de;
+  --chart-6: #32ade6;
+  --chart-7: #ff6482;
+  --chart-8: #30b0c7;
+  --chart-9: #ffd60a;
+  --chart-10: #5856d6;
+  --chart-11: #64d2ff;
+  --chart-12: #bf5af2;
   --theme-color: #ffffff;
   /* apple.com contract tokens (docs/design/APPLE-UX-CONTRACT.md). Semantic
      surface/hairline/shadow/text-faint/focus names shared with the docs site
@@ -167,8 +182,22 @@
   --terminal-text: #f5f5f7;
   --terminal-text-dim: #86868b;
   --card-shadow: none;
-  --hero-glow-a: rgba(0, 113, 227, 0.18);
-  --hero-glow-b: rgba(50, 173, 230, 0.16);
+  --hero-glow-a: rgba(10, 132, 255, 0.28);
+  --hero-glow-b: rgba(100, 210, 255, 0.22);
+  --hero-glow-c: rgba(191, 90, 242, 0.22);
+  --hero-glow-d: rgba(255, 55, 95, 0.16);
+  --chart-1: #0a84ff;
+  --chart-2: #30d158;
+  --chart-3: #ff9f0a;
+  --chart-4: #ff375f;
+  --chart-5: #bf5af2;
+  --chart-6: #64d2ff;
+  --chart-7: #ff6482;
+  --chart-8: #40c8e0;
+  --chart-9: #ffd60a;
+  --chart-10: #5e5ce6;
+  --chart-11: #70d7ff;
+  --chart-12: #da8fff;
   --theme-color: #000000;
   --surface-1: #1d1d1f;
   --surface-hover: #2c2c2e;
@@ -1442,19 +1471,19 @@ code {
    almost every cell is "ok", and a border-only treatment left the whole
    grid reading as flat/monochrome gray. */
 .stage-cell.ok {
-  background: var(--success-bg);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--accent-green) 18%, var(--success-bg)), var(--success-bg));
   border-color: var(--success-border);
 }
 .stage-cell.warming {
-  background: var(--info-bg);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--accent-cyan) 16%, var(--info-bg)), var(--info-bg));
   border-color: var(--info-border);
 }
 .stage-cell.warning {
-  background: var(--warning-bg);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--accent-amber) 16%, var(--warning-bg)), var(--warning-bg));
   border-color: var(--warning-border);
 }
 .stage-cell.critical {
-  background: var(--danger-bg);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--danger) 18%, var(--danger-bg)), var(--danger-bg));
   border-color: var(--danger);
 }
 .stage-cell-body {

@@ -324,14 +324,21 @@ button.overview-link:hover { background: none; text-decoration: underline; }
   padding: 24px 24px 8px;
   border: 1px solid var(--hairline-1);
   border-radius: var(--radius-2xl);
-  background: var(--surface-1);
-  box-shadow: var(--shadow-1);
+  background:
+    radial-gradient(ellipse at 8% 0%, var(--hero-glow-a), transparent 48%),
+    radial-gradient(ellipse at 92% 10%, var(--hero-glow-c), transparent 42%),
+    radial-gradient(ellipse at 70% 100%, var(--hero-glow-b), transparent 48%),
+    radial-gradient(ellipse at 20% 95%, var(--hero-glow-d), transparent 40%),
+    var(--surface-1);
+  box-shadow: var(--shadow-2);
   overflow: hidden;
 }
 [data-theme="dark"] .overview-stage {
   background:
-    radial-gradient(ellipse at 15% 0%, var(--hero-glow-a), transparent 55%),
-    radial-gradient(ellipse at 90% 100%, var(--hero-glow-b), transparent 50%),
+    radial-gradient(ellipse at 8% 0%, var(--hero-glow-a), transparent 55%),
+    radial-gradient(ellipse at 92% 10%, var(--hero-glow-c), transparent 48%),
+    radial-gradient(ellipse at 70% 100%, var(--hero-glow-b), transparent 50%),
+    radial-gradient(ellipse at 20% 95%, var(--hero-glow-d), transparent 42%),
     var(--surface-1);
 }
 .overview-stage__head {
@@ -361,54 +368,80 @@ button.overview-link:hover { background: none; text-decoration: underline; }
 .dp-hero--vertical svg { max-height: none; }
 .dp-col-title {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   fill: var(--text-tertiary);
 }
-.dp-link { fill: none; stroke: var(--hairline-1); stroke-width: 1.25; }
+.dp-col-title--wl { fill: var(--accent-cyan-text); }
+.dp-col-title--hook { fill: var(--accent-purple-text); }
+.dp-col-title--agent { fill: var(--accent-green-text); }
+.dp-col-title--ctrl { fill: var(--apple-link); }
+.dp-link { fill: none; stroke: var(--hairline-1); stroke-width: 1.4; }
 .dp-link--live {
-  stroke: color-mix(in srgb, var(--apple-blue) 35%, transparent);
-  stroke-dasharray: 4 6;
-  animation: dpDash 1.2s linear infinite;
+  stroke-dasharray: 5 7;
+  animation: dpDash 1.05s linear infinite;
 }
-.dp-link--blocked { stroke: color-mix(in srgb, var(--danger) 55%, transparent); }
-.dp-link--pressure { stroke: color-mix(in srgb, var(--danger) 40%, transparent); stroke-width: 1.6; }
-.dp-hero--warn .dp-link--live { stroke: color-mix(in srgb, var(--warning-text) 45%, transparent); }
-.dp-hero--bad .dp-link--live { stroke: color-mix(in srgb, var(--danger) 50%, transparent); }
-@keyframes dpDash { to { stroke-dashoffset: -20; } }
-.dp-dot { fill: var(--apple-blue); }
+.dp-link--hue0 { stroke: color-mix(in srgb, var(--chart-1) 55%, transparent); }
+.dp-link--hue1 { stroke: color-mix(in srgb, var(--chart-5) 55%, transparent); }
+.dp-link--hue2 { stroke: color-mix(in srgb, var(--chart-2) 55%, transparent); }
+.dp-link--hue3 { stroke: color-mix(in srgb, var(--chart-6) 55%, transparent); }
+.dp-link--blocked { stroke: color-mix(in srgb, var(--danger) 70%, transparent); stroke-width: 1.8; }
+.dp-link--pressure { stroke: color-mix(in srgb, var(--danger) 55%, transparent); stroke-width: 1.8; }
+.dp-hero--warn .dp-link--live { stroke: color-mix(in srgb, var(--accent-amber) 60%, transparent); }
+.dp-hero--bad .dp-link--live { stroke: color-mix(in srgb, var(--danger) 65%, transparent); }
+@keyframes dpDash { to { stroke-dashoffset: -24; } }
+.dp-dot { fill: var(--chart-1); }
+.dp-dot--hue0 { fill: var(--chart-1); }
+.dp-dot--hue1 { fill: var(--chart-5); }
+.dp-dot--hue2 { fill: var(--chart-2); }
+.dp-dot--hue3 { fill: var(--chart-6); }
 .dp-dot--blocked { fill: var(--danger); }
-.dp-node rect { fill: var(--surface-1); stroke: var(--hairline-1); stroke-width: 1; }
-.dp-node--active rect {
-  fill: color-mix(in srgb, var(--apple-blue) 7%, var(--surface-1));
-  stroke: color-mix(in srgb, var(--apple-blue) 45%, var(--hairline-1));
+.dp-node rect {
+  fill: color-mix(in srgb, var(--surface-1) 92%, white);
+  stroke: var(--hairline-1);
+  stroke-width: 1.25;
+  transition: fill 0.25s var(--ease-apple), stroke 0.25s var(--ease-apple), filter 0.25s var(--ease-apple);
 }
-.dp-node--hot rect {
-  animation: dpHot 1.8s var(--ease-apple) infinite;
+.dp-node--wl.dp-node--active rect {
+  fill: color-mix(in srgb, var(--chart-6) 16%, var(--surface-1));
+  stroke: color-mix(in srgb, var(--chart-6) 65%, var(--hairline-1));
 }
+.dp-node--hook.dp-node--active rect {
+  fill: color-mix(in srgb, var(--chart-5) 16%, var(--surface-1));
+  stroke: color-mix(in srgb, var(--chart-5) 65%, var(--hairline-1));
+}
+.dp-node--agent.dp-node--active rect {
+  fill: color-mix(in srgb, var(--chart-2) 16%, var(--surface-1));
+  stroke: color-mix(in srgb, var(--chart-2) 65%, var(--hairline-1));
+}
+.dp-node--ctrl.dp-node--active rect {
+  fill: color-mix(in srgb, var(--chart-1) 16%, var(--surface-1));
+  stroke: color-mix(in srgb, var(--chart-1) 65%, var(--hairline-1));
+}
+.dp-node--hot rect { animation: dpHot 1.6s var(--ease-apple) infinite; }
 @keyframes dpHot {
-  0%, 100% { stroke: color-mix(in srgb, var(--apple-blue) 45%, var(--hairline-1)); }
-  50% { stroke: color-mix(in srgb, var(--apple-blue) 80%, var(--hairline-1)); }
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  50% { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--chart-1) 45%, transparent)); }
 }
 .dp-node-label { font-size: 14px; font-weight: 600; fill: var(--text-primary); }
 .dp-node:not(.dp-node--active) .dp-node-label { fill: var(--text-tertiary); }
 .dp-node-sub { font-size: 11px; fill: var(--text-tertiary); }
 .dp-rate-label {
   font-size: 11px;
-  font-weight: 600;
-  fill: var(--text-secondary);
+  font-weight: 700;
+  fill: var(--apple-link);
 }
 .dp-detect-badge rect {
-  fill: color-mix(in srgb, var(--warning-text) 18%, var(--surface-1));
-  stroke: color-mix(in srgb, var(--warning-border) 80%, var(--hairline-1));
+  fill: color-mix(in srgb, var(--accent-amber) 22%, var(--surface-1));
+  stroke: color-mix(in srgb, var(--accent-amber) 55%, var(--hairline-1));
 }
 .dp-detect-badge text {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  fill: var(--text-primary);
+  fill: var(--accent-amber-text);
 }
 .dp-hero--vertical .dp-node-label { font-size: 10px; }
 
@@ -506,24 +539,36 @@ button.overview-link:hover { background: none; text-decoration: underline; }
   text-align: left;
   cursor: pointer;
   color: inherit;
+  transition: transform 0.2s var(--ease-apple), border-color 0.2s var(--ease-apple), background 0.2s var(--ease-apple);
 }
+.ks-stage__btn:not(:disabled):hover { transform: translateY(-2px); }
 .ks-stage__btn:disabled { cursor: default; }
 .ks-stage__dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--text-tertiary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent);
 }
-.ks-stage--ok .ks-stage__dot { background: var(--success-text); }
-.ks-stage--warning .ks-stage__dot { background: var(--warning-text); }
-.ks-stage--critical .ks-stage__dot { background: var(--danger); }
-.ks-stage--warming .ks-stage__dot { background: var(--text-tertiary); }
+.ks-stage--ok .ks-stage__dot { background: var(--accent-green); color: var(--accent-green); }
+.ks-stage--warning .ks-stage__dot { background: var(--accent-amber); color: var(--accent-amber); }
+.ks-stage--critical .ks-stage__dot { background: var(--danger); color: var(--danger); }
+.ks-stage--warming .ks-stage__dot { background: var(--accent-cyan); color: var(--accent-cyan); }
+.ks-stage--ok .ks-stage__btn {
+  border-color: var(--success-border);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent-green) 12%, var(--surface-1)), var(--surface-1));
+}
 .ks-stage--critical .ks-stage__btn {
-  border-color: color-mix(in srgb, var(--danger) 35%, var(--hairline-1));
-  background: color-mix(in srgb, var(--danger) 6%, var(--surface-1));
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--hairline-1));
+  background: linear-gradient(160deg, color-mix(in srgb, var(--danger) 12%, var(--surface-1)), var(--surface-1));
 }
 .ks-stage--warning .ks-stage__btn {
   border-color: var(--warning-border);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent-amber) 12%, var(--surface-1)), var(--surface-1));
+}
+.ks-stage--warming .ks-stage__btn {
+  border-color: var(--info-border);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent-cyan) 10%, var(--surface-1)), var(--surface-1));
 }
 .ks-stage__title {
   font-size: 12px;
@@ -632,7 +677,10 @@ button.overview-link:hover { background: none; text-decoration: underline; }
   padding: 18px 22px 6px;
   border: 1px solid var(--hairline-1);
   border-radius: var(--radius-2xl);
-  background: var(--surface-1);
+  background:
+    radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--chart-1) 10%, transparent), transparent 45%),
+    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--chart-5) 8%, transparent), transparent 40%),
+    var(--surface-1);
   box-shadow: var(--shadow-1);
   overflow: hidden;
   animation: fadeRise 0.45s var(--ease-apple) both;

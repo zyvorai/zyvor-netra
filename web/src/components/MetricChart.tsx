@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { anomalyBand, formatTime, formatValue, latest, palette, valueRange, type MetricResult } from '../lib/metrics';
+import { anomalyBand, chartColor, formatTime, formatValue, latest, valueRange, type MetricResult } from '../lib/metrics';
 
 type Props = {
   result?: MetricResult;
@@ -100,7 +100,7 @@ export default function MetricChart({ result, title, subtitle, height = 160, onH
       if (t1 > t0) {
         const xa = PAD.l + ((a - t0) / (t1 - t0)) * plotW;
         const xb = PAD.l + ((b - t0) / (t1 - t0)) * plotW;
-        g.fillStyle = 'rgba(59,130,246,0.12)';
+        g.fillStyle = 'rgba(0, 113, 227, 0.14)';
         g.fillRect(Math.max(PAD.l, xa), PAD.t, Math.min(PAD.l + plotW, xb) - Math.max(PAD.l, xa), plotH);
       }
     }
@@ -108,9 +108,11 @@ export default function MetricChart({ result, title, subtitle, height = 160, onH
     const base = new Array(n).fill(0);
     (result?.dimensions || []).forEach((d, di) => {
       if (hidden[d.name]) return;
-      const color = palette[di % palette.length];
+      const color = chartColor(di);
       g.strokeStyle = color;
-      g.lineWidth = 1.5;
+      g.lineWidth = 2;
+      g.lineJoin = 'round';
+      g.lineCap = 'round';
       g.beginPath();
       let open = false;
       const top: [number, number][] = [];
@@ -127,16 +129,22 @@ export default function MetricChart({ result, title, subtitle, height = 160, onH
         top.push([i, y]);
       }
       g.stroke();
-      if (stacked && top.length > 1) {
-        g.globalAlpha = 0.18;
+      if (top.length > 1) {
+        const fillAlpha = stacked ? 0.28 : 0.14;
+        g.globalAlpha = fillAlpha;
         g.fillStyle = color;
         g.beginPath();
         top.forEach(([i, y], k) => (k === 0 ? g.moveTo(xOf(i), y) : g.lineTo(xOf(i), y)));
-        for (let k = top.length - 1; k >= 0; k--) g.lineTo(xOf(top[k][0]), yOf(base[top[k][0]]));
+        if (stacked) {
+          for (let k = top.length - 1; k >= 0; k--) g.lineTo(xOf(top[k][0]), yOf(base[top[k][0]]));
+        } else {
+          g.lineTo(xOf(top[top.length - 1][0]), yOf(lo));
+          g.lineTo(xOf(top[0][0]), yOf(lo));
+        }
         g.closePath();
         g.fill();
         g.globalAlpha = 1;
-        for (let i = 0; i < n; i++) if (d.values[i] != null) base[i] += d.values[i]!;
+        if (stacked) for (let i = 0; i < n; i++) if (d.values[i] != null) base[i] += d.values[i]!;
       }
     });
 
@@ -145,7 +153,7 @@ export default function MetricChart({ result, title, subtitle, height = 160, onH
     for (let i = 0; i < n; i++) {
       const a = band[i];
       if (a == null || a <= 0) continue;
-      g.fillStyle = `rgba(239,68,68,${Math.min(1, 0.25 + a / 100)})`;
+      g.fillStyle = `rgba(255, 55, 95,${Math.min(1, 0.28 + a / 100)})`;
       const x0 = i === 0 ? PAD.l : (xOf(i - 1) + xOf(i)) / 2;
       const x1 = i === n - 1 ? PAD.l + plotW : (xOf(i) + xOf(i + 1)) / 2;
       g.fillRect(x0, by, Math.max(1, x1 - x0), BAND);
@@ -217,7 +225,7 @@ export default function MetricChart({ result, title, subtitle, height = 160, onH
             <div className="metric-chart__tip-time">{new Date(view.timestamps[tipIdx] * 1000).toLocaleString()}</div>
             {dims.slice(0, 12).map((d) => (
               <div key={d.name} className="metric-chart__tip-row">
-                <i style={{ background: palette[all.indexOf(d) % palette.length] }} />
+                <i style={{ background: chartColor(all.indexOf(d)) }} />
                 <span>{d.name}</span>
                 <b>{formatValue(d.values[tipIdx], result?.units)}</b>
                 {(d.anomalyRate[tipIdx] || 0) > 0 && <em title="anomaly rate">{Math.round(d.anomalyRate[tipIdx]!)}% anom</em>}
@@ -236,7 +244,7 @@ export default function MetricChart({ result, title, subtitle, height = 160, onH
               onClick={() => setHidden((h) => ({ ...h, [d.name]: !h[d.name] }))}
               title={hidden[d.name] ? 'Show' : 'Hide'}
             >
-              <i style={{ background: palette[i % palette.length] }} />
+              <i style={{ background: chartColor(i) }} />
               {d.name}
               <b>{formatValue(latest(d), result?.units === '%' ? '%' : '')}</b>
             </button>

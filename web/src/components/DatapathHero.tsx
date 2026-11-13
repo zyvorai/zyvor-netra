@@ -18,7 +18,18 @@ type DatapathHeroProps = {
   pressure?: 'idle' | 'ok' | 'warn' | 'bad';
 };
 
-type Node = { id: string; label: string; sub?: string; x: number; y: number; w: number; h: number; active: boolean; hot?: boolean };
+type Node = {
+  id: string;
+  label: string;
+  sub?: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  active: boolean;
+  hot?: boolean;
+  role?: 'wl' | 'hook' | 'agent' | 'ctrl';
+};
 
 const HOOKS: { key: string; label: string; sub: string }[] = [
   { key: 'cgroup', label: 'cgroup/skb', sub: 'root cgroup' },
@@ -111,6 +122,7 @@ export default function DatapathHero({
     h: nh,
     active: w.count > 0,
     hot: w.count > 0 && busy,
+    role: 'wl' as const,
   }));
   const hk = HOOKS.map((h, i) => {
     const n = hookCount(hooks, h.key);
@@ -123,6 +135,7 @@ export default function DatapathHero({
       h: nh,
       active: n > 0,
       hot: n > 0 && busy,
+      role: 'hook' as const,
     };
   });
   const agent: Node = {
@@ -134,6 +147,7 @@ export default function DatapathHero({
     h: nh,
     active: agents > 0,
     hot: agents > 0 && busy,
+    role: 'agent',
   };
   const ctrl: Node = {
     id: 'ctrl',
@@ -144,6 +158,7 @@ export default function DatapathHero({
     h: nh,
     active: agents > 0,
     hot: agents > 0 && busy,
+    role: 'ctrl',
   };
 
   const activeHooks = hk.filter((h) => h.active);
@@ -166,13 +181,22 @@ export default function DatapathHero({
       aria-label="Live Netra datapath: workloads, kernel hooks, node agent and controller"
     >
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <filter id="dp-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.2" result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
         {!vertical &&
           cols.map((x, i) => (
-            <text key={'t' + i} className="dp-col-title" x={x} y={18} textAnchor="middle">
+            <text key={'t' + i} className={`dp-col-title dp-col-title--${['wl', 'hook', 'agent', 'ctrl'][i]}`} x={x} y={18} textAnchor="middle">
               {columnTitles[i]}
             </text>
           ))}
-        {links.map((l) => (
+        {links.map((l, i) => (
           <path
             key={l.key}
             d={l.d}
@@ -181,6 +205,7 @@ export default function DatapathHero({
               l.live ? 'dp-link--live' : '',
               l.blocked ? 'dp-link--blocked' : '',
               pressure === 'bad' && l.live ? 'dp-link--pressure' : '',
+              l.live ? `dp-link--hue${i % 4}` : '',
             ]
               .filter(Boolean)
               .join(' ')}
@@ -191,7 +216,7 @@ export default function DatapathHero({
             .filter((l) => l.live)
             .map((l, i) =>
               [0, 1].map((k) => (
-                <circle key={l.key + k} r={vertical ? 3 : 3.5} className="dp-dot">
+                <circle key={l.key + k} r={vertical ? 3.5 : 4} className={`dp-dot dp-dot--hue${i % 4}`} filter="url(#dp-glow)">
                   <animateMotion dur={`${dur}s`} begin={`-${((i * 0.37 + (k * dur) / 2) % dur).toFixed(2)}s`} repeatCount="indefinite" path={l.d} />
                 </circle>
               )),
@@ -199,13 +224,18 @@ export default function DatapathHero({
         {!reduced &&
           blocked &&
           wl.slice(0, 2).map((w, i) => (
-            <circle key={'b' + i} r={vertical ? 3.5 : 4} className="dp-dot dp-dot--blocked">
+            <circle key={'b' + i} r={vertical ? 3.5 : 4.5} className="dp-dot dp-dot--blocked" filter="url(#dp-glow)">
               <animateMotion dur="2.4s" begin={`-${i * 1.2}s`} repeatCount="indefinite" path={link(w, hookTargets[0], vertical)} />
               <animate attributeName="opacity" values="1;1;0" keyTimes="0;0.85;1" dur="2.4s" begin={`-${i * 1.2}s`} repeatCount="indefinite" />
             </circle>
           ))}
         {nodes.map((n) => (
-          <g key={n.id} className={['dp-node', n.active ? 'dp-node--active' : '', n.hot ? 'dp-node--hot' : ''].filter(Boolean).join(' ')}>
+          <g
+            key={n.id}
+            className={['dp-node', n.role ? `dp-node--${n.role}` : '', n.active ? 'dp-node--active' : '', n.hot ? 'dp-node--hot' : '']
+              .filter(Boolean)
+              .join(' ')}
+          >
             <rect x={n.x - n.w / 2} y={n.y - n.h / 2} width={n.w} height={n.h} rx={n.h / 2} />
             <text x={n.x} y={n.sub ? n.y - 3 : n.y + 4} textAnchor="middle" className="dp-node-label">
               {n.label}
