@@ -9,21 +9,21 @@ type Shot = {
   caption: string;
 };
 
-// Prefer the current docs/ux lab captures (grouped nav, Ask Netra, path/capture)
-// over the archived docs/ux/v022 flat-nav tour.
+// Live lab captures (2026-11-13) under docs/ux/current/ — not the archived
+// docs/ux/v022 flat-nav tour.
 const TOUR: Shot[] = [
-  {src: '/00-overview.png', caption: 'Overview — Ask Netra'},
-  {src: '/07-login.png', caption: 'Sign in'},
-  {src: '/08-path-edge-intel.png', caption: 'Path diagnostics'},
-  {src: '/09-congestion-map.jpg', caption: 'Congestion map'},
-  {src: '/03-drops.png', caption: 'Drop diagnostics'},
-  {src: '/10-capture-live.jpg', caption: 'Live capture'},
-  {src: '/11-capture-decode.jpg', caption: 'Capture decode'},
-  {src: '/01-flows.png', caption: 'Flows'},
-  {src: '/02-policy.png', caption: 'Policies'},
-  {src: '/04-ebpf.png', caption: 'eBPF / firewall'},
-  {src: '/05-policy-dryrun.png', caption: 'Policy dry-run'},
-  {src: '/06-lockdown.png', caption: 'Workload lockdown'},
+  {src: '/current/00-overview.png', caption: 'Overview'},
+  {src: '/current/01-surfaces.png', caption: 'Surfaces'},
+  {src: '/current/02-handoff.png', caption: 'Handoff'},
+  {src: '/current/03-slo.png', caption: 'SLO'},
+  {src: '/current/04-drops.png', caption: 'Drop diagnostics'},
+  {src: '/current/05-drop-reasons.png', caption: 'Drop reasons'},
+  {src: '/current/06-path.png', caption: 'Path diagnostics'},
+  {src: '/current/07-capture.png', caption: 'Capture'},
+  {src: '/current/08-investigate.png', caption: 'Investigate'},
+  {src: '/current/09-flow-observe.png', caption: 'Flow observe'},
+  {src: '/current/10-ai.png', caption: 'Ask Netra'},
+  {src: '/current/11-audit.png', caption: 'Audit / SIEM'},
 ];
 
 function ShotCard({shot}: {shot: Shot}) {
@@ -41,14 +41,14 @@ export default function Gallery(): ReactNode {
   return (
     <Layout
       title="Gallery"
-      description="A walkthrough of the Netra dashboard — overview, path and drop diagnostics, live capture, and leased controls — from a real lab deployment.">
+      description="Current Netra dashboard tour — Surfaces, Handoff, SLO, Investigate, capture and Ask Netra — from a live lab deployment.">
       <header className={styles.header}>
         <div className="container">
           <Heading as="h1">Product tour</Heading>
           <p>
-            Screenshots from a running lab deployment. Observe boards (Surfaces,
-            Handoff, SLO, Investigate, Flow observe) ship in the dashboard and
-            docs; this gallery tracks the live captures in <code>docs/ux/</code>.
+            Fresh captures from a running lab (grouped nav, Surfaces, Handoff,
+            SLO, Investigate). Archived v0.22 shots stay under{' '}
+            <code>docs/ux/v022/</code> for history only.
           </p>
         </div>
       </header>
@@ -60,7 +60,7 @@ export default function Gallery(): ReactNode {
           />
           <p className={styles.caption}>
             Live demo: congestion map finding into a filtered, time-bounded
-            packet capture with decode — no mockups.
+            packet capture with decode.
           </p>
         </div>
         <div className={styles.grid}>

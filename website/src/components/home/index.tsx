@@ -149,11 +149,11 @@ export function StackScene(): ReactNode {
 /* --------------------------------------------------------- walkthrough */
 
 const SHOTS = [
-  {id: 'overview', label: 'Overview', src: '/00-overview.png', q: 'What is the cluster doing right now?', body: 'Ask Netra briefs plus agents, health and findings on one page — from a live lab deployment.', to: '/docs/getting-started/quickstart', cta: 'Quickstart'},
-  {id: 'path', label: 'Path diagnostics', src: '/08-path-edge-intel.png', q: 'Where along the path does it stall?', body: 'TCP connect latency, cwnd pressure and edge intel for a pair of endpoints.', to: '/docs/core-concepts/sensors', cta: 'Sensors'},
-  {id: 'drops', label: 'Drop diagnostics', src: '/03-drops.png', q: 'Why was this connection dropped?', body: 'Kernel skb reasons, softnet pressure, interface counters and drop detective findings.', to: '/docs/diagnose/drop-diagnostics', cta: 'Drop diagnostics'},
-  {id: 'capture', label: 'Live capture', src: '/10-capture-live.jpg', q: 'What is actually on the wire?', body: 'Filtered, time-bounded AF_PACKET capture with live decode — no payload retention beyond the session.', to: '/docs/diagnose/capture', cta: 'Packet capture'},
-  {id: 'firewall', label: 'Firewall', src: '/04-ebpf.png', q: 'What is enforced, and until when?', body: 'Unified rules with their leases. Previews first; everything expires back to observe.', to: '/docs/contain/deny-preview', cta: 'Deny preview'},
+  {id: 'overview', label: 'Overview', src: '/current/00-overview.png', q: 'What is the cluster doing right now?', body: 'Live datapath diagram, Ask Netra and agent health — from a running lab deployment.', to: '/docs/getting-started/quickstart', cta: 'Quickstart'},
+  {id: 'surfaces', label: 'Surfaces', src: '/current/01-surfaces.png', q: 'What encrypted and threat surfaces exist?', body: 'P1–P5 observe boards: TLS/JA3, encrypted DNS, shadow SaaS, destination risk — no decrypt.', to: '/docs/getting-started/features', cta: 'Feature map'},
+  {id: 'handoff', label: 'Handoff', src: '/current/02-handoff.png', q: 'What should the next on-call see?', body: 'Observe-only shift pack: report, coverage, fleet, audit and drop reasons — never extends a lease.', to: '/docs/getting-started/features', cta: 'Feature map'},
+  {id: 'drops', label: 'Drop diagnostics', src: '/current/04-drops.png', q: 'Why was this connection dropped?', body: 'Kernel skb reasons, softnet pressure, interface counters and drop detective findings.', to: '/docs/diagnose/drop-diagnostics', cta: 'Drop diagnostics'},
+  {id: 'capture', label: 'Capture', src: '/current/07-capture.png', q: 'What is actually on the wire?', body: 'Filtered, time-bounded AF_PACKET capture with summaries — no payload retention beyond the session.', to: '/docs/diagnose/capture', cta: 'Packet capture'},
 ] as const;
 
 function Shot({src, alt}: {src: string; alt: string}): ReactNode {
