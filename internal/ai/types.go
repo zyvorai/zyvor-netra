@@ -60,9 +60,9 @@ type Snapshot struct {
 	// TLSRare / ECHSightings are observe-only TLSFP risk rollups when the
 	// controller has fingerprint samples. IntelHits counts DNS/threat-feed
 	// matches surfaced into the snapshot. All optional and may stay zero.
-	TLSRare       int `json:"tlsRare,omitempty"`
-	ECHSightings  int `json:"echSightings,omitempty"`
-	IntelHits     int `json:"intelHits,omitempty"`
+	TLSRare      int `json:"tlsRare,omitempty"`
+	ECHSightings int `json:"echSightings,omitempty"`
+	IntelHits    int `json:"intelHits,omitempty"`
 }
 
 // NamedCount is a compact label/value pair used in top-N lists.

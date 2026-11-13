@@ -34,6 +34,10 @@ PUT /api/v1/vms/{node}/capture
   {"backend": "afpacket", "protocol": "tcp", "host": "10.0.0.5", "durationSeconds": 60}
 
 netractl capture start node-1 --backend afpacket --protocol tcp --host 10.0.0.5
+netractl capture status
+netractl capture history
+netractl capture summaries
+netractl capture context ARTIFACT_ID
 ```
 
 `backend` is optional everywhere (CLI, MCP, API) and defaults to `"ebpf"` — every existing caller that predates this field keeps working unchanged. `GET /api/v1/capture/status` and the MCP `netra_capture_status` tool report which backend each active session is using. MCP `netra_capture_start` (mutating, gated by `NETRA_MCP_ALLOW_MUTATIONS`) accepts the same `backend` field.

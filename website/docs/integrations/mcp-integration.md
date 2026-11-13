@@ -189,8 +189,21 @@ Every tool call returns an MCP `tools/call` result of the form:
 | `netra_explain_drops` | `namespace`, `pod` (optional) | Combine `netra_ai_ask` with drop/diagnose tools |
 | `netra_draft_rule` | `request` **(required)** | Turn a deny/rate sentence into a preview rule via `netra_ai_draft`; never applies |
 | `netra_oncall_digest` | — | Produce the on-call card via `netra_ai_digest`; if the fingerprint changed, quote `whyChanged`/`whyChangedProse` rather than guessing at a cause |
+| `netra_congestion_triage` | `window` (optional) | Kernel-network congestion via `netra_ai_congestion_brief` |
 | `netra_incident_timeline` | `since` (optional) | Narrate `netra_incidents_timeline`'s entries in order; forbids inventing entries/causes/timestamps |
 | `netra_policy_review` | `namespace`, `workload` (optional) | Review drafts via `netra_insights_policy_review`; forbids apply / mode changes |
+| `netra_tls_triage` | — | Rare JA3 + ECH-blind |
+| `netra_security_review` | — | Optimizer + incidents + intel |
+| `netra_metrics_oncall` | `window` (optional) | Alerts + anomalies + congestion |
+| `netra_netlink_churn` | — | RTNL findings |
+| `netra_ai_destinations_review` | — | GenAI/MCP catalog matches |
+| `netra_shadow_saas` | — | Shadow SaaS + app categories |
+| `netra_capture_status` | — | Capture status + summaries |
+| `netra_fleet_rollcall` | — | Fleet + clusters + metrics fleet |
+| `netra_investigate_connection` | `namespace`, `pod`, `peer`, `port` | Failed-connection timeline |
+| `netra_flow_observe` | `namespace`, `pod` | History + RED + traces |
+| `netra_ebpf_maps_review` | — | Map inventory under `/sys/fs/bpf/netra` |
+| `netra_suggest_then_ask` | — | Suggestions → agent |
 
 See `docs/ai.md` for the controller-side brief/ask engines those prompts lean on.
 
@@ -202,10 +215,24 @@ See `docs/ai.md` for the controller-side brief/ask engines those prompts lean on
 |---|---|---|
 | `netra://ai/brief` | `GET /api/v1/ai/brief` | Live heuristic brief |
 | `netra://ai/digest` | `GET /api/v1/ai/digest` | On-call card + incident fingerprint |
+| `netra://ai/congestion` | `GET /api/v1/ai/congestion-brief` | Kernel-network congestion brief |
 | `netra://ai/suggestions` | `GET /api/v1/ai/suggestions` | Snapshot-derived follow-up questions |
 | `netra://status` | `GET /api/v1/status` | Controller status |
 | `netra://incidents` | `GET /api/v1/incidents` | Cross-signal incident clusters |
 | `netra://incidents/timeline` | `GET /api/v1/incidents/timeline` | Chronological audit + health-signature-transition merge |
+| `netra://ebpf/health` | `GET /api/v1/ebpf/health` | TCP health anomalies |
+| `netra://ebpf/tls-risk` | `GET /api/v1/ebpf/tls-fingerprints/risk` | Rare JA3 / ECH |
+| `netra://ebpf/tls-fingerprints` | `GET /api/v1/ebpf/tls-fingerprints` | JA3/JA4 samples |
+| `netra://ebpf/maps` | `GET /api/v1/ebpf/maps` | Desired map inventory |
+| `netra://ebpf/ai-destinations` | `GET /api/v1/ebpf/ai-destinations` | GenAI/MCP matches |
+| `netra://ebpf/app-categories` | `GET /api/v1/ebpf/app-categories` | Heuristic categories |
+| `netra://insights/exposure` | `GET /api/v1/insights/exposure` | Exposure findings |
+| `netra://insights/red` | `GET /api/v1/insights/red` | RED board |
+| `netra://insights/traces` | `GET /api/v1/insights/traces` | Inferred spans |
+| `netra://flows/history` | `GET /api/v1/flows/history` | Native flow history |
+| `netra://security/incidents` | `GET /api/v1/security/incidents` | Security correlation |
+| `netra://compliance` | `GET /api/v1/compliance` | Compliance packs |
+| `netra://handoff` | `GET /api/v1/handoff?format=json` | On-call pack |
 
 ## Complete tool reference
 
@@ -321,6 +348,24 @@ All tool names are prefixed `netra_`. Every tool maps 1:1 to one Netra controlle
 | `netra_insights_profiles` | `GET /api/v1/insights/profiles` | — | Kernel stacks and `wchan` for the hottest host comms. No argv. Not a user-space flame graph |
 | `netra_insights_workload_events` | `GET /api/v1/insights/workload-events` | `namespace`, `pod` | Kubernetes Warning events for pods. Not the application journal |
 | `netra_insights_kernel_notes` | `GET /api/v1/insights/kernel-notes` | — | Scrubbed kernel lines about netdev, TCP, UDP, conntrack, and OOM |
+| `netra_insights_zero_trust` | `GET /api/v1/insights/zero-trust` | `limit` | Observe-only Zero Trust drafts |
+| `netra_insights_microseg` | `GET /api/v1/insights/microseg` | `limit` | Microseg lease drafts (never auto-apply) |
+| `netra_insights_shadow_saas` | `GET /api/v1/insights/shadow-saas` | `limit` | Unsanctioned SaaS hostname findings |
+| `netra_insights_experience` | `GET /api/v1/insights/experience` | `limit` | Per-workload experience scores (`workloads` list) |
+| `netra_insights_destination_risk` | `GET /api/v1/insights/destination-risk` | `limit` | Destination risk board (`destinations` list) |
+| `netra_insights_exfil` | `GET /api/v1/insights/exfil` | `limit` | Exfil heuristics (observe-only) |
+| `netra_insights_lateral` | `GET /api/v1/insights/lateral` | `limit` | Lateral-movement playbooks |
+| `netra_insights_category_deny` | `GET /api/v1/insights/category-deny` | `limit` | Category-deny draft CLIs |
+| `netra_insights_ech_blind` | `GET /api/v1/insights/ech-blind` | `limit` | ECH / missing-SNI findings |
+| `netra_insights_policy_packs` | `GET /api/v1/insights/policy-packs` | `limit` | Policy pack suggestions |
+| `netra_insights_identity_drafts` | `GET /api/v1/insights/identity-drafts` | `limit` | Identity-based draft rules |
+| `netra_ebpf_tls_fingerprints` | `GET /api/v1/ebpf/tls-fingerprints` | `limit` | JA3/JA4 ClientHello samples |
+| `netra_ebpf_tls_fingerprint_risk` | `GET /api/v1/ebpf/tls-fingerprints/risk` | `limit` | Rare JA3 / ECH risk rows |
+| `netra_ebpf_encrypted_dns` | `GET /api/v1/ebpf/encrypted-dns` | `limit` | DoT/DoH hostname hits |
+| `netra_ebpf_app_categories` | `GET /api/v1/ebpf/app-categories` | `limit` | Heuristic app/category labels |
+| `netra_ebpf_ai_destinations` | `GET /api/v1/ebpf/ai-destinations` | `limit` | GenAI/MCP catalog matches |
+| `netra_compliance` | `GET /api/v1/compliance` | — | Compliance packs → controls |
+| `netra_report_prevention` | `GET /api/v1/report/prevention` | — | Prevention coverage scorecard |
 
 ### Policies — read & generate (always available)
 
@@ -432,7 +477,8 @@ Every eBPF mutating tool returns the full updated `EBPFFastPathConfig` on succes
 ## Not included
 
 - **No `flows/stream` tool.** `GET /api/v1/flows/stream` is a Server-Sent-Events stream; it doesn't fit a request/response MCP `tools/call`. `netra_flow_summary` is the live aggregate. `netra_flow_history` is the flow sidecar or optional SQLite backend (`docs/flow-log.md`), not a stream and not a shared warehouse.
-- **Tools only — no MCP resources or prompts.** Every capability is exposed as a callable tool; there is no resource-subscription or prompt-template surface.
+- **No `netra_ai_forget` tool.** Conversation memory clear stays on `POST /api/v1/ai/forget` for the web/CLI (`netractl ai forget ID`) so agents cannot wipe another client's thread by accident.
+- **No arbitrary cluster API or Secret access.** Prompts and resources exist (`prompts/list`, `resources/list`) but are still a strict subset of Netra's own read APIs — same observe-only boundaries as tools.
 - **No additional rate limiting.** `netra-mcp` adds no throttling of its own beyond whatever the controller's own API already enforces.
 - **No per-tool credential scoping.** See [Security considerations](#security-considerations) — one API key covers everything `netra-mcp` is allowed to do; the mutation gate is process-wide, not per-tool.
 - **No credential management.** `netra-mcp` reads `NETRA_API_KEY` from its own process environment; it does not fetch, rotate, or store credentials itself.

@@ -50,7 +50,7 @@ peer and port. Stale ownership is not copied. No cmdline.
 (DNS events and TLS metadata). Empty means unobserved — never invented.
 Historical deny preview uses these fields when present.
 
-The console Flows page shows the last hour, a RED table, and inferred
+The console **Flow observe** page (`#page=flow-observe`) shows the last hour, a RED table, and inferred
 paths.
 
 ## RED
