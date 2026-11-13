@@ -133,7 +133,28 @@ netractl install --namespace netra-system # Helm install: controller + node agen
 netractl status
 ```
 
-Then open `https://<node-ip>:30870` and sign in. The dashboard sits behind a login screen — see [Signing in](docs/dashboard-login.md) (the nav bar and login screen carry the [Zyvor](https://zyvor.dev?utm_source=github&utm_medium=netra&utm_campaign=readme_suite) mark).
+### Dashboard login (testers)
+
+Open `https://<node-ip>:30870` (accept the self-signed TLS warning). There is **no default password** — do not try `Admin@321`.
+
+| Field | What to enter |
+|---|---|
+| **Username** | `admin` (fixed; cosmetic) |
+| **Password** | the controller API key — paste the whole key |
+
+**Where the key is:**
+
+```bash
+# After deploy-remote / make install on the controller host:
+cat ~/.netra/api-key
+# or:
+grep NETRA_API_KEY ~/.netra/env
+
+# Helm secret (cluster):
+kubectl -n netra-system get secret netra-auth -o jsonpath='{.data.api-key}' | base64 -d; echo
+```
+
+`scripts/deploy-remote.sh` mints a random key unless you set `NETRA_API_KEY` yourself, and writes it to `~/.netra/api-key` (mode 600) and `~/.netra/env`. Full detail: [Signing in](docs/dashboard-login.md).
 
 ![Sign in](docs/ux/07-login.png)
 

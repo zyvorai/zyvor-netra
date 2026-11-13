@@ -1,28 +1,41 @@
 # Signing in to the dashboard
 
-The web dashboard is now gated behind a login screen instead of the old inline
-"API token" field that used to appear on every page.
+The web dashboard is gated behind a login screen. **Testers: there is no
+built-in password.** `admin` / `Admin@321` will not work.
 
 ![Sign in](ux/07-login.png)
 
-## Signing in
+## How to sign in (copy this)
 
-| Field    | Value                                   |
-|----------|-----------------------------------------|
-| Username | `admin`                                 |
-| Password | the controller's API key (`NETRA_API_KEY` / `auth.apiKey`) |
+1. Open `https://<controller-host>:30870/` (port/TLS: [HTTPS default](architecture.md#https-default)). Accept the browser's self-signed cert warning if needed.
+2. Enter:
 
-There is **no default password**. `scripts/deploy-remote.sh` mints a random API key
-unless you export `NETRA_API_KEY`, and writes it to `~/.netra/api-key` (mode 600) and
-`~/.netra/env` on the host so `netractl status` works without hand-exporting settings —
-see [`netractl.md`](netractl.md). Read the key from there and paste it as the password.
+| Field | Value |
+|-------|--------|
+| **Username** | `admin` (always — it is cosmetic, not a real user account) |
+| **Password** | the controller API key (`NETRA_API_KEY` / Helm `auth.apiKey`) |
 
-Open `https://<controller-host>:30870/` (the port and TLS default come from
-[HTTPS default](architecture.md#https-default)). The login screen shows the host you're
-connecting to ("Connecting to `<host>`") so you can confirm you're pointed at the right
-cluster before entering the key. The UI probes `/api/v1/fleet` with the bearer before
-opening the dashboard, so a wrong key fails on the login screen instead of bouncing you
-after a brief flash of the console.
+3. Get the password (API key) from the host or cluster:
+
+```bash
+# Preferred after deploy-remote / local install:
+cat ~/.netra/api-key
+# Same value is also in:
+grep '^NETRA_API_KEY=' ~/.netra/env
+
+# If you only have kubectl access:
+kubectl -n netra-system get secret netra-auth \
+  -o jsonpath='{.data.api-key}' | base64 -d; echo
+```
+
+`scripts/deploy-remote.sh` **mints a new random key** on each deploy unless you
+export `NETRA_API_KEY` yourself. It writes the key to `~/.netra/api-key` (mode
+600) and `~/.netra/env` so `netractl status` works without hand-exporting —
+see [`netractl.md`](netractl.md). Paste that string into the password field.
+
+The login screen shows "Connecting to `<host>`" so you can confirm the target.
+The UI probes `/api/v1/fleet` with the bearer before opening the dashboard, so
+a wrong key fails on the login screen instead of flashing an empty console.
 
 ## What the login actually does
 
