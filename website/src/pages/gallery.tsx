@@ -9,21 +9,21 @@ type Shot = {
   caption: string;
 };
 
-// The docs/ux/v022 set is a single deployment's full-page walkthrough,
-// already captured in this exact narrative order.
+// Prefer the current docs/ux lab captures (grouped nav, Ask Netra, path/capture)
+// over the archived docs/ux/v022 flat-nav tour.
 const TOUR: Shot[] = [
-  {src: '/v022/00-overview.png', caption: 'Overview'},
-  {src: '/v022/01-pods.png', caption: 'Pods'},
-  {src: '/v022/02-vms.png', caption: 'VMs (KubeVirt)'},
-  {src: '/v022/03-network-health.png', caption: 'Network Health'},
-  {src: '/v022/04-path-diagnostics.png', caption: 'Path Diagnostics'},
-  {src: '/v022/05-drop-diagnostics.png', caption: 'Drop Diagnostics'},
-  {src: '/v022/06-l7-metadata.png', caption: 'L7 Metadata'},
-  {src: '/v022/07-insights.png', caption: 'Insights'},
-  {src: '/v022/08-ebpf.png', caption: 'Firewall'},
-  {src: '/v022/09-hubble.png', caption: 'Hubble live flows'},
-  {src: '/v022/10-policies.png', caption: 'Policies'},
-  {src: '/v022/11-audit.png', caption: 'Audit'},
+  {src: '/00-overview.png', caption: 'Overview — Ask Netra'},
+  {src: '/07-login.png', caption: 'Sign in'},
+  {src: '/08-path-edge-intel.png', caption: 'Path diagnostics'},
+  {src: '/09-congestion-map.jpg', caption: 'Congestion map'},
+  {src: '/03-drops.png', caption: 'Drop diagnostics'},
+  {src: '/10-capture-live.jpg', caption: 'Live capture'},
+  {src: '/11-capture-decode.jpg', caption: 'Capture decode'},
+  {src: '/01-flows.png', caption: 'Flows'},
+  {src: '/02-policy.png', caption: 'Policies'},
+  {src: '/04-ebpf.png', caption: 'eBPF / firewall'},
+  {src: '/05-policy-dryrun.png', caption: 'Policy dry-run'},
+  {src: '/06-lockdown.png', caption: 'Workload lockdown'},
 ];
 
 function ShotCard({shot}: {shot: Shot}) {
@@ -37,17 +37,18 @@ function ShotCard({shot}: {shot: Shot}) {
 }
 
 export default function Gallery(): ReactNode {
-  const gif = useBaseUrl('/netra-live-demo.gif');
+  const gif = useBaseUrl('/capture-diagnostics-demo.gif');
   return (
     <Layout
       title="Gallery"
-      description="A full walkthrough of the Netra dashboard, captured against a live lab deployment.">
+      description="A walkthrough of the Netra dashboard — overview, path and drop diagnostics, live capture, and leased controls — from a real lab deployment.">
       <header className={styles.header}>
         <div className="container">
           <Heading as="h1">Product tour</Heading>
           <p>
-            Every screenshot below is captured against a real, running lab
-            deployment — not a mockup.
+            Screenshots from a running lab deployment. Observe boards (Surfaces,
+            Handoff, SLO, Investigate, Flow observe) ship in the dashboard and
+            docs; this gallery tracks the live captures in <code>docs/ux/</code>.
           </p>
         </div>
       </header>
@@ -55,12 +56,11 @@ export default function Gallery(): ReactNode {
         <div className={styles.demo}>
           <img
             src={gif}
-            alt="Netra live demo — Overview, Firewall/NetPol v2, in-browser VNC console"
+            alt="Netra live demo — congestion finding to packet capture"
           />
           <p className={styles.caption}>
-            Live demo: Overview, the Firewall page's unified rules table and
-            NetPol v2 allow-list, then a real in-browser VNC console
-            connected to a running KubeVirt VM.
+            Live demo: congestion map finding into a filtered, time-bounded
+            packet capture with decode — no mockups.
           </p>
         </div>
         <div className={styles.grid}>

@@ -129,6 +129,9 @@ export default function Surfaces() {
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const boards = BOARDS.filter((b) => b.group === group);
+  const active = BOARDS.find((b) => b.id === boardId) || boards[0] || BOARDS[0];
+
   useEffect(() => {
     const q = (route.scope.query || '').trim();
     if (!q) return;
@@ -144,9 +147,6 @@ export default function Surfaces() {
     if (route.scope.query === active.id) return;
     navigate('surfaces', { query: active.id });
   }, [active?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const boards = BOARDS.filter((b) => b.group === group);
-  const active = BOARDS.find((b) => b.id === boardId) || boards[0] || BOARDS[0];
 
   useEffect(() => {
     if (!boards.some((b) => b.id === boardId)) setBoardId(boards[0]?.id || BOARDS[0].id);

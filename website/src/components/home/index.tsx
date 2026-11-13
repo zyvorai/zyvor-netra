@@ -149,11 +149,11 @@ export function StackScene(): ReactNode {
 /* --------------------------------------------------------- walkthrough */
 
 const SHOTS = [
-  {id: 'overview', label: 'Overview', src: '/v022/00-overview.png', q: 'What is the cluster doing right now?', body: 'Agents, health, flows and findings on one page, from a live lab deployment.', to: '/docs/getting-started/quickstart', cta: 'Quickstart'},
-  {id: 'drops', label: 'Drop diagnostics', src: '/v022/05-drop-diagnostics.png', q: 'Why was this connection dropped?', body: 'Kernel drop attribution: which connections are dropped, why, and by which function.', to: '/docs/diagnose/drop-diagnostics', cta: 'Drop diagnostics'},
-  {id: 'path', label: 'Path diagnostics', src: '/v022/04-path-diagnostics.png', q: 'Where along the path does it stall?', body: 'TCP path and congestion diagnostics for a pair of endpoints.', to: '/docs/core-concepts/sensors', cta: 'Sensors'},
-  {id: 'l7', label: 'L7 metadata', src: '/v022/06-l7-metadata.png', q: 'Who is talking to what, by name?', body: 'DNS names, TLS server names and HTTP status codes without decrypting payloads.', to: '/docs/diagnose/l7-metadata', cta: 'L7 metadata'},
-  {id: 'firewall', label: 'Firewall', src: '/v022/08-ebpf.png', q: 'What is enforced, and until when?', body: 'Unified rules with their leases. Previews first; everything expires back to observe.', to: '/docs/contain/deny-preview', cta: 'Deny preview'},
+  {id: 'overview', label: 'Overview', src: '/00-overview.png', q: 'What is the cluster doing right now?', body: 'Ask Netra briefs plus agents, health and findings on one page — from a live lab deployment.', to: '/docs/getting-started/quickstart', cta: 'Quickstart'},
+  {id: 'path', label: 'Path diagnostics', src: '/08-path-edge-intel.png', q: 'Where along the path does it stall?', body: 'TCP connect latency, cwnd pressure and edge intel for a pair of endpoints.', to: '/docs/core-concepts/sensors', cta: 'Sensors'},
+  {id: 'drops', label: 'Drop diagnostics', src: '/03-drops.png', q: 'Why was this connection dropped?', body: 'Kernel skb reasons, softnet pressure, interface counters and drop detective findings.', to: '/docs/diagnose/drop-diagnostics', cta: 'Drop diagnostics'},
+  {id: 'capture', label: 'Live capture', src: '/10-capture-live.jpg', q: 'What is actually on the wire?', body: 'Filtered, time-bounded AF_PACKET capture with live decode — no payload retention beyond the session.', to: '/docs/diagnose/capture', cta: 'Packet capture'},
+  {id: 'firewall', label: 'Firewall', src: '/04-ebpf.png', q: 'What is enforced, and until when?', body: 'Unified rules with their leases. Previews first; everything expires back to observe.', to: '/docs/contain/deny-preview', cta: 'Deny preview'},
 ] as const;
 
 function Shot({src, alt}: {src: string; alt: string}): ReactNode {
@@ -192,9 +192,11 @@ export function Walkthrough(): ReactNode {
 
 const CAPS = [
   {id: 'diagnose', label: 'Diagnose', q: 'Why was this connection dropped?', body: 'Kernel drop attribution shows which connections the kernel drops, why, and by which function, with the context captured around the drop.', cmd: 'netractl ebpf drops', to: '/docs/diagnose/drop-diagnostics', cta: 'Drop diagnostics'},
+  {id: 'investigate', label: 'Investigate', q: 'What happened to this failed connect?', body: 'Failed-connection timeline with flow history, RED, traces and stacks — observe-only, never applies a deny.', cmd: 'netractl investigate connection --peer 203.0.113.10 --port 443', to: '/docs/operate/flow-log', cta: 'Flow log'},
+  {id: 'surfaces', label: 'Surfaces', q: 'What encrypted and threat surfaces exist?', body: 'One board for TLS/JA3 risk, encrypted DNS, ECH-blind, shadow SaaS, destination risk, DNS intel and more — catalogued as P0–P5 observe surfaces.', cmd: 'netractl handoff --format markdown', to: '/docs/getting-started/features', cta: 'Feature map'},
   {id: 'capture', label: 'Capture', q: 'What is actually on the wire?', body: 'Start a filtered, time-bounded packet capture on one node and stream it live to the dashboard, netractl or MCP.', cmd: 'netractl capture start node-1 --backend afpacket --protocol tcp --host 10.0.0.5', to: '/docs/diagnose/capture', cta: 'Packet capture'},
   {id: 'contain', label: 'Contain', q: 'Can I stop it without risking an outage?', body: 'Preview a deny rule against live traffic first. Applied rules sit behind a lease that fails open to observe.', cmd: 'netractl ebpf deny-preview cidr 203.0.113.0/24 egress', to: '/docs/contain/deny-preview', cta: 'Deny preview'},
-  {id: 'measure', label: 'Measure', q: 'What changed in the last hour?', body: 'Per-second host, network and workload metrics, scored for anomalies and evaluated by alert rules.', cmd: 'netractl metrics anomalies --after -3600', to: '/docs/operate/metrics', cta: 'Metrics platform'},
+  {id: 'measure', label: 'Measure', q: 'What changed in the last hour?', body: 'Per-second host, network and workload metrics, scored for anomalies, SLO burn windows and alert rules — reading never acks or silences.', cmd: 'netractl metrics anomalies --after -3600', to: '/docs/operate/metrics', cta: 'Metrics platform'},
   {id: 'automate', label: 'Automate', q: 'Can my agent do this?', body: `netra-mcp exposes ${F.mcpTools} tools over stdio. ${F.mcpReadTools} are read-only; the rest need NETRA_MCP_ALLOW_MUTATIONS=true.`, cmd: `docker run -i --rm -e NETRA_URL -e NETRA_API_KEY ${F.mcpImage}`, to: '/docs/integrations/mcp-integration', cta: 'MCP integration'},
 ] as const;
 
@@ -308,10 +310,10 @@ export function Receipts(): ReactNode {
 /* ------------------------------------------------------------ timeline */
 
 const SHIPPED = [
+  {v: 'main', d: '2026-11-13', t: 'Observe UX depth: Handoff, SLO, Surfaces, MCP', p: 'Handoff and SLO boards, drop-reasons and capture summaries, Surfaces catalog, SIEM export strip, and deeper AI/MCP/CLI observe paths — still never apply mode or policy from AI.'},
   {v: '0.32.0', d: '2026-10-19', t: 'Per-node mTLS, scoped auth, SQLite flows, investigate', p: 'Optional node-bound agent mTLS and serial deny-list; namespace/cluster/tenant scopes and service credentials; SQLite flow history with fleet fan-out; failed-connection investigate timeline.'},
   {v: '0.31.0', d: '2026-10-17', t: 'Diagnose surfaces and leased exe-hash deny', p: 'Deny Preview, Netlink, BPF Attachments and Detect boards; auto-mitigate shadow preview; detector HA warm-start; stack histograms; Helm agent.server and Envoy Gateway.'},
   {v: '0.30.1', d: '2026-10-15', t: 'Listed in the MCP Registry', p: 'netra-mcp ships as an OCI image and as io.github.zyvorai/netra.'},
-  {v: '0.30.0', d: '2026-10-07', t: 'Metrics, node isolation, security review', p: 'Per-second metrics with anomaly detection and alerts, a per-node allow-only egress filter (shadow or enforce), and read-only security intelligence.'},
 ];
 
 export function Shipped(): ReactNode {
