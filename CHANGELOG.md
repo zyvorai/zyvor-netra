@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Toolchain Go 1.27.4.** CI and `go.mod` toolchain move past GO-2026-6809 (`crypto/x509`) and GO-2026-6859 (`net/http`); both are fixed in 1.27.3 / 1.27.4.
 - **Security: no built-in admin key.** `scripts/deploy-remote.sh` no longer defaults `NETRA_API_KEY` to the published `Admin@321`; it mints a random key (still written to `~/.netra/api-key`) unless `NETRA_API_KEY` is set. The dashboard login no longer maps `admin` / `Admin@321` to a baked-in token: the password is the API key. Controllers deployed with the old default should rotate their key. Docs: `docs/dashboard-login.md`.
 
 ## 0.32.0 — 2026-10-19
