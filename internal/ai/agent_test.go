@@ -25,7 +25,27 @@ func TestRunClassifiesAndSynthesizesHeuristic(t *testing.T) {
 		t.Fatalf("question=%q", res.Brief.Question)
 	}
 	assertNode(t, res, "classify")
+	assertNode(t, res, "gather")
 	assertNode(t, res, "synthesize")
+}
+
+func TestRunInvestigateIntentSuggestsTimeline(t *testing.T) {
+	snap := Snapshot{AgentsTotal: 1, HealthScore: 80, Blocked: 3}
+	res := Run(context.Background(), snap, "why can't the pod reach the peer?", nil, "")
+	if res.Intent != IntentInvestigate {
+		t.Fatalf("intent=%s", res.Intent)
+	}
+	assertNode(t, res, "gather")
+	found := false
+	for _, s := range res.Brief.NextSteps {
+		if strings.Contains(strings.ToLower(s), "investigate") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected investigate next step, got %#v", res.Brief.NextSteps)
+	}
 }
 
 func TestRunDraftsWhenQuestionLooksLikeARule(t *testing.T) {

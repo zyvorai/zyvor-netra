@@ -23,6 +23,8 @@ export const navGroups: NavGroup[] = [
       { page: 'explain', label: 'Explain', blurb: 'Passive, read-only evidence from agent reports, one selector away.' },
       { page: 'traffic', label: 'Traffic', blurb: 'Namespace, protocol, port, and DNS breakdowns. No payloads.' },
       { page: 'capture', label: 'Capture', blurb: 'Filtered, time-bounded packet capture per node, live.' },
+      { page: 'investigate', label: 'Investigate', blurb: 'Fused DNS→flow→netlink→policy→drops timeline for a failed connection.' },
+      { page: 'flow-observe', label: 'Flow observe', blurb: 'Native flow history, RED, traces, profiles — no Hubble required.' },
     ],
   },
   {
@@ -38,8 +40,10 @@ export const navGroups: NavGroup[] = [
       { page: 'deny-preview', label: 'Deny Preview', blurb: 'Review-only blast radius for a proposed emergency deny against live counters or flow history.' },
       { page: 'netlink', label: 'Netlink', blurb: 'Read-only RTNL change recorder and findings — routes, links, neighbors. Never mutates.' },
       { page: 'bpf-attachments', label: 'BPF Attachments', blurb: 'Inventory of attached programs and hook drift. Sees, does not repair.' },
+      { page: 'ebpf-maps', label: 'eBPF Maps', blurb: 'Controller-desired map inventory under /sys/fs/bpf/netra. Read-only.' },
       { page: 'detect', label: 'Detect', blurb: 'DNS anomaly and scan/fan-out findings — observe only, GA detectors.' },
       { page: 'surfaces', label: 'Surfaces', blurb: 'P1–P5 observe boards: JA3, encrypted DNS, shadow SaaS, exfil, fleet tenants, and more.' },
+      { page: 'tls-fingerprints', label: 'TLS / JA3', blurb: 'Typed JA3/JA4 risk board — SNI, ECH, rare fingerprints. Observe only.' },
       { page: 'features', label: 'Features', blurb: 'Enable or disable install-time capabilities (DNS detect, auto-mitigate, AI, agent coverage).' },
       { page: 'insights', label: 'Insights', blurb: 'Baselines, drift, and review-only remediation proposals.' },
       { page: 'topology', label: 'Topology', blurb: 'The observed-traffic dependency graph, live and force-directed.' },
@@ -67,7 +71,8 @@ export const navGroups: NavGroup[] = [
   {
     label: 'Reports',
     children: [
-      { page: 'flows', label: 'Hubble', blurb: 'Optional Cilium enrichment when Hubble Relay is available.' },
+      { page: 'flows', label: 'Flows', blurb: 'Optional Hubble Relay live stream; native observe lives under Investigate → Flow observe.' },
+      { page: 'ai', label: 'Ask Netra', blurb: 'Read-only briefs, digest, drafts and the in-process agent graph.' },
       { page: 'report', label: 'Report', blurb: 'A point-in-time health, drift, and incident briefing.' },
       { page: 'scorecard', label: 'Scorecard', blurb: 'Health, stale agents, and blocked events folded into a 0–100 board.' },
       { page: 'talkers', label: 'Talkers', blurb: 'Top destination IPs by packet count. No payloads.' },

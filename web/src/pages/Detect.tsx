@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
+import { navigate } from '../hooks/useInvestigation';
 import PagePulse from '../components/kit/PagePulse';
 import { countTone } from '../components/kit/tone';
 
@@ -111,9 +112,13 @@ export default function Detect() {
           <button type="button" onClick={load}>
             Refresh
           </button>
-          <a className="overview-link" href="#page=security-review">
+          <button
+            type="button"
+            className="overview-link"
+            onClick={() => navigate('security-review')}
+          >
             Open Security Review
-          </a>
+          </button>
           <a className="overview-link" href="#page=ebpf">
             Auto-mitigate status
           </a>
@@ -151,6 +156,20 @@ export default function Detect() {
                   {who}
                 </span>
                 <small>{f.message || ''}</small>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() =>
+                    navigate('security-review', {
+                      namespace: f.namespace || '',
+                      pod: f.pod || f.workload || '',
+                      node: f.node || '',
+                      query: f.kind || '',
+                    })
+                  }
+                >
+                  Correlate
+                </button>
               </div>
             );
           })}

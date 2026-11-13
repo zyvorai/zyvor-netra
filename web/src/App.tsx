@@ -36,6 +36,11 @@ import Workloads from './pages/Workloads';
 import Metrics from './pages/Metrics';
 import MetricAnomalies from './pages/MetricAnomalies';
 import MetricAlerts from './pages/MetricAlerts';
+import InvestigateConnection from './pages/InvestigateConnection';
+import FlowObservePage from './pages/FlowObservePage';
+import AI from './pages/AI';
+import TlsFingerprints from './pages/TlsFingerprints';
+import EbpfMaps from './pages/EbpfMaps';
 import PageHero, { type HeroTint } from './components/PageHero';
 import Login from './components/Login';
 import { sessionAlive } from './api';
@@ -47,6 +52,36 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     eyebrow: 'Investigation',
     title: 'Follow every clue.',
     lede: 'Native eBPF events, workload context, and honest explanations of observed outcomes.',
+  },
+  investigate: {
+    eyebrow: 'Investigate',
+    title: 'One connection, one timeline.',
+    lede: 'Compose DNS, flows, netlink, policy and drops into an evidence-backed timeline. Observe-only; gaps are listed, never invented.',
+    tint: 'amber',
+  },
+  'flow-observe': {
+    eyebrow: 'Flow observe',
+    title: 'History, RED and inferred paths.',
+    lede: 'Native flow history without Hubble. App protocol is a port hint; process is comm/pid when TCP health matched. No payloads.',
+    tint: 'green',
+  },
+  ai: {
+    eyebrow: 'Ask Netra',
+    title: 'Briefs, drafts and the agent graph.',
+    lede: 'Read-only natural-language triage over live aggregates. Optional LLM rewrite; never applies mode, rules or policy.',
+    tint: 'purple',
+  },
+  'tls-fingerprints': {
+    eyebrow: 'TLS',
+    title: 'JA3 risk without decrypt.',
+    lede: 'Client fingerprints, rare JA3 ranking and ECH sightings from the datapath. Observe only — never decrypts or applies policy.',
+    tint: 'amber',
+  },
+  'ebpf-maps': {
+    eyebrow: 'eBPF Maps',
+    title: 'What Netra pinned.',
+    lede: 'Desired map inventory under /sys/fs/bpf/netra — filled vs empty, entry samples. Never touches Cilium-owned maps.',
+    tint: 'green',
   },
   workloads: {
     eyebrow: 'Investigation',
@@ -172,9 +207,9 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     tint: 'red',
   },
   flows: {
-    eyebrow: 'Hubble',
-    title: 'Optional Cilium enrichment.',
-    lede: 'When Hubble Relay is available, enrich the picture. Otherwise use Network Health and eBPF.',
+    eyebrow: 'Flows',
+    title: 'Native flow observe, with optional Hubble.',
+    lede: 'Flow history, RED and inferred traces from Netra agents. When Hubble Relay is available, enrich with Cilium verdicts too.',
   },
   policies: {
     eyebrow: 'Policies',
@@ -314,6 +349,8 @@ export default function App() {
     explain: <Explain />,
     pods: <Workloads key="pod" kind="pod" />,
     vms: <Workloads key="vm" kind="vm" />,
+    investigate: <InvestigateConnection />,
+    'flow-observe': <FlowObservePage />,
     health: <Health />,
     path: <Path />,
     drops: <Drops />,
@@ -324,8 +361,10 @@ export default function App() {
     'deny-preview': <DenyPreview />,
     netlink: <Netlink />,
     'bpf-attachments': <BpfAttachments />,
+    'ebpf-maps': <EbpfMaps />,
     detect: <Detect />,
     surfaces: <Surfaces />,
+    'tls-fingerprints': <TlsFingerprints />,
     features: <Features />,
     insights: <Insights />,
     topology: <Topology />,
@@ -344,6 +383,7 @@ export default function App() {
     metrics: <Metrics />,
     'metric-anomalies': <MetricAnomalies />,
     'metric-alerts': <MetricAlerts />,
+    ai: <AI />,
   }[page];
 
   const hero = pageHero[page];

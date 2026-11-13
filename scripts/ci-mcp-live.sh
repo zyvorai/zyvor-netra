@@ -132,9 +132,17 @@ leaked = sorted(MUTATING & set(ro_tools))
 check(not leaked, f"read-only server lists mutating tools: {leaked}")
 check(len(MUTATING) >= 50, f"only {len(MUTATING)} mutating tools found in the source: the extraction is broken")
 
-check(len(ro.call("prompts/list")["result"]["prompts"]) > 0, "no prompts listed")
+prompt_names = {p["name"] for p in ro.call("prompts/list")["result"]["prompts"]}
+check(len(prompt_names) > 0, "no prompts listed")
+check("netra_tls_triage" in prompt_names, "netra_tls_triage prompt missing")
+check("netra_congestion_triage" in prompt_names, "netra_congestion_triage prompt missing")
 res = ro.call("resources/list")["result"]["resources"]
 check(len(res) > 0, "no resources listed")
+uris = {r["uri"] for r in res}
+check("netra://ebpf/tls-risk" in uris, "netra://ebpf/tls-risk resource missing")
+check("netra://ai/congestion" in uris, "netra://ai/congestion resource missing")
+tls_risk = ro.call("resources/read", {"uri": "netra://ebpf/tls-risk"})
+check("error" not in tls_risk, f"resources/read tls-risk errored: {tls_risk.get('error')}")
 
 st = ro.tool("netra_status")
 check("error" not in st, f"netra_status returned a JSON-RPC error: {st.get('error')}")

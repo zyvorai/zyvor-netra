@@ -5,6 +5,7 @@ import PagePulse from '../components/kit/PagePulse';
 import { countTone } from '../components/kit/tone';
 import { useRate } from '../components/kit/useSeries';
 import { useSeries } from '../components/kit/useSeries';
+import { navigate } from '../hooks/useInvestigation';
 
 export default function L7() {
   const [data, setData] = useState<any>();
@@ -95,6 +96,7 @@ export default function L7() {
       <p className="eyebrow">JA3 / JA4</p>
       <h2 className="card-title">{tlsFP?.stats?.uniqueJa3 ?? 0} unique fingerprints</h2>
       <p>Always-on datapath ClientHello samples (and capture frames). Full boards under Diagnostics → Surfaces.</p>
+      <div className="chips"><button type="button" onClick={() => navigate('surfaces', { query: 'tls' })}>Open Surfaces → TLS</button></div>
       {(tlsFP?.fingerprints || []).length === 0 && <p className="empty-state">No JA3 samples yet.</p>}
       <div className="list">
         {(tlsFP?.fingerprints || []).slice(0, 12).map((f: any, i: number) => (
@@ -110,6 +112,7 @@ export default function L7() {
       <p className="eyebrow">ENCRYPTED DNS</p>
       <h2 className="card-title">DoT / DoH observe</h2>
       <p>Port 853 and known DoH hostnames via SNI/Host/DNS — no decryption. See Surfaces for the full board.</p>
+      <div className="chips"><button type="button" onClick={() => navigate('surfaces', { query: 'encdns' })}>Open Surfaces → Encrypted DNS</button></div>
       {(() => {
         const hits = encDNS?.result?.hits || encDNS?.hits || encDNS?.result?.items || [];
         if (!hits.length) return <p className="empty-state">No DoT/DoH hits yet.</p>;

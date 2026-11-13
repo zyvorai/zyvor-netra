@@ -98,6 +98,35 @@ func TestRED(t *testing.T) {
 	}
 }
 
+func TestREDL7SampleFoldsNodeScoped5xx(t *testing.T) {
+	recs := []Record{
+		{Node: "n1", Namespace: "", Pod: "", Packets: 10},
+	}
+	agents := []models.AgentStatus{{AgentReport: models.AgentReport{
+		Node: "n1",
+		L7Sample: &models.L7SampleSummary{
+			Attached:    true,
+			ScaleFactor: 2,
+			Protocols: []models.L7SampleProtocol{{
+				Protocol: "http2",
+				Role:     "served",
+				Codes:    []models.L7SampleCode{{Code: "503", Status: "error", Count: 3}, {Code: "404", Status: "error", Count: 9}},
+			}},
+		},
+	}}}
+	got := RED(recs, agents, time.Minute)
+	if got.Count != 1 {
+		t.Fatalf("count=%d rows=%+v", got.Count, got.Rows)
+	}
+	// 3 sampled 503 * scale 2 = 6; 404 must not count.
+	if got.Rows[0].HTTP5xx != 6 {
+		t.Fatalf("http5xx=%d want 6 (scaled sample); row=%+v", got.Rows[0].HTTP5xx, got.Rows[0])
+	}
+	if !isHTTP5xxCode("503") || isHTTP5xxCode("404") || isHTTP5xxCode("5") || isHTTP5xxCode("abc") {
+		t.Fatal("isHTTP5xxCode helpers wrong")
+	}
+}
+
 func TestTracesLinkCallee(t *testing.T) {
 	t0 := time.Date(2026, 9, 18, 12, 0, 0, 0, time.UTC)
 	recs := []Record{

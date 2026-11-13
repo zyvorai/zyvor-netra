@@ -16,6 +16,7 @@ func registerResources(srv *mcpserver.Server, c *client) error {
 	items := []spec{
 		{"netra://ai/brief", "Cluster brief", "Live heuristic brief from /api/v1/ai/brief.", "/api/v1/ai/brief"},
 		{"netra://ai/digest", "On-call digest", "Pager/Slack card plus incident fingerprint from /api/v1/ai/digest.", "/api/v1/ai/digest"},
+		{"netra://ai/congestion", "Congestion brief", "Kernel-network congestion brief from /api/v1/ai/congestion-brief.", "/api/v1/ai/congestion-brief"},
 		{"netra://ai/suggestions", "Live questions", "Snapshot-derived follow-up questions.", "/api/v1/ai/suggestions"},
 		{"netra://status", "Controller status", "GET /api/v1/status.", "/api/v1/status"},
 		{"netra://metrics/contexts", "Metric contexts", "Every per-second metric context with charts and dimensions from /api/v1/metrics/contexts.", "/api/v1/metrics/contexts"},
@@ -23,6 +24,12 @@ func registerResources(srv *mcpserver.Server, c *client) error {
 		{"netra://metrics/alerts", "Metric alerts", "Active metric health alerts from /api/v1/metrics/alerts.", "/api/v1/metrics/alerts"},
 		{"netra://incidents/timeline", "Incident timeline", "Chronological, human-readable merge of the audit log and cluster-health-signature transitions from /api/v1/incidents/timeline.", "/api/v1/incidents/timeline"},
 		{"netra://incidents", "Cross-signal incidents", "Health/drift/rate-drift/exposure/detective/audit findings joined into subject-keyed clusters from /api/v1/incidents.", "/api/v1/incidents"},
+		{"netra://ebpf/health", "eBPF health", "TCP health/retransmit anomalies from /api/v1/ebpf/health.", "/api/v1/ebpf/health"},
+		{"netra://ebpf/tls-risk", "JA3 risk", "Rare JA3 / ECH risk rows from /api/v1/ebpf/tls-fingerprints/risk.", "/api/v1/ebpf/tls-fingerprints/risk"},
+		{"netra://insights/exposure", "Exposure findings", "External exposure findings from /api/v1/insights/exposure.", "/api/v1/insights/exposure"},
+		{"netra://security/incidents", "Security incidents", "Security-review incident correlation from /api/v1/security/incidents.", "/api/v1/security/incidents"},
+		{"netra://ebpf/ai-destinations", "AI destinations", "GenAI/MCP hostname catalog matches from /api/v1/ebpf/ai-destinations.", "/api/v1/ebpf/ai-destinations"},
+		{"netra://compliance", "Compliance packs", "Compliance pack controls from /api/v1/compliance.", "/api/v1/compliance"},
 	}
 	for _, it := range items {
 		it := it

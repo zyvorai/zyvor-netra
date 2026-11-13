@@ -56,6 +56,13 @@ type Snapshot struct {
 	// "metric-anomaly") from the metrics platform, when netrad runs it.
 	Metrics       []Finding `json:"metrics,omitempty"`
 	SuggestedNext []string  `json:"suggestedNext,omitempty"`
+
+	// TLSRare / ECHSightings are observe-only TLSFP risk rollups when the
+	// controller has fingerprint samples. IntelHits counts DNS/threat-feed
+	// matches surfaced into the snapshot. All optional and may stay zero.
+	TLSRare       int `json:"tlsRare,omitempty"`
+	ECHSightings  int `json:"echSightings,omitempty"`
+	IntelHits     int `json:"intelHits,omitempty"`
 }
 
 // NamedCount is a compact label/value pair used in top-N lists.
@@ -94,9 +101,8 @@ type Brief struct {
 // AskRequest is the JSON body for POST /api/v1/ai/ask.
 type AskRequest struct {
 	Question string `json:"question"`
-	// Namespace optionally scopes the snapshot language; the controller
-	// still builds a cluster-wide snapshot today and mentions the hint
-	// in the prompt. Kept for forward compatibility with scoped packs.
+	// Namespace scopes exposure/drift/recommendations language to one
+	// Kubernetes namespace when set. Cluster agent totals stay unscoped.
 	Namespace string `json:"namespace,omitempty"`
 	// PreferLLM forces the optional provider path when configured.
 	// Ignored when no provider is configured.

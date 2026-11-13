@@ -183,12 +183,15 @@ Prompts (MCP `prompts/list` / `prompts/get`):
 - `netra_explain_drops` — optional `namespace` / `pod`
 - `netra_draft_rule` (`request` required) — draft via `netra_ai_draft`; never applies
 - `netra_oncall_digest` — the on-call card via `netra_ai_digest`; if the fingerprint changed, quotes `whyChanged`/`whyChangedProse` rather than guessing at a cause
+- `netra_congestion_triage` — optional `window`; kernel-network congestion via `netra_ai_congestion_brief`
 - `netra_incident_timeline` — optional `since`; narrates the audit log and cluster-health-signature transitions in order
 - `netra_policy_review` — optional `namespace` / `workload`; forbids apply
+- `netra_tls_triage`, `netra_security_review`, `netra_metrics_oncall`, `netra_netlink_churn`, `netra_ai_destinations_review`, `netra_shadow_saas`, `netra_capture_status`, `netra_fleet_rollcall`
 
 Resources (MCP `resources/list` / `resources/read`) — read-only, URI-addressed, no tool call needed:
 
-- `netra://ai/brief`, `netra://ai/digest`, `netra://ai/suggestions`, `netra://status`, `netra://incidents/timeline`, `netra://incidents`
+- `netra://ai/brief`, `netra://ai/digest`, `netra://ai/congestion`, `netra://ai/suggestions`, `netra://status`, `netra://incidents/timeline`, `netra://incidents`
+- `netra://ebpf/health`, `netra://ebpf/tls-risk`, `netra://ebpf/ai-destinations`, `netra://insights/exposure`, `netra://security/incidents`, `netra://compliance`
 
 See `docs/mcp-integration.md` for the full tool/prompt/resource reference.
 

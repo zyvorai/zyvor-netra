@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import { navigate } from '../hooks/useInvestigation';
 
 type History = {
   records?: Array<{
@@ -81,7 +82,11 @@ export default function FlowObserve() {
       <h2 className="card-title">Last hour, plus RED and inferred paths</h2>
       <p>
         In-memory deltas only. App protocol is a port hint. Process is comm and pid when TCP health matched. No
-        payloads.
+        payloads. For filters, polling and profiles open{' '}
+        <button type="button" className="overview-link" onClick={() => navigate('flow-observe')}>
+          Flow observe
+        </button>
+        .
       </p>
       {error && <p className="warning">{error}</p>}
       <div className="list">

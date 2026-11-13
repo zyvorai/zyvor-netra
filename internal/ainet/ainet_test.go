@@ -38,3 +38,25 @@ func TestMatchSNI(t *testing.T) {
 		t.Fatalf("%+v", ents)
 	}
 }
+
+func TestCatalogSuffixes(t *testing.T) {
+	cases := []struct {
+		host string
+		cat  Category
+	}{
+		{"foo.api.nvidia.com", CatLLMSaaS},
+		{"x.inference.azure.com", CatLLMSaaS},
+		{"api.gemini.google.com", CatLLMSaaS},
+		{"gpu.runpod.io", CatAIInfra},
+		{"mcp.github.com", CatMCP},
+		{"api.githubcopilot.com", CatMCP},
+		{"ide.windsurf.com", CatAIInfra},
+		{"api.tabnine.com", CatAIInfra},
+	}
+	for _, c := range cases {
+		e, ok := lookup(DefaultCatalog(), c.host)
+		if !ok || e.Category != c.cat {
+			t.Fatalf("%s: got %+v ok=%v want %s", c.host, e, ok, c.cat)
+		}
+	}
+}

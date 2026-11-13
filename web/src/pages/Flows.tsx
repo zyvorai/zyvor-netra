@@ -135,8 +135,7 @@ export default function Flows() {
         <p className="eyebrow">LIVE STREAM</p>
         <h2 className="card-title">Filters</h2>
         <p>
-          Optional Cilium/Hubble enrichment. When Hubble is disabled, use <b>eBPF</b>, <b>Network Health</b>, and{' '}
-          <b>L7 Metadata</b> for Netra-native telemetry.
+          Optional Cilium/Hubble live stream. Native flow history, RED and traces sit below — and work without Hubble.
         </p>
         <div className="filters">
           {Object.entries(filter).map(([k, v]) => (

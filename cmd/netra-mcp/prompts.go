@@ -42,7 +42,18 @@ func registerPrompts(srv *mcpserver.Server) error {
 			Description: "Produce the current on-call digest and say whether the incident fingerprint changed.",
 			Messages: []mcpserver.PromptMessage{{
 				Role: "user",
-				Text: "Call netra_ai_digest. Quote the card. If changed=true, say the fingerprint moved and quote whyChanged (the deterministic list of what changed) — lead with whyChangedProse instead if it is present. Never guess at a cause not present in those fields. Stay read-only.",
+				Text: "Call netra_ai_digest with peek=1 if you are polling. Quote the card. If changed=true, say the fingerprint moved and quote whyChanged (the deterministic list of what changed) — lead with whyChangedProse instead if it is present. Never guess at a cause not present in those fields. Stay read-only.",
+			}},
+		},
+		{
+			Name:        "netra_congestion_triage",
+			Description: "Triage kernel-network congestion (rcvbuf, listen queues, softnet, qdisc). Read-only.",
+			Arguments: []mcpserver.PromptArg{
+				{Name: "window", Description: "Lookback window such as 5m or 1h.", Required: false},
+			},
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Triage kernel-network congestion. Call netra_ai_congestion_brief with window={{window}}, then netra_ebpf_drops if needed. Summarize where in the stack pressure shows up. Do not recommend sysctl changes as automatic fixes. Stay read-only.",
 			}},
 		},
 		{
@@ -66,6 +77,73 @@ func registerPrompts(srv *mcpserver.Server) error {
 			Messages: []mcpserver.PromptMessage{{
 				Role: "user",
 				Text: "Review Netra policy drafts for namespace={{namespace}} workload={{workload}}. Call netra_insights_recommendations first, then netra_insights_policy_review with each candidate's id — it already resolves the governing live policy, diffs against it, and checks live traffic against every destination the diff would remove, so don't re-derive blast radius by hand from netra_insights_remediations. Explain the risk level, the diff, and which removed destinations show active live traffic vs. couldn't be correlated (FQDN/entity destinations honestly can't be checked — never claim they're safe to remove just because no CIDR match was found). Do not call netra_policy_apply, netra_ebpf_mode, or any other mutating tool. Remind the operator that plan→apply with a preflight token is mandatory.",
+			}},
+		},
+		{
+			Name:        "netra_tls_triage",
+			Description: "Triage rare JA3 and ECH-blind findings. Observe-only metadata, no decrypt.",
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Triage TLS ClientHello fingerprints and ECH/missing-SNI blindness. Call netra_ebpf_tls_fingerprint_risk then netra_insights_ech_blind. Summarize rare JA3, ECH sightings, and nodes. Do not invent payloads. Stay read-only.",
+			}},
+		},
+		{
+			Name:        "netra_security_review",
+			Description: "Review security optimizer, incidents, and intel hits. Suggest only — never apply deny.",
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_security_optimizer, netra_security_incidents, and netra_intel_hits (or netra_intel_dns_hits). Correlate subjects. Never delete a rule, apply a deny, or quarantine. Stay read-only.",
+			}},
+		},
+		{
+			Name:        "netra_metrics_oncall",
+			Description: "On-call metrics triage: alerts, anomalies, and congestion brief. Read-only.",
+			Arguments: []mcpserver.PromptArg{
+				{Name: "window", Description: "Congestion lookback such as 5m or 1h.", Required: false},
+			},
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_metrics_alerts, netra_metrics_anomalies, and netra_ai_congestion_brief with window={{window}}. Summarize raised alerts and anomalous metrics. Do not ack or silence. Stay read-only.",
+			}},
+		},
+		{
+			Name:        "netra_netlink_churn",
+			Description: "Triage RTNL / route / neigh churn. Read-only netlink recorder.",
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_netlink_findings and netra_netlink. Summarize requester attribution (comm/pid/cgroup) and interface churn. Never mutate routes. Stay read-only.",
+			}},
+		},
+		{
+			Name:        "netra_ai_destinations_review",
+			Description: "Review GenAI / MCP destination catalog matches. Observe-only.",
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_ebpf_ai_destinations. List matched hosts by category. Remind the operator this is hostname metadata only — no prompts or payloads. Stay read-only; do not draft a deny unless asked.",
+			}},
+		},
+		{
+			Name:        "netra_shadow_saas",
+			Description: "Review shadow SaaS and app-category hits. Observe-only.",
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_insights_shadow_saas and netra_ebpf_app_categories. Summarize unsanctioned hosts and categories. Stay read-only.",
+			}},
+		},
+		{
+			Name:        "netra_capture_status",
+			Description: "Summarize live capture status and recent summaries. Read-only.",
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_capture_status and netra_capture_summaries. Report active captures and recent artifacts. Stay read-only.",
+			}},
+		},
+		{
+			Name:        "netra_fleet_rollcall",
+			Description: "Fleet roll-call across clusters and metric fleet view. Read-only.",
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_fleet, netra_fleet_clusters, and netra_metrics_fleet. Summarize cluster health. Stay read-only.",
 			}},
 		},
 	}

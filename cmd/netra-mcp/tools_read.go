@@ -812,12 +812,19 @@ func registerReadTools(srv *mcpserver.Server, c *client) error {
 		},
 		{
 			name: "netra_ai_digest", method: "GET", path: "/api/v1/ai/digest",
-			description: "On-call digest: severity, incident fingerprint, copy-paste card. Fingerprint stays stable while only raw counters chatter.",
-			schema:      emptySchema(),
+			description: "On-call digest: severity, incident fingerprint, copy-paste card. Fingerprint stays stable while only raw counters chatter. Pass peek=1 to compare without advancing the shared fingerprint slot (safe for agent pollers).",
+			schema:      objSchema(map[string]any{"peek": strProp("Set to 1 to peek without advancing the digest fingerprint slot.")}),
+			queryParams: []string{"peek"},
+		},
+		{
+			name: "netra_ai_congestion_brief", method: "GET", path: "/api/v1/ai/congestion-brief",
+			description: "Plain-English brief scoped to kernel-network congestion findings (Congestion Map). Optional window such as 5m. Read-only; never mutates.",
+			schema:      objSchema(map[string]any{"window": strProp("Lookback window such as 5m or 1h. Default is the controller's congestion brief window.")}),
+			queryParams: []string{"window"},
 		},
 		{
 			name: "netra_ai_suggestions", method: "GET", path: "/api/v1/ai/suggestions",
-			description: "Live follow-up questions derived from the current snapshot (stale agents, DNS, exposure, lease).",
+			description: "Live follow-up questions derived from the current snapshot (stale agents, DNS, exposure, congestion, lease).",
 			schema:      emptySchema(),
 		},
 		{

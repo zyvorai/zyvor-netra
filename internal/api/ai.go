@@ -8,10 +8,12 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/zyvorai/netra/internal/ai"
+	"github.com/zyvorai/netra/internal/denysim"
 	"github.com/zyvorai/netra/internal/health"
 	"github.com/zyvorai/netra/internal/insights"
 	"github.com/zyvorai/netra/internal/kerneldiag"
@@ -99,6 +101,7 @@ func (s *Server) aiAsk(w http.ResponseWriter, r *http.Request) {
 		errorJSON(w, 503, err.Error())
 		return
 	}
+	snap = scopeAISnapshot(snap, req.Namespace)
 	// Use the provider whenever NETRA_AI_API_KEY is set. Heuristic-only
 	// operators leave the key unset. preferLlm is accepted for forward
 	// compatibility and is not a hard switch.
@@ -129,8 +132,13 @@ func (s *Server) aiAgent(w http.ResponseWriter, r *http.Request) {
 		errorJSON(w, 503, err.Error())
 		return
 	}
+	snap = scopeAISnapshot(snap, req.Namespace)
 	_ = req.PreferLLM
-	writeJSON(w, 200, ai.Run(r.Context(), snap, req.Question, ai.ProviderFromEnv(), req.ConversationID))
+	res := ai.Run(r.Context(), snap, req.Question, ai.ProviderFromEnv(), req.ConversationID)
+	if res.Draft != nil {
+		s.attachDraftBlastRadius(res.Draft)
+	}
+	writeJSON(w, 200, res)
 }
 
 // aiForget clears any stored conversation memory (conversation.go) for
@@ -171,7 +179,9 @@ func (s *Server) aiDraft(w http.ResponseWriter, r *http.Request) {
 		errorJSON(w, 400, "question is required")
 		return
 	}
-	writeJSON(w, 200, ai.DraftRule(req.Question))
+	draft := ai.DraftRule(req.Question)
+	s.attachDraftBlastRadius(&draft)
+	writeJSON(w, 200, draft)
 }
 
 func (s *Server) aiDigest(w http.ResponseWriter, r *http.Request) {
@@ -180,9 +190,18 @@ func (s *Server) aiDigest(w http.ResponseWriter, r *http.Request) {
 		errorJSON(w, 503, err.Error())
 		return
 	}
-	digest := ai.BuildDigest(ai.BuildBrief(snap))
+	brief := ai.BuildBrief(snap)
+	peek := r.URL.Query().Get("peek") == "1" || strings.EqualFold(r.Header.Get("X-Netra-Digest-Peek"), "1")
+	var digest ai.Digest
+	if peek {
+		digest = ai.BuildDigestPeek(brief)
+	} else {
+		digest = ai.BuildDigest(brief)
+	}
 	digest = ai.NarrateWhyChanged(r.Context(), digest, ai.ProviderFromEnv())
-	s.recordHealthSample(snap, digest.Severity, digest.Fingerprint)
+	if !peek {
+		s.recordHealthSample(snap, digest.Severity, digest.Fingerprint)
+	}
 	writeJSON(w, 200, digest)
 }
 
@@ -227,10 +246,9 @@ func (s *Server) aiExplain(w http.ResponseWriter, r *http.Request) {
 		errorJSON(w, 503, err.Error())
 		return
 	}
-	q := ai.ExplainQuestion(req)
 	// Explain popovers narrate one independent finding, not a thread —
 	// they never opt into conversation memory.
-	writeJSON(w, 200, ai.Answer(r.Context(), snap, q, ai.ProviderFromEnv(), ""))
+	writeJSON(w, 200, ai.ExplainFinding(r.Context(), snap, req, ai.ProviderFromEnv()))
 }
 
 func (s *Server) aiSnapshot(r *http.Request) (ai.Snapshot, error) {
@@ -292,6 +310,11 @@ func (s *Server) aiSnapshot(r *http.Request) (ai.Snapshot, error) {
 	}
 
 	snap.Metrics = s.metricFindings(now)
+	if s.tlsFP != nil {
+		risk := s.tlsFP.Risk(100, 2)
+		snap.TLSRare = risk.Rare
+		snap.ECHSightings = risk.ECHSightings
+	}
 
 	graph, err := s.dependencyGraph(r, 2000)
 	if err == nil {
@@ -304,9 +327,13 @@ func (s *Server) aiSnapshot(r *http.Request) (ai.Snapshot, error) {
 		drift := insights.Drift(s.store.Baseline(), agents)
 		rateDrift := s.rateDrift(r)
 		exposure := insights.Exposure(graph, drift, rateDrift)
-		recs := insights.Recommendations(graph, agents, "", "", 50)
+		nsHint := strings.TrimSpace(r.URL.Query().Get("namespace"))
+		recs := insights.Recommendations(graph, agents, nsHint, "", 50)
 		high := 0
 		for _, item := range exposure {
+			if nsHint != "" && !sourceInNamespace(item.Source, nsHint) {
+				continue
+			}
 			if item.Severity == "high" || item.Severity == "critical" {
 				high++
 			}
@@ -324,6 +351,9 @@ func (s *Server) aiSnapshot(r *http.Request) (ai.Snapshot, error) {
 			}
 		}
 		for _, f := range drift.Findings {
+			if nsHint != "" && !sourceInNamespace(f.Source, nsHint) {
+				continue
+			}
 			if len(snap.Drift) >= 6 {
 				break
 			}
@@ -334,13 +364,77 @@ func (s *Server) aiSnapshot(r *http.Request) (ai.Snapshot, error) {
 				Message:  f.Message,
 			})
 		}
-		snap.DependencyEdges = len(graph.Edges)
-		snap.ExternalEdges = external
-		snap.DriftFindings = len(drift.Findings)
+		if nsHint != "" {
+			external = 0
+			edges := 0
+			for _, e := range graph.Edges {
+				if sourceInNamespace(e.Source, nsHint) || sourceInNamespace(e.Target, nsHint) {
+					edges++
+					if e.External {
+						external++
+					}
+				}
+			}
+			snap.DependencyEdges = edges
+			snap.ExternalEdges = external
+		} else {
+			snap.DependencyEdges = len(graph.Edges)
+			snap.ExternalEdges = external
+		}
+		snap.DriftFindings = len(snap.Drift)
+		if nsHint == "" {
+			snap.DriftFindings = len(drift.Findings)
+		}
 		snap.HighExposure = high
 		snap.Recommendations = len(recs)
 	}
 	return snap, nil
+}
+
+// scopeAISnapshot post-filters findings when the ask/agent body carries a
+// namespace. AgentsTotal/Mode stay cluster-wide so the brief still says how
+// many nodes are reporting.
+func scopeAISnapshot(snap ai.Snapshot, namespace string) ai.Snapshot {
+	ns := strings.TrimSpace(namespace)
+	if ns == "" {
+		return snap
+	}
+	filter := func(in []ai.Finding) []ai.Finding {
+		out := make([]ai.Finding, 0, len(in))
+		for _, f := range in {
+			if sourceInNamespace(f.Subject, ns) || strings.Contains(strings.ToLower(f.Message), strings.ToLower(ns)) {
+				out = append(out, f)
+			}
+		}
+		return out
+	}
+	snap.Exposure = filter(snap.Exposure)
+	snap.Drift = filter(snap.Drift)
+	snap.Anomalies = filter(snap.Anomalies)
+	snap.HighExposure = 0
+	for _, f := range snap.Exposure {
+		if f.Severity == "high" || f.Severity == "critical" {
+			snap.HighExposure++
+		}
+	}
+	snap.DriftFindings = len(snap.Drift)
+	snap.SuggestedNext = append([]string{"Scoped to namespace " + ns + "."}, snap.SuggestedNext...)
+	return snap
+}
+
+func sourceInNamespace(source, ns string) bool {
+	if ns == "" || source == "" {
+		return ns == ""
+	}
+	// Canonical forms: workload:ns:kind:name, pod:ns:pod, ns/pod, bare ns token.
+	parts := strings.Split(source, ":")
+	if len(parts) >= 2 && (parts[0] == "workload" || parts[0] == "pod" || parts[0] == "service") {
+		return parts[1] == ns
+	}
+	if i := strings.IndexByte(source, '/'); i > 0 {
+		return source[:i] == ns
+	}
+	return source == ns || strings.Contains(source, ":"+ns+":")
 }
 
 func toAICounts(in []models.NamedCount, n int) []ai.NamedCount {
@@ -352,4 +446,99 @@ func toAICounts(in []models.NamedCount, n int) []ai.NamedCount {
 		out = append(out, ai.NamedCount{Name: in[i].Name, Count: in[i].Count})
 	}
 	return out
+}
+
+// attachDraftBlastRadius runs an observe-only deny-preview against live
+// counters when the draft targets an IP/CIDR/port/DNS/SNI/process. Failures
+// are ignored so drafting never 503s on a preview miss.
+func (s *Server) attachDraftBlastRadius(d *ai.RuleDraft) {
+	if d == nil || !d.Understood || s.store == nil {
+		return
+	}
+	kind, value := draftPreviewTarget(*d)
+	if kind == "" || value == "" {
+		return
+	}
+	p := denysim.Proposal{Kind: kind, Value: value, Limit: 20}
+	if dir, ok := d.Body["direction"].(string); ok {
+		p.Direction = dir
+	}
+	if proto, ok := d.Body["protocol"].(string); ok {
+		p.Protocol = proto
+	}
+	if kind == denysim.KindPort {
+		if n, err := strconv.ParseUint(value, 10, 16); err == nil {
+			p.Port = uint16(n)
+		}
+	}
+	res, err := denysim.Preview(s.store.AgentStatuses(time.Now(), s.agentStaleAfter), p)
+	if err != nil || res == nil {
+		return
+	}
+	d.BlastRadius = map[string]any{
+		"hitCount":     res.HitCount,
+		"workloads":    res.Workloads,
+		"totalPackets": res.TotalPackets,
+		"agentsSeen":   res.AgentsSeen,
+		"agentsStale":  res.AgentsStale,
+		"caveat":       res.Caveat,
+		"note":         "Observe-only counterfactual from deny-preview. Nothing was applied.",
+	}
+	if res.HitCount > 0 {
+		d.Warnings = append(d.Warnings, "deny-preview would match "+strconv.Itoa(res.HitCount)+" observed counter group(s) / "+strconv.Itoa(res.Workloads)+" workload(s)")
+	}
+}
+
+func draftPreviewTarget(d ai.RuleDraft) (kind, value string) {
+	switch d.Kind {
+	case "deny", "allow":
+		if ip, ok := d.Body["ip"].(string); ok {
+			return denysim.KindIP, ip
+		}
+		if ip, ok := d.Body["address"].(string); ok {
+			return denysim.KindIP, ip
+		}
+	case "cidr-deny", "cidr-allow", "cidr":
+		if c, ok := d.Body["cidr"].(string); ok {
+			return denysim.KindCIDR, c
+		}
+	case "port-deny", "port-allow", "port":
+		if p, ok := d.Body["port"]; ok {
+			return denysim.KindPort, formatDraftPort(p)
+		}
+	case "dns", "dns-deny":
+		if n, ok := d.Body["name"].(string); ok {
+			return denysim.KindDNS, n
+		}
+		if n, ok := d.Body["domain"].(string); ok {
+			return denysim.KindDNS, n
+		}
+	case "sni", "sni-deny":
+		if n, ok := d.Body["sni"].(string); ok {
+			return denysim.KindSNI, n
+		}
+		if n, ok := d.Body["name"].(string); ok {
+			return denysim.KindSNI, n
+		}
+	case "process", "process-deny", "process-allow":
+		if n, ok := d.Body["name"].(string); ok {
+			return denysim.KindProcess, n
+		}
+	}
+	return "", ""
+}
+
+func formatDraftPort(v any) string {
+	switch t := v.(type) {
+	case float64:
+		return strconv.Itoa(int(t))
+	case int:
+		return strconv.Itoa(t)
+	case uint16:
+		return strconv.Itoa(int(t))
+	case string:
+		return t
+	default:
+		return ""
+	}
 }

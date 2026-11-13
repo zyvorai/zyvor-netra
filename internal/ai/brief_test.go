@@ -47,10 +47,16 @@ func TestBuildBriefCriticalAnomaly(t *testing.T) {
 func TestClassify(t *testing.T) {
 	cases := map[string]Intent{
 		"why are packets being dropped?": IntentDrops,
+		"is there congestion on rcvbuf?": IntentCongestion,
+		"listen queue backlog high?":     IntentCongestion,
+		"why can't the pod reach the peer?": IntentInvestigate,
 		"health score for dns":           IntentHealth,
 		"draft a network policy":         IntentPolicy,
 		"any new external exposure?":     IntentExposure,
 		"are we in enforce mode?":        IntentMode,
+		"any rare ja3 or ech blindness?": IntentTLS,
+		"where is netlink route churn?":  IntentNetlink,
+		"any shadow saas outside list?":  IntentExposure,
 		"":                               IntentBrief,
 	}
 	for q, want := range cases {

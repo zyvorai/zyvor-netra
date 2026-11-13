@@ -181,6 +181,37 @@ func TestBuildDigestPopulatesWhyChangedOnlyWhenChanged(t *testing.T) {
 	}
 }
 
+func TestBuildDigestPeekDoesNotAdvanceSlot(t *testing.T) {
+	resetDigestState(t)
+	snap1 := Snapshot{HealthScore: 90, Mode: "observe"}
+	_ = BuildDigest(BuildBrief(snap1))
+
+	peekSame := BuildDigestPeek(BuildBrief(snap1))
+	if peekSame.Changed {
+		t.Fatalf("peek of identical snapshot should not report changed: %#v", peekSame)
+	}
+
+	snap2 := Snapshot{HealthScore: 90, Mode: "enforce"}
+	peekChanged := BuildDigestPeek(BuildBrief(snap2))
+	if !peekChanged.Changed {
+		t.Fatal("peek should still report Changed against the last recorded digest")
+	}
+
+	again := BuildDigestPeek(BuildBrief(snap2))
+	if !again.Changed {
+		t.Fatal("peek must not advance the slot; a second peek of the new mode should still look changed vs the recorded observe digest")
+	}
+
+	recorded := BuildDigest(BuildBrief(snap2))
+	if !recorded.Changed {
+		t.Fatal("first interactive record of the new mode should still report Changed vs the prior observe digest")
+	}
+	follow := BuildDigest(BuildBrief(snap2))
+	if follow.Changed {
+		t.Fatalf("after record, identical digest should be stable: %#v", follow)
+	}
+}
+
 func TestNarrateWhyChangedNoOpCases(t *testing.T) {
 	d := Digest{Changed: false, WhyChanged: []string{"x"}}
 	if got := NarrateWhyChanged(context.Background(), d, nil); got.WhyChangedProse != "" {

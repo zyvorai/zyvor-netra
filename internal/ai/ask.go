@@ -13,14 +13,17 @@ import (
 type Intent string
 
 const (
-	IntentBrief      Intent = "brief"
-	IntentDrops      Intent = "drops"
-	IntentHealth     Intent = "health"
-	IntentPolicy     Intent = "policy"
-	IntentExposure   Intent = "exposure"
-	IntentMode       Intent = "mode"
-	IntentCongestion Intent = "congestion"
-	IntentMetrics    Intent = "metrics"
+	IntentBrief       Intent = "brief"
+	IntentDrops       Intent = "drops"
+	IntentHealth      Intent = "health"
+	IntentPolicy      Intent = "policy"
+	IntentExposure    Intent = "exposure"
+	IntentMode        Intent = "mode"
+	IntentCongestion  Intent = "congestion"
+	IntentMetrics     Intent = "metrics"
+	IntentInvestigate Intent = "investigate"
+	IntentTLS         Intent = "tls"
+	IntentNetlink     Intent = "netlink"
 )
 
 // Classify maps a free-text question onto one Intent. Unknown or empty
@@ -28,17 +31,25 @@ const (
 func Classify(question string) Intent {
 	q := strings.ToLower(question)
 	switch {
+	case containsAny(q, "can't reach", "cannot reach", "investigate connection", "failed connection", "why can't", "connection fail", "unreachable"):
+		return IntentInvestigate
+	case containsAny(q, "ja3", "ja4", "tls fingerprint", "ech", "encrypted dns", "dns-over-https", "dns-over-tls", "doh", "port 853"):
+		return IntentTLS
+	case containsAny(q, "netlink", "route change", "neigh", "rtnl", "route churn"):
+		return IntentNetlink
+	case containsAny(q, "congestion", "rcvbuf", "listen queue", "listen backlog", "softnet", "qdisc", "udp drop", "tcp memory", "sockmem", "tcpabort", "listenoverflow"):
+		return IntentCongestion
 	case containsAny(q, "drop", "deny", "block", "reset", "rto", "kfree"):
 		return IntentDrops
 	case containsAny(q, "rtt", "latency", "retrans", "dns fail", "health", "score"):
 		return IntentHealth
 	case containsAny(q, "policy", "netpol", "allow-list", "allow list", "recommend", "draft"):
 		return IntentPolicy
-	case containsAny(q, "expos", "drift", "external", "internet", "egress"):
+	case containsAny(q, "shadow saas", "unsanctioned", "shadow it", "exfil", "data egress", "rare host", "genai", "openai", "anthropic", "mcp server destination", "expos", "drift", "external", "internet", "egress"):
 		return IntentExposure
 	case containsAny(q, "enforce", "observe", "lease", "mode"):
 		return IntentMode
-	case containsAny(q, "metric", "anomal", "alert", "cpu", "memory", "disk", "spike"):
+	case containsAny(q, "metric", "anomal", "alert", "cpu", "memory", "disk", "spike", "softirq"):
 		return IntentMetrics
 	default:
 		return IntentBrief
@@ -127,6 +138,28 @@ func specialize(b Brief, snap Snapshot, intent Intent) Brief {
 			b.NextSteps = append([]string{"Open the evidence for a metric (netractl metrics evidence CONTEXT --node N, or GET /api/v1/metrics/evidence) to see the flows, drops and captures behind it."}, b.NextSteps...)
 		}
 		b.Summary = lead + b.Summary
+	case IntentInvestigate:
+		b.Headline = "Connection investigation"
+		b.Summary = "Compose a failed-connection timeline from DNS, flows, netlink, policy explain and drops — do not invent missing stages. " + b.Summary
+		b.NextSteps = append([]string{
+			"Use Investigate in the UI or: netractl investigate connection --namespace NS --pod POD --peer IP --port N",
+		}, b.NextSteps...)
+	case IntentTLS:
+		b.Headline = "TLS / encrypted metadata"
+		lead := ""
+		if snap.TLSRare > 0 || snap.ECHSightings > 0 {
+			lead = itoa(snap.TLSRare) + " rare JA3 and " + itoa(snap.ECHSightings) + " ECH/missing-SNI sighting(s). "
+		}
+		b.Summary = lead + "ClientHello JA3/JA4, DoT/DoH, and ECH-blind findings are observe-only metadata — no decrypt. " + b.Summary
+		b.NextSteps = append([]string{
+			"Open Surfaces → TLS / Encrypted DNS, or: netractl ebpf tls-fingerprint-risk",
+		}, b.NextSteps...)
+	case IntentNetlink:
+		b.Headline = "Netlink / route churn"
+		b.Summary = "RTNL observation records requester comm/pid/cgroup and interface — never argv or message bodies. " + b.Summary
+		b.NextSteps = append([]string{
+			"Open Netlink (view=state) or: netractl netlink findings",
+		}, b.NextSteps...)
 	}
 	return b
 }

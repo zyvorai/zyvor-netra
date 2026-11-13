@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api, errorMessage } from '../api';
+import { navigate } from '../hooks/useInvestigation';
 import { formatValue } from '../lib/metrics';
 
 type Alert = {
@@ -32,6 +33,7 @@ type Snapshot = {
   silences: Silence[];
   stats: { rules: number; instances: number; warning: number; critical: number; evaluations: number };
 };
+type Exporter = { sink: string; pointsSent?: number; batches?: number; failures?: number; lastError?: string; lastSend?: string; resolution?: string };
 
 export function since(iso: string, now = Date.now()): string {
   const s = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
@@ -41,10 +43,22 @@ export function since(iso: string, now = Date.now()): string {
   return `${(s / 86400).toFixed(1)}d`;
 }
 
+function openMetrics(a: { node: string; context: string; class?: string }) {
+  if (a.class === 'anomaly') {
+    navigate('metric-anomalies', { node: a.node || '', query: a.context || '' });
+    return;
+  }
+  navigate('metrics', { node: a.node || '', query: a.context || '' });
+}
+
 export default function MetricAlerts() {
   const [snap, setSnap] = useState<Snapshot>();
+  const [exporters, setExporters] = useState<Exporter[]>([]);
   const [err, setErr] = useState('');
   const [note, setNote] = useState('');
+  const [silenceFor, setSilenceFor] = useState<Alert | null>(null);
+  const [silenceDur, setSilenceDur] = useState('2h');
+  const [silenceComment, setSilenceComment] = useState('silenced from the dashboard');
 
   const load = useCallback(() => {
     api<Snapshot>('/api/v1/metrics/alerts?history=100')
@@ -53,6 +67,9 @@ export default function MetricAlerts() {
         setErr('');
       })
       .catch((e) => setErr(String(e.message || e)));
+    api<{ exporters?: Exporter[] }>('/api/v1/metrics/exporters')
+      .then((d) => setExporters(d.exporters || []))
+      .catch(() => setExporters([]));
   }, []);
 
   useEffect(() => {
@@ -70,14 +87,14 @@ export default function MetricAlerts() {
       .catch((e) => setErr(String(e.message || e)));
 
   const ack = (a: Alert) => act(api(`/api/v1/metrics/alerts/${encodeURIComponent(a.id)}/ack`, { method: 'POST' }), `Acknowledged ${a.rule} on ${a.node}.`);
-  const silence = (a: Alert) =>
+  const silence = (a: Alert, duration: string, comment: string) =>
     act(
       api('/api/v1/metrics/alerts/silences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rule: a.rule, node: a.node, chart: a.chart, duration: '2h', comment: 'silenced from the dashboard' }),
+        body: JSON.stringify({ rule: a.rule, node: a.node, chart: a.chart, duration, comment }),
       }),
-      `Silenced ${a.rule} on ${a.node} for 2 hours.`
+      `Silenced ${a.rule} on ${a.node} for ${duration}.`
     );
   const unsilence = (s: Silence) =>
     act(
@@ -136,14 +153,25 @@ export default function MetricAlerts() {
                   <td className="num">{formatValue(a.value, a.units)}</td>
                   <td>{since(a.since)}</td>
                   <td>
+                    <button type="button" className="btn-secondary" onClick={() => openMetrics(a)}>
+                      {a.class === 'anomaly' ? 'Anomalies' : 'Metrics'}
+                    </button>
                     {!a.acked && (
                       <button type="button" className="btn-secondary" onClick={() => ack(a)}>
                         Ack
                       </button>
                     )}
                     {!a.silenced && (
-                      <button type="button" className="btn-secondary" onClick={() => silence(a)}>
-                        Silence 2h
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => {
+                          setSilenceFor(a);
+                          setSilenceDur('2h');
+                          setSilenceComment('silenced from the dashboard');
+                        }}
+                      >
+                        Silence
                       </button>
                     )}
                   </td>
@@ -152,7 +180,63 @@ export default function MetricAlerts() {
             </tbody>
           </table>
         )}
+        {silenceFor && (
+          <div className="filters" style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span className="kit-caption">
+              Silence {silenceFor.rule} on {silenceFor.node}
+            </span>
+            <select value={silenceDur} onChange={(e) => setSilenceDur(e.target.value)} aria-label="Silence duration">
+              {['30m', '1h', '2h', '4h', '12h', '24h'].map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+            <input value={silenceComment} onChange={(e) => setSilenceComment(e.target.value)} aria-label="Silence comment" style={{ minWidth: '16rem' }} />
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                silence(silenceFor, silenceDur, silenceComment.trim() || 'silenced from the dashboard');
+                setSilenceFor(null);
+              }}
+            >
+              Confirm silence
+            </button>
+            <button type="button" className="btn-secondary" onClick={() => setSilenceFor(null)}>
+              Cancel
+            </button>
+          </div>
+        )}
       </section>
+      {exporters.length > 0 && (
+        <section className="card span3">
+          <p className="eyebrow">EXPORTERS</p>
+          <h2 className="card-title">Remote-write / OTLP / Graphite sinks</h2>
+          <table className="metric-table">
+            <thead>
+              <tr>
+                <th>Sink</th>
+                <th className="num">Sent</th>
+                <th className="num">Failures</th>
+                <th>Last send</th>
+                <th>Last error</th>
+              </tr>
+            </thead>
+            <tbody>
+              {exporters.map((e) => (
+                <tr key={e.sink}>
+                  <td>{e.sink}</td>
+                  <td className="num">{e.pointsSent ?? 0}</td>
+                  <td className="num">{e.failures ?? 0}</td>
+                  <td>{e.lastSend ? new Date(e.lastSend).toLocaleString() : '—'}</td>
+                  <td>{e.lastError || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
       {snap && snap.silences.length > 0 && (
         <section className="card span3">
           <p className="eyebrow">SILENCES</p>

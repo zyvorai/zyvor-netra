@@ -68,7 +68,11 @@ func allCLICommands() []cliCommand {
 		{Name: "metrics-anomalies", Args: []string{"metrics", "anomalies", "--json"}, Optional: true},
 		{Name: "metrics-evidence", Args: []string{"metrics", "evidence", "ebpf.kernel_drops", "--json"}, Optional: true},
 		{Name: "metrics-fleet", Args: []string{"metrics", "fleet", "--json"}, Optional: true},
+		{Name: "metrics-summary", Args: []string{"metrics", "summary", "--json"}, Optional: true},
+		{Name: "metrics-exporters", Args: []string{"metrics", "exporters", "--json"}, Optional: true},
 		{Name: "metrics-alerts", Args: []string{"metrics", "alerts", "--json"}, Optional: true},
+		{Name: "whoami", Args: []string{"whoami"}},
+		{Name: "slo", Args: []string{"slo"}, Optional: true},
 		{Name: "scorecard", Args: []string{"scorecard"}},
 		{Name: "talkers", Args: []string{"talkers"}},
 		{Name: "namespaces", Args: []string{"namespaces"}},
@@ -81,6 +85,12 @@ func allCLICommands() []cliCommand {
 		{Name: "drops", Args: []string{"drops"}},
 
 		{Name: "capture-status", Args: []string{"capture", "status"}},
+		{Name: "capture-history", Args: []string{"capture", "history"}, Optional: true},
+		{Name: "capture-summaries", Args: []string{"capture", "summaries"}, Optional: true},
+		{Name: "pods", Args: []string{"pods"}, Optional: true},
+		{Name: "vms", Args: []string{"vms"}, Optional: true},
+		{Name: "workload-detail", Args: []string{"workload", "Pod", "default", "ci"}, Optional: true},
+		{Name: "fleet-flows-history", Args: []string{"fleet", "flows", "--limit", "20"}, Optional: true},
 
 		{Name: "intel-feed", Args: []string{"intel", "feed"}},
 		{Name: "intel-hits", Args: []string{"intel", "hits"}},
@@ -90,6 +100,8 @@ func allCLICommands() []cliCommand {
 
 		{Name: "flows-summary", Args: []string{"flows", "summary"}},
 		{Name: "flows-watch", Args: []string{"flows", "watch"}, Streaming: true},
+		{Name: "flows-history", Args: []string{"flows", "history", "--limit", "20"}, Optional: true},
+		{Name: "investigate-connection", Args: []string{"investigate", "connection", "--peer", "203.0.113.10"}, Optional: true},
 
 		// Policy (read + dry-run)
 		{Name: "policy-list", Args: []string{"policy", "list"}},
@@ -105,7 +117,9 @@ func allCLICommands() []cliCommand {
 		{Name: "ai-status", Args: []string{"ai", "status"}},
 		{Name: "ai-brief", Args: []string{"ai", "brief"}},
 		{Name: "ai-digest", Args: []string{"ai", "digest"}},
+		{Name: "ai-digest-peek", Args: []string{"ai", "digest", "--peek"}},
 		{Name: "ai-suggestions", Args: []string{"ai", "suggestions"}},
+		{Name: "ai-congestion", Args: []string{"ai", "congestion", "5m"}, Optional: true},
 		{Name: "ai-ask", Args: []string{"ai", "ask", "what is the cluster mode?"}},
 		{Name: "ai-draft", Args: []string{"ai", "draft", "deny egress to 203.0.113.1"}},
 		{Name: "ai-agent", Args: []string{"ai", "agent", "summarize talkers"}},
@@ -128,11 +142,12 @@ func allCLICommands() []cliCommand {
 func ebpfReadCommands() []cliCommand {
 	names := []string{
 		"stats", "summary", "coverage", "reasons", "census", "health",
-		"capdrift", "nsdrift", "exehash", "path", "drops",
+		"capdrift", "nsdrift", "exehash", "path", "drops", "drop-info", "tcp-events", "listen-queues",
 		"kernel-network", "attachments", "sysctl-audit", "dns-findings", "scan-findings",
 		"ai-destinations", "app-categories", "auto-mitigate",
 		"tls-fingerprints", "tls-fingerprint-risk", "encrypted-dns", "ipv6",
-		"shield", "interfaces", "diagnose", "l7", "capabilities", "workloads",
+		"shield", "interfaces", "diagnose", "l7", "l7-sampled", "topology", "stack-histograms",
+		"node-isolation", "capabilities", "workloads",
 	}
 	out := make([]cliCommand, 0, len(names)+5)
 	for _, n := range names {
@@ -142,14 +157,19 @@ func ebpfReadCommands() []cliCommand {
 		cliCommand{Name: "ebpf-maps", Args: []string{"ebpf", "maps", "--json"}},
 		cliCommand{Name: "ebpf-sysctl", Args: []string{"ebpf", "sysctl"}},
 		cliCommand{Name: "ebpf-kernel-network-window", Args: []string{"ebpf", "kernel-network", "5m"}},
+		cliCommand{Name: "ebpf-kernel-network-sparkline", Args: []string{"ebpf", "kernel-network", "sparkline"}, Optional: true},
+		cliCommand{Name: "ebpf-auto-mitigate-preview", Args: []string{"ebpf", "auto-mitigate", "preview"}, Optional: true},
+		cliCommand{Name: "ebpf-l7-tls", Args: []string{"ebpf", "l7-tls"}, Optional: true},
+		cliCommand{Name: "ebpf-explain", Args: []string{"ebpf", "explain"}, Optional: true},
 		cliCommand{Name: "ebpf-scope-show", Args: []string{"ebpf", "scope", "show"}},
 		cliCommand{Name: "ebpf-rules-list", Args: []string{"ebpf", "rules", "list"}},
 		cliCommand{Name: "ebpf-deny-preview", Args: []string{"ebpf", "deny-preview", "ip", "203.0.113.50", "egress"}},
 	)
 	for i := range out {
 		switch out[i].Name {
-		case "ebpf-scan-findings", "ebpf-dns-findings":
-			out[i].Optional = true // feature-gated; Conflict when disabled is OK
+		case "ebpf-scan-findings", "ebpf-dns-findings", "ebpf-drop-info", "ebpf-tcp-events", "ebpf-listen-queues",
+			"ebpf-l7-sampled", "ebpf-stack-histograms", "ebpf-node-isolation":
+			out[i].Optional = true // feature-gated / sensor may be off; Conflict when disabled is OK
 		}
 	}
 	return out
@@ -160,6 +180,7 @@ func insightsReadCommands() []cliCommand {
 		"summary", "dependencies", "drift", "rates", "rate-drift", "exposure",
 		"remediations", "protocol-downgrades", "new-since-start", "health-trend",
 		"recommendations", "zero-trust", "microseg", "shadow-saas", "experience",
+		"red", "traces", "profiles", "workload-events", "kernel-notes",
 		"destination-risk", "policy-packs", "identity-drafts", "ech-blind",
 		"exfil", "lateral", "category-deny",
 	}

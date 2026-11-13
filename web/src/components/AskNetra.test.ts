@@ -14,9 +14,13 @@ describe('AskNetra helpers', () => {
     expect(canAsk('what dropped?', false)).toBe(true);
   });
 
-  it('detects deny/rate sentences for the preview pane', () => {
+  it('detects deny/rate/allow sentences for the preview pane', () => {
     expect(looksLikeDraft('deny dns malware.example')).toBe(true);
+    expect(looksLikeDraft('allow 10.0.0.5')).toBe(true);
+    expect(looksLikeDraft('quarantine that workload')).toBe(true);
     expect(looksLikeDraft('why is DNS failing?')).toBe(false);
+    expect(ASK_SUGGESTIONS.some((q) => /JA3|ECH/i.test(q))).toBe(true);
+    expect(ASK_SUGGESTIONS.some((q) => /GenAI|shadow SaaS|netlink/i.test(q))).toBe(true);
   });
 
   it('formats the in-process graph step trace', () => {

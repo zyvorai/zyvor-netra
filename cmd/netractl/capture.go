@@ -14,11 +14,20 @@ import (
 
 func captureCmd(args []string) error {
 	if len(args) < 1 {
-		return fmt.Errorf("capture start NODE [--backend ebpf|afpacket] [--protocol tcp|udp|icmp|icmpv6] [--host IP] [--port N] [--snaplen N] [--max-pps N] [--duration 60s] | capture stop NODE | capture status")
+		return fmt.Errorf("capture start|stop|status|history|summaries|context ID")
 	}
 	switch args[0] {
 	case "status":
 		return request("GET", "/api/v1/capture/status", nil)
+	case "history":
+		return request("GET", "/api/v1/capture/history", nil)
+	case "summaries":
+		return request("GET", "/api/v1/capture/summaries", nil)
+	case "context":
+		if len(args) < 2 {
+			return fmt.Errorf("capture context ARTIFACT_ID")
+		}
+		return request("GET", "/api/v1/capture/artifacts/"+url.PathEscape(args[1])+"/context", nil)
 	case "stop":
 		if len(args) < 2 {
 			return fmt.Errorf("capture stop NODE")
@@ -27,7 +36,7 @@ func captureCmd(args []string) error {
 	case "start":
 		return captureStartCmd(args[1:])
 	default:
-		return fmt.Errorf("unknown capture subcommand %q", args[0])
+		return fmt.Errorf("capture start|stop|status|history|summaries|context ID")
 	}
 }
 

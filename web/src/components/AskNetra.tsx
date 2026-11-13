@@ -67,6 +67,11 @@ export const ASK_SUGGESTIONS = [
   'Any new external exposure?',
   'Are we in enforce mode?',
   'What policy drafts need review?',
+  'Any rare JA3 or ECH blindness?',
+  'Any encrypted DNS (DoT/DoH)?',
+  'Which GenAI destinations are we talking to?',
+  'Any shadow SaaS outside the sanctioned list?',
+  'Where is netlink/route churn?',
 ];
 
 export function canAsk(question: string, busy: boolean): boolean {
@@ -74,7 +79,7 @@ export function canAsk(question: string, busy: boolean): boolean {
 }
 
 export function looksLikeDraft(question: string): boolean {
-  return /\b(deny|block|drop|rate[- ]?limit|throttle|ban)\b/i.test(question);
+  return /\b(deny|block|drop|rate[- ]?limit|throttle|ban|forbid|allow|except|whitelist|exception|quarantine|isolate|syn-drop)\b/i.test(question);
 }
 
 export function formatGraphSteps(steps: AgentStep[] | undefined): string {

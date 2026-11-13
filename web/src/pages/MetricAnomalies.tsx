@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import MetricChart from '../components/MetricChart';
+import { navigate, useRoute } from '../hooks/useInvestigation';
 import { useMetricStream } from '../hooks/useMetricStream';
 import { formatValue, streamId, windows, type MetricResult } from '../lib/metrics';
 
@@ -31,11 +32,14 @@ export function timelineResult(s: Summary): MetricResult | undefined {
 }
 
 export default function MetricAnomalies() {
+  const route = useRoute();
   const [win, setWin] = useState(3600);
   const [data, setData] = useState<Summary>();
   const [hl, setHl] = useState<[number, number] | undefined>();
   const [pick, setPick] = useState<Ranked | undefined>();
   const [err, setErr] = useState('');
+  const nodeFilter = route.scope.node || '';
+  const queryFilter = (route.scope.query || '').toLowerCase();
 
   useEffect(() => {
     const load = () => {
@@ -57,7 +61,14 @@ export default function MetricAnomalies() {
   }, [win, hl]);
 
   const timeline = useMemo(() => (data ? timelineResult(data) : undefined), [data]);
-  const rows = hl ? data?.correlated || [] : data?.ranked || [];
+  const rows = useMemo(() => {
+    const base = hl ? data?.correlated || [] : data?.ranked || [];
+    return base.filter(
+      (r) =>
+        (!nodeFilter || r.node === nodeFilter) &&
+        (!queryFilter || r.context.toLowerCase().includes(queryFilter) || r.chart.toLowerCase().includes(queryFilter) || r.dimension.toLowerCase().includes(queryFilter))
+    );
+  }, [data, hl, nodeFilter, queryFilter]);
   const pickQuery = useMemo(
     () => (pick ? [{ id: streamId(pick.context, pick.node, pick.chart), context: pick.context, charts: [pick.chart], nodes: [pick.node], window: win, points: 300 }] : []),
     [pick, win]
@@ -139,6 +150,7 @@ export default function MetricAnomalies() {
               <th>Dimension</th>
               <th className="num">Anomaly rate</th>
               <th className="num">Score</th>
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -150,6 +162,28 @@ export default function MetricAnomalies() {
                 <td>{r.dimension}</td>
                 <td className="num">{formatValue(r.anomalyRate, '%')}</td>
                 <td className="num">{r.score.toFixed(2)}</td>
+                <td>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate('metrics', { node: r.node, query: r.context });
+                    }}
+                  >
+                    Metrics
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate('metric-alerts', { node: r.node, query: r.context });
+                    }}
+                  >
+                    Alerts
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

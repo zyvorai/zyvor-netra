@@ -23,6 +23,9 @@ type RuleDraft struct {
 	CLI         string         `json:"cli,omitempty"`
 	Warnings    []string       `json:"warnings"`
 	Note        string         `json:"note"`
+	// BlastRadius is an optional observe-only counterfactual from
+	// deny-preview (attached by the API layer). Never applies a rule.
+	BlastRadius map[string]any `json:"blastRadius,omitempty"`
 }
 
 var (

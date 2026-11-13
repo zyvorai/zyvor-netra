@@ -16,7 +16,7 @@ import (
 	"text/tabwriter"
 )
 
-const metricsUsage = `metrics nodes|contexts|query|top|anomalies|evidence|alerts|fleet [flags]
+const metricsUsage = `metrics nodes|contexts|query|top|anomalies|evidence|alerts|summary|exporters|fleet [flags]
   metrics nodes [--json]
   metrics contexts [--node N] [--family F] [--json]
   metrics query CONTEXT [--node N] [--after -600] [--before 0] [--points 60]
@@ -26,6 +26,8 @@ const metricsUsage = `metrics nodes|contexts|query|top|anomalies|evidence|alerts
   metrics anomalies [--node N] [--after -900] [--highlight-after T --highlight-before T] [--json]
   metrics evidence CONTEXT [--node N] [--labels namespace:NS,workload:W] [--after -900] [--before 0] [--json]
   metrics alerts [--all] [--json]
+  metrics summary [--json]      this cluster at a glance
+  metrics exporters [--json]    remote-write / OTLP / Graphite sink status
   metrics fleet [--json]        this cluster plus NETRA_FLEET_PEERS peers
   metrics ack ALERT_ID
   metrics silence [--rule GLOB] [--node GLOB] [--chart GLOB] --for 2h [--comment TEXT]
@@ -91,6 +93,10 @@ func metricsCmd(args []string, w io.Writer) error {
 		return metricsGet("/api/v1/metrics/evidence?"+q.Encode(), asJSON, w, printEvidence)
 	case "fleet":
 		return metricsGet("/api/v1/metrics/fleet", asJSON, w, printMetricsFleet)
+	case "summary":
+		return metricsGet("/api/v1/metrics/summary", asJSON, w, printMetricsSummary)
+	case "exporters":
+		return metricsGet("/api/v1/metrics/exporters", asJSON, w, printMetricsExporters)
 	case "alerts":
 		p := "/api/v1/metrics/alerts"
 		if _, all := flags["all"]; all {
@@ -462,6 +468,35 @@ func printMetricsFleet(v map[string]any, w io.Writer) {
 	}
 	t := obj(v["totals"])
 	fmt.Fprintf(tw, "TOTAL\t%.0f/%.0f\t%.0f\t%.0f\t%s\t%.0f\t%.0f\t\n", num(t["okClusters"]), num(t["clusters"]), num(t["nodes"]), num(t["series"]), fmtNum(num(t["anomalyRate"])), num(t["alertsCritical"]), num(t["alertsWarning"]))
+	tw.Flush()
+}
+
+func printMetricsSummary(v map[string]any, w io.Writer) {
+	fmt.Fprintf(w, "available=%v nodes=%.0f stale=%.0f series=%.0f anomaly=%s%% alerts=%0.f crit / %.0f warn\n",
+		v["available"], num(v["nodes"]), num(v["staleNodes"]), num(v["series"]), fmtNum(num(v["anomalyRate"])), num(v["alertsCritical"]), num(v["alertsWarning"]))
+	if top := list(v["topAlerts"]); len(top) > 0 {
+		fmt.Fprintln(w, "top alerts:")
+		for _, a := range top {
+			m := obj(a)
+			fmt.Fprintf(w, "  %s %s on %s (%s)\n", str(m["status"]), str(m["rule"]), str(m["node"]), str(m["chart"]))
+		}
+	}
+	if top := list(v["topAnomalous"]); len(top) > 0 {
+		fmt.Fprintln(w, "top anomalous:")
+		for _, a := range top {
+			m := obj(a)
+			fmt.Fprintf(w, "  %s %s/%s rate=%s%%\n", str(m["node"]), str(m["chart"]), str(m["dimension"]), fmtNum(num(m["anomalyRate"])))
+		}
+	}
+}
+
+func printMetricsExporters(v map[string]any, w io.Writer) {
+	tw := tabwriter.NewWriter(w, 0, 4, 2, ' ', 0)
+	fmt.Fprintln(tw, "SINK\tSENT\tFAILURES\tLAST_SEND\tLAST_ERROR")
+	for _, e := range list(v["exporters"]) {
+		m := obj(e)
+		fmt.Fprintf(tw, "%s\t%.0f\t%.0f\t%s\t%s\n", str(m["sink"]), num(m["pointsSent"]), num(m["failures"]), str(m["lastSend"]), str(m["lastError"]))
+	}
 	tw.Flush()
 }
 

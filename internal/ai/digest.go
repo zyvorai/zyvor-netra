@@ -183,6 +183,9 @@ func Suggestions(snap Snapshot) []string {
 	if snap.Blocked > 0 || len(snap.BlockReasons) > 0 {
 		out = append(out, "Why are packets being dropped?")
 	}
+	if snap.KernelCritical > 0 || snap.KernelWarnings > 0 {
+		out = append(out, "Where is the kernel network stack congested?")
+	}
 	if hasKind(snap.Metrics, "metric-") {
 		out = append(out, "Which metrics are alerting or anomalous, and what explains them?")
 	}
@@ -195,6 +198,12 @@ func Suggestions(snap Snapshot) []string {
 	if strings.EqualFold(snap.Mode, "enforce") {
 		out = append(out, "When does the enforce lease expire?")
 	}
+	if snap.TLSRare > 0 || snap.ECHSightings > 0 || hasKind(snap.Anomalies, "ja3") || hasKind(snap.Anomalies, "ech") || hasKind(snap.Anomalies, "tls") {
+		out = append(out, "Any rare JA3 or ECH blindness?")
+	}
+	if snap.IntelHits > 0 || hasKind(snap.Anomalies, "intel") || hasKind(snap.Exposure, "intel") {
+		out = append(out, "Which DNS or threat-intel hits need triage?")
+	}
 	if len(out) == 0 {
 		out = append(out, "What looks unhealthy?", "Are we in enforce mode?")
 	}
@@ -204,8 +213,22 @@ func Suggestions(snap Snapshot) []string {
 	return out
 }
 
-// BuildDigest turns a brief into an on-call card.
+// BuildDigest turns a brief into an on-call card and advances the
+// process-local fingerprint slot so the next interactive digest can
+// set Changed. Prefer BuildDigestPeek for agent/MCP pollers that must
+// not thrash that shared slot.
 func BuildDigest(brief Brief) Digest {
+	return buildDigest(brief, true)
+}
+
+// BuildDigestPeek is BuildDigest without advancing the fingerprint
+// slot: Changed/whyChanged still compare against the last recorded
+// interactive digest. Use for background pollers and MCP agents.
+func BuildDigestPeek(brief Brief) Digest {
+	return buildDigest(brief, false)
+}
+
+func buildDigest(brief Brief, record bool) Digest {
 	fp := Fingerprint(brief.Snapshot, brief.Severity)
 	prev, _ := lastFingerprint()
 	changed := prev != "" && prev != fp
@@ -233,8 +256,10 @@ func BuildDigest(brief Brief) Digest {
 		Brief:       brief,
 		WhyChanged:  why,
 	}
-	RecordFingerprint(fp)
-	recordFingerprintComponents(curComponents)
+	if record {
+		RecordFingerprint(fp)
+		recordFingerprintComponents(curComponents)
+	}
 	return d
 }
 

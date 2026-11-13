@@ -26,6 +26,9 @@ netractl --help           # colorful grouped help on a TTY (NO_COLOR / NETRA_CLI
 netractl status
 netractl features list
 netractl features enable dns-detect --yes
+netractl pods | netractl vms | netractl workload Pod default my-pod
+netractl fleet | netractl fleet flows --limit 50
+netractl capture history | capture summaries
 ```
 
 ## Self-signed TLS and `~/.netra`

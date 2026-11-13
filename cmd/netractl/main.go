@@ -154,6 +154,10 @@ func run(args []string) error {
 		return explainCmd(args[1:], os.Stdout)
 	case "investigate":
 		return investigateCmd(args[1:])
+	case "whoami":
+		return request("GET", "/api/v1/whoami", nil)
+	case "slo":
+		return request("GET", "/api/v1/slo", nil)
 	case "status":
 		return statusCmd(args[1:], os.Stdout)
 	case "install":
@@ -187,11 +191,30 @@ func run(args []string) error {
 	case "watchlist":
 		return watchlistCmd(args[1:])
 	case "fleet":
+		if len(args) >= 2 && (args[1] == "flows" || args[1] == "flows-history") {
+			limit := "200"
+			for i := 2; i < len(args); i++ {
+				if args[i] == "--limit" && i+1 < len(args) {
+					limit = args[i+1]
+					i++
+				}
+			}
+			return request("GET", "/api/v1/fleet/flows/history?limit="+url.QueryEscape(limit), nil)
+		}
 		return request("GET", "/api/v1/fleet", nil)
 	case "fleet-clusters":
 		return request("GET", "/api/v1/fleet/clusters", nil)
 	case "fleet-tenants":
 		return request("GET", "/api/v1/fleet/tenants", nil)
+	case "pods":
+		return request("GET", "/api/v1/pods", nil)
+	case "vms":
+		return request("GET", "/api/v1/vms", nil)
+	case "workload":
+		if len(args) < 4 {
+			return fmt.Errorf("workload KIND NAMESPACE NAME")
+		}
+		return request("GET", "/api/v1/workloads/"+url.PathEscape(args[1])+"/"+url.PathEscape(args[2])+"/"+url.PathEscape(args[3]), nil)
 	case "compliance":
 		return request("GET", "/api/v1/compliance", nil)
 	case "node-resources":
@@ -203,9 +226,9 @@ func run(args []string) error {
 	case "handoff":
 		return handoffCmd(args[1:])
 	case "scorecard":
-		return request("GET", "/api/v1/scorecard", nil)
+		return scorecardCmd(args[1:])
 	case "talkers":
-		return request("GET", "/api/v1/talkers", nil)
+		return talkersCmd(args[1:])
 	case "namespaces", "heat":
 		return request("GET", "/api/v1/namespaces/heat", nil)
 	case "protocols":
@@ -241,7 +264,7 @@ func run(args []string) error {
 
 func aiCmd() error {
 	if len(os.Args) < 3 {
-		return fmt.Errorf("ai status|brief|digest|suggestions|ask|agent|draft|explain")
+		return fmt.Errorf("ai status|brief|digest|suggestions|congestion|ask|agent|draft|explain")
 	}
 	switch os.Args[2] {
 	case "status":
@@ -249,9 +272,25 @@ func aiCmd() error {
 	case "brief":
 		return request("GET", "/api/v1/ai/brief", nil)
 	case "digest":
-		return request("GET", "/api/v1/ai/digest", nil)
+		path := "/api/v1/ai/digest"
+		for i := 3; i < len(os.Args); i++ {
+			if os.Args[i] == "--peek" {
+				path += "?peek=1"
+				break
+			}
+		}
+		return request("GET", path, nil)
 	case "suggestions":
 		return request("GET", "/api/v1/ai/suggestions", nil)
+	case "congestion":
+		path := "/api/v1/ai/congestion-brief"
+		if len(os.Args) >= 4 {
+			if _, err := time.ParseDuration(os.Args[3]); err != nil {
+				return fmt.Errorf("window must be a duration such as 5m or 1h: %w", err)
+			}
+			path += "?window=" + url.QueryEscape(os.Args[3])
+		}
+		return request("GET", path, nil)
 	case "ask", "draft", "agent":
 		if len(os.Args) < 4 {
 			return fmt.Errorf("ai %s QUESTION...", os.Args[2])
@@ -276,7 +315,7 @@ func aiCmd() error {
 		}
 		return request("POST", "/api/v1/ai/explain", b)
 	default:
-		return fmt.Errorf("ai status|brief|digest|suggestions|ask|agent|draft|explain")
+		return fmt.Errorf("ai status|brief|digest|suggestions|congestion|ask|agent|draft|explain")
 	}
 }
 func policy() error {
@@ -763,7 +802,16 @@ func ebpf() error {
 		return request("GET", "/api/v1/ebpf/path", nil)
 	case "drops":
 		return request("GET", "/api/v1/ebpf/drops", nil)
+	case "drop-info":
+		return request("GET", "/api/v1/ebpf/drop-info", nil)
+	case "tcp-events":
+		return request("GET", "/api/v1/ebpf/tcp-events", nil)
+	case "listen-queues":
+		return request("GET", "/api/v1/listen-queues", nil)
 	case "kernel-network", "sysctl":
+		if len(os.Args) >= 4 && os.Args[3] == "sparkline" {
+			return request("GET", "/api/v1/ebpf/kernel-network/sparkline", nil)
+		}
 		path := "/api/v1/ebpf/kernel-network"
 		if len(os.Args) >= 4 {
 			if _, err := time.ParseDuration(os.Args[3]); err != nil {
@@ -787,17 +835,46 @@ func ebpf() error {
 	case "scan-findings":
 		return request("GET", "/api/v1/ebpf/scan-findings", nil)
 	case "ai-destinations":
-		return request("GET", "/api/v1/ebpf/ai-destinations", nil)
+		return surfaceTableCmd("/api/v1/ebpf/ai-destinations", []string{"hits", "items"}, []string{"CATEGORY", "LABEL", "HOST", "KIND", "PACKETS"}, func(m map[string]any) []string {
+			return []string{boardStr(m["category"]), boardStr(m["label"]), boardStr(m["host"]), boardStr(m["kind"]), fmt.Sprintf("%.0f", boardNum(m["packets"]))}
+		}, os.Args[3:])
 	case "app-categories":
-		return request("GET", "/api/v1/ebpf/app-categories", nil)
+		return surfaceTableCmd("/api/v1/ebpf/app-categories", []string{"hits", "items"}, []string{"CATEGORY", "LABEL", "HOST", "KIND", "PACKETS"}, func(m map[string]any) []string {
+			return []string{boardStr(m["category"]), boardStr(m["label"]), boardStr(m["host"]), boardStr(m["kind"]), fmt.Sprintf("%.0f", boardNum(m["packets"]))}
+		}, os.Args[3:])
 	case "auto-mitigate":
+		if len(os.Args) >= 4 && os.Args[3] == "preview" {
+			return request("GET", "/api/v1/ebpf/auto-mitigate/preview", nil)
+		}
 		return request("GET", "/api/v1/ebpf/auto-mitigate", nil)
+	case "l7-tls":
+		return request("GET", "/api/v1/l7/tls", nil)
+	case "explain":
+		return request("GET", "/api/v1/ebpf/explain", nil)
 	case "tls-fingerprints":
-		return request("GET", "/api/v1/ebpf/tls-fingerprints", nil)
+		return surfaceTableCmd("/api/v1/ebpf/tls-fingerprints", []string{"fingerprints", "items"}, []string{"JA3", "JA4", "SNI", "NODE", "COUNT", "ECH"}, func(m map[string]any) []string {
+			ech := ""
+			if m["ech"] == true {
+				ech = "yes"
+			}
+			return []string{boardStr(m["ja3"]), boardStr(m["ja4"]), boardStr(m["sni"]), boardStr(m["node"]), fmt.Sprintf("%.0f", boardNum(m["count"])), ech}
+		}, os.Args[3:])
 	case "tls-fingerprint-risk":
-		return request("GET", "/api/v1/ebpf/tls-fingerprints/risk", nil)
+		return surfaceTableCmd("/api/v1/ebpf/tls-fingerprints/risk", []string{"items"}, []string{"SEVERITY", "JA3", "SNI", "COUNT", "REASONS"}, func(m map[string]any) []string {
+			reasons := ""
+			if a, ok := m["reasons"].([]any); ok {
+				parts := make([]string, 0, len(a))
+				for _, x := range a {
+					parts = append(parts, boardStr(x))
+				}
+				reasons = strings.Join(parts, ",")
+			}
+			return []string{boardStr(m["severity"]), boardStr(m["ja3"]), boardStr(m["sni"]), fmt.Sprintf("%.0f", boardNum(m["count"])), reasons}
+		}, os.Args[3:])
 	case "encrypted-dns":
-		return request("GET", "/api/v1/ebpf/encrypted-dns", nil)
+		return surfaceTableCmd("/api/v1/ebpf/encrypted-dns", []string{"result.hits", "hits", "items"}, []string{"KIND", "HOST", "PORT", "NODE", "PACKETS"}, func(m map[string]any) []string {
+			return []string{boardStr(m["kind"]), boardStr(m["host"]), boardStr(m["port"]), boardStr(m["node"]), fmt.Sprintf("%.0f", boardNum(m["packets"]))}
+		}, os.Args[3:])
 	case "ipv6":
 		return request("GET", "/api/v1/ebpf/ipv6", nil)
 	case "shield":
@@ -1090,6 +1167,33 @@ func ebpf() error {
 		return request("GET", "/api/v1/ebpf/diagnose", nil)
 	case "l7":
 		return request("GET", "/api/v1/ebpf/l7", nil)
+	case "l7-sampled", "l7-sample":
+		return request("GET", "/api/v1/l7/sampled", nil)
+	case "topology":
+		return request("GET", "/api/v1/ebpf/topology", nil)
+	case "stack-histograms":
+		return request("GET", "/api/v1/ebpf/stack-histograms", nil)
+	case "node-isolation":
+		if len(os.Args) < 4 || os.Args[3] == "list" {
+			return request("GET", "/api/v1/ebpf/node-isolation", nil)
+		}
+		switch os.Args[3] {
+		case "clear":
+			if len(os.Args) < 5 {
+				return fmt.Errorf("node-isolation clear NODE")
+			}
+			return request("DELETE", "/api/v1/ebpf/node-isolation/"+url.PathEscape(os.Args[4]), nil)
+		case "set":
+			if len(os.Args) < 6 {
+				return fmt.Errorf("node-isolation set NODE JSON_BODY")
+			}
+			if !json.Valid([]byte(os.Args[5])) {
+				return fmt.Errorf("JSON body is not valid")
+			}
+			return request("PUT", "/api/v1/ebpf/node-isolation/"+url.PathEscape(os.Args[4]), []byte(os.Args[5]))
+		default:
+			return fmt.Errorf("node-isolation list|set NODE JSON|clear NODE")
+		}
 	case "capabilities":
 		return request("GET", "/api/v1/ebpf/capabilities", nil)
 	case "maps":
@@ -1624,9 +1728,13 @@ func insightCmd() error {
 	case "microseg":
 		return request("GET", "/api/v1/insights/microseg", nil)
 	case "shadow-saas":
-		return request("GET", "/api/v1/insights/shadow-saas", nil)
+		return surfaceTableCmd("/api/v1/insights/shadow-saas", []string{"findings", "items"}, []string{"HOST", "STATUS", "RISK", "CATEGORY", "NS/POD", "PACKETS"}, func(m map[string]any) []string {
+			return []string{boardStr(m["host"]), boardStr(m["status"]), boardStr(m["risk"]), boardStr(m["category"]), boardFirst(boardStr(m["namespace"])+"/"+boardStr(m["pod"]), boardStr(m["workload"])), fmt.Sprintf("%.0f", boardNum(m["packets"]))}
+		}, os.Args[3:])
 	case "experience":
-		return request("GET", "/api/v1/insights/experience", nil)
+		return surfaceTableCmd("/api/v1/insights/experience", []string{"workloads", "rows", "items"}, []string{"NS/POD", "SCORE", "SEVERITY", "RETRANS", "DNSFAIL"}, func(m map[string]any) []string {
+			return []string{boardFirst(boardStr(m["namespace"])+"/"+boardStr(m["pod"]), boardStr(m["workload"])), fmt.Sprintf("%.0f", boardNum(m["score"])), boardStr(m["severity"]), fmt.Sprintf("%.0f", boardNum(m["retransmits"])), fmt.Sprintf("%.0f", boardNum(m["dnsFailures"]))}
+		}, os.Args[3:])
 	case "red":
 		p := "/api/v1/insights/red"
 		if len(os.Args) > 3 {
@@ -1657,7 +1765,16 @@ func insightCmd() error {
 	case "kernel-notes":
 		return request("GET", "/api/v1/insights/kernel-notes", nil)
 	case "destination-risk":
-		return request("GET", "/api/v1/insights/destination-risk", nil)
+		return surfaceTableCmd("/api/v1/insights/destination-risk", []string{"destinations", "items"}, []string{"DESTINATION", "SCORE", "SEVERITY", "INTEL", "AI"}, func(m map[string]any) []string {
+			intel, ai := "", ""
+			if m["intelHit"] == true {
+				intel = "yes"
+			}
+			if m["aiRelated"] == true {
+				ai = "yes"
+			}
+			return []string{boardStr(m["destination"]), fmt.Sprintf("%.0f", boardNum(m["score"])), boardStr(m["severity"]), intel, ai}
+		}, os.Args[3:])
 	case "policy-packs":
 		return request("GET", "/api/v1/insights/policy-packs", nil)
 	case "identity-drafts":
@@ -1665,7 +1782,9 @@ func insightCmd() error {
 	case "ech-blind":
 		return request("GET", "/api/v1/insights/ech-blind", nil)
 	case "exfil":
-		return request("GET", "/api/v1/insights/exfil", nil)
+		return surfaceTableCmd("/api/v1/insights/exfil", []string{"findings", "items"}, []string{"NS/POD", "SCORE", "UNIQDST", "EXT", "RARE"}, func(m map[string]any) []string {
+			return []string{boardFirst(boardStr(m["namespace"])+"/"+boardStr(m["pod"]), boardStr(m["workload"])), fmt.Sprintf("%.0f", boardNum(m["score"])), fmt.Sprintf("%.0f", boardNum(m["uniqueDestinations"])), fmt.Sprintf("%.0f", boardNum(m["externalDestinations"])), fmt.Sprintf("%.0f", boardNum(m["rareHosts"]))}
+		}, os.Args[3:])
 	case "lateral":
 		return request("GET", "/api/v1/insights/lateral", nil)
 	case "category-deny":

@@ -29,11 +29,14 @@ from .state import AgentState, Intent
 # stays aligned with the controller even when no LLM is configured.
 _INTENT_RULES: list[tuple[Intent, tuple[str, ...]]] = [
     ("draft", ("deny ", "allow ", "rate limit", "rate-limit", "throttle", "whitelist")),
+    ("investigate", ("can't reach", "cannot reach", "investigate connection", "failed connection", "why can't", "unreachable")),
+    ("congestion", ("congestion", "rcvbuf", "listen queue", "listen backlog", "softnet", "qdisc", "udp drop", "tcp memory")),
     ("drops", ("drop", "deny", "block", "reset", "rto", "kfree")),
     ("health", ("rtt", "latency", "retrans", "dns fail", "health", "score")),
     ("policy", ("policy", "netpol", "allow-list", "allow list", "recommend", "draft")),
     ("exposure", ("expos", "drift", "external", "internet", "egress")),
     ("mode", ("enforce", "observe", "lease", "mode")),
+    ("metrics", ("metric", "anomal", "alert", "cpu", "memory", "disk", "spike")),
 ]
 
 

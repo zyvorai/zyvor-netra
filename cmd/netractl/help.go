@@ -43,17 +43,21 @@ func helpSections() []helpSection {
 				{"scorecard | talkers | handoff", "Shift board, top destinations, handoff pack"},
 				{"namespaces | protocols | baselines | ports | dnsboard", "Traffic breakdowns"},
 				{"node-resources | lease | compliance", "Host pressure, enforce lease, checks"},
-				{"capture start|stop|status …", "Filtered per-node packet capture"},
+				{"capture start|stop|status|history|summaries|context …", "Filtered per-node packet capture"},
+				{"pods | vms | workload KIND NS NAME", "Inventory listings"},
+				{"fleet | fleet flows [--limit N]", "Fleet rollup and cross-cluster flow history"},
 			},
 		},
 		{
 			title: "🩺  Diagnostics",
 			cmds: []helpCmd{
 				{"ebpf summary|health|path|drops|l7|…", "Datapath counters and diagnostics"},
+				{"ebpf drop-info | tcp-events | listen-queues", "P0 drop/TCP/listen-queue sensors"},
 				{"ebpf kernel-network [5m]", "Windowed kernel network pressure"},
 				{"ebpf attachments [--node N]", "BPF programs attached per interface + hook drift"},
 				{"netlink state|events|findings …", "Route, link, address and neighbor changes + what is wrong now"},
-				{"metrics nodes|contexts|query|top|anomalies|alerts", "Per-second host, network, workload and app metrics"},
+				{"metrics nodes|contexts|query|top|anomalies|alerts|summary|exporters", "Per-second host, network, workload and app metrics"},
+				{"whoami | slo", "Auth identity and workload SLO status"},
 				{"metrics ack|silence|unsilence", "Acknowledge or silence metric alerts (notifications only)"},
 				{"security optimizer|incidents", "Review deny predicates and exact-workload security correlation"},
 				{"intel history|rollback REVISION", "Inspect or restore a retained threat-feed revision"},
@@ -88,7 +92,7 @@ func helpSections() []helpSection {
 				{"audit | audit summary", "Controller audit trail"},
 				{"export … | report | playbooks", "SIEM export and operator briefs"},
 				{"intel … | watchlist …", "Threat intel preview / match"},
-				{"ai status|brief|ask|agent|draft|…", "Read-only AI surfaces"},
+				{"ai status|brief|digest|congestion|ask|agent|draft|…", "Read-only AI surfaces"},
 			},
 		},
 	}
@@ -164,7 +168,9 @@ func usagePlain(w io.Writer) {
   metrics ack ALERT_ID | metrics silence [--rule G] [--node G] [--chart G] --for 2h [--comment T] | metrics unsilence ID
   namespaces | protocols | baselines | ports | dnsboard | lease
   capture start NODE [--protocol tcp|udp|icmp|icmpv6] [--host IP] [--port N] [--snaplen N] [--max-pps N] [--duration 60s]
-  capture stop NODE | capture status
+  capture stop NODE | capture status | capture history | capture summaries | capture context ID
+  pods | vms | workload KIND NAMESPACE NAME
+  fleet | fleet flows [--limit N]
   policy list [namespace] | policy list --namespace NAMESPACE
   policy build --name NAME --namespace NAMESPACE --selector key=value --kind fqdn|cidr|entity --to DEST [--to DEST] [--port PORT] [--protocol TCP|UDP] [--include-dns]
   policy plan <file> | policy plan --file FILE

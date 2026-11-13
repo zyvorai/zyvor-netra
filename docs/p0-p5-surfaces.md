@@ -23,7 +23,7 @@ Strategy maps: [`competitive-quantum.md`](competitive-quantum.md) (NGFW),
 
 | Place | What |
 |---|---|
-| **Surfaces** (Diagnostics + Security nav) | Tabbed boards for all P1–P5 observe APIs — Encrypted / Fit / Threat / Ops / Fleet. |
+| **Surfaces** (Diagnostics + Security nav) | Tabbed boards for all P1–P5 observe APIs — Encrypted / Fit / Threat / Ops / Fleet. `listKeys` must match API envelopes (`workloads`, `destinations`, `leaseDrafts`, `packs`). Deep-link: `#page=surfaces&query=tls`. |
 | **L7** | JA3 + encrypted-DNS (DoT/DoH) summaries; deep-links to Surfaces. |
 | **Fleet** | Multi-cluster + tenant risk rollups. |
 | **Report** | Prevention coverage scorecard. |

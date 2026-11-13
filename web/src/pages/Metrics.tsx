@@ -6,9 +6,22 @@ import { api } from '../api';
 import MetricChart from '../components/MetricChart';
 import MetricEvidence, { type EvidenceTarget } from '../components/MetricEvidence';
 import { useMetricStream } from '../hooks/useMetricStream';
+import { useRoute } from '../hooks/useInvestigation';
 import { familyOf, groupContexts, streamId, windows, type ContextInfo, type StreamQuery } from '../lib/metrics';
 
 type NodeInfo = { node: string; lastIngest: string; stats?: { series?: number } };
+type MetricsSummary = {
+  available?: boolean;
+  nodes?: number;
+  staleNodes?: number;
+  series?: number;
+  anomalyRate?: number;
+  alertsCritical?: number;
+  alertsWarning?: number;
+  topAlerts?: { rule: string; status: string; node: string; chart: string }[];
+  topAnomalous?: { node: string; chart: string; dimension: string; anomalyRate: number }[];
+};
+type FleetRollup = { totals?: { clusters?: number; okClusters?: number; nodes?: number; series?: number; anomalyRate?: number; alertsCritical?: number; alertsWarning?: number }; note?: string };
 
 /** Charts drawn per instance before a context collapses into one chart. */
 const MAX_INSTANCES = 6;
@@ -42,15 +55,23 @@ export function chartsFor(contexts: ContextInfo[], node: string, split: string, 
 }
 
 export default function Metrics() {
+  const route = useRoute();
   const [nodes, setNodes] = useState<NodeInfo[]>([]);
   const [contexts, setContexts] = useState<ContextInfo[]>([]);
-  const [node, setNode] = useState('');
+  const [summary, setSummary] = useState<MetricsSummary>();
+  const [fleet, setFleet] = useState<FleetRollup>();
+  const [node, setNode] = useState(route.scope.node || '');
   const [family, setFamily] = useState('');
   const [win, setWin] = useState(300);
   const [split, setSplit] = useState('dimension');
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState(route.scope.query || '');
   const [err, setErr] = useState('');
   const [evidence, setEvidence] = useState<{ id: string; target: EvidenceTarget } | null>(null);
+
+  useEffect(() => {
+    if (route.scope.node) setNode(route.scope.node);
+    if (route.scope.query) setFilter(route.scope.query);
+  }, [route.scope.node, route.scope.query]);
 
   useEffect(() => {
     const load = () => {
@@ -63,6 +84,12 @@ export default function Metrics() {
           setErr('');
         })
         .catch((e) => setErr(String(e.message || e)));
+      api<MetricsSummary>('/api/v1/metrics/summary')
+        .then(setSummary)
+        .catch(() => setSummary(undefined));
+      api<FleetRollup>('/api/v1/metrics/fleet')
+        .then(setFleet)
+        .catch(() => setFleet(undefined));
     };
     load();
     const t = setInterval(load, 30000);
@@ -74,17 +101,38 @@ export default function Metrics() {
     return contexts.filter((c) => (!node || c.charts.some((ch) => ch.node === node)) && (!f || c.context.toLowerCase().includes(f) || (c.title || '').toLowerCase().includes(f)));
   }, [contexts, node, filter]);
   const groups = useMemo(() => groupContexts(visible), [visible]);
-  const fam = family && visible.some((c) => familyOf(c) === family) ? family : groups[0]?.families[0]?.family || '';
+  const fam = family && visible.some((c) => familyOf(c) === family) ? family : visible[0] ? familyOf(visible[0]) : groups[0]?.families[0]?.family || '';
   const famContexts = useMemo(() => visible.filter((c) => familyOf(c) === fam), [visible, fam]);
   const charts = useMemo(() => chartsFor(famContexts, node, node ? 'dimension' : split, win), [famContexts, node, split, win]);
   const queries = useMemo(() => charts.map((c) => c.q), [charts]);
   const { results, live, error } = useMetricStream(queries);
 
+  const totals = fleet?.totals;
   return (
     <div className="grid">
       {(err || error) && (
         <section className="card span3">
           <p className="warning">{err || error}</p>
+        </section>
+      )}
+      {(summary?.available || totals) && (
+        <section className="card span3">
+          <p className="eyebrow">AT A GLANCE</p>
+          <h2 className="card-title">
+            {summary?.nodes ?? 0} nodes · {summary?.series ?? 0} series
+            {summary?.staleNodes ? ` · ${summary.staleNodes} stale` : ''}
+            {typeof summary?.anomalyRate === 'number' ? ` · anomaly ${summary.anomalyRate.toFixed(1)}%` : ''}
+            {(summary?.alertsCritical || summary?.alertsWarning)
+              ? ` · alerts ${summary?.alertsCritical || 0} crit / ${summary?.alertsWarning || 0} warn`
+              : ''}
+          </h2>
+          {totals && (totals.clusters || 0) > 1 && (
+            <p className="kit-caption">
+              Fleet: {totals.okClusters}/{totals.clusters} clusters · {totals.nodes} nodes · {totals.series} series
+              {typeof totals.anomalyRate === 'number' ? ` · anomaly ${totals.anomalyRate.toFixed(1)}%` : ''}
+            </p>
+          )}
+          {fleet?.note && <p className="kit-caption">{fleet.note}</p>}
         </section>
       )}
       <div className="span3">

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any, Literal, TypedDict
 
-Intent = Literal["brief", "drops", "health", "policy", "exposure", "mode", "draft"]
+Intent = Literal["brief", "drops", "health", "policy", "exposure", "mode", "draft", "congestion", "investigate", "metrics"]
 
 
 class AgentState(TypedDict, total=False):
