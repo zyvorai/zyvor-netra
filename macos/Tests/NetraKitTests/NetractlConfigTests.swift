@@ -47,4 +47,16 @@ final class NetractlConfigTests: XCTestCase {
         XCTAssertFalse(NetractlConfig.parse("NETRA_URL=https://h:1").requestedInsecureTLS)
         XCTAssertTrue(NetractlConfig.parse("NETRA_TLS_INSECURE=1").requestedInsecureTLS)
     }
+
+    func testLoadDirectoryMergesEnvAndApiKey() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("netra-cfg-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try "NETRA_URL=https://lab:30870\nNETRA_TLS_INSECURE=1\n".write(to: dir.appendingPathComponent("env"), atomically: true, encoding: .utf8)
+        try "tok-from-file\n".write(to: dir.appendingPathComponent("api-key"), atomically: true, encoding: .utf8)
+        let c = NetractlConfig.load(directory: dir)
+        XCTAssertEqual(c.url, "https://lab:30870")
+        XCTAssertEqual(c.apiKey, "tok-from-file")
+        XCTAssertTrue(c.requestedInsecureTLS)
+    }
 }

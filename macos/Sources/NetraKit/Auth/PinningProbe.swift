@@ -25,22 +25,45 @@ public enum CertificateProbeError: Error, Sendable, Equatable, LocalizedError {
     }
 }
 
-/// Reads the presented certificate during the TLS handshake, then cancels the challenge,
-/// so no HTTP request (and no credential) is ever sent.
+/// Reads the presented certificate during the TLS handshake without sending credentials.
+/// URLSession task + session trust challenges, bounded by a hard timeout.
 public enum CertificateProbe {
     public static func probe(url: URL, timeout: TimeInterval = 8) async throws -> CertificateProbeResult {
         guard url.scheme == "https", let host = url.host else { throw CertificateProbeError.notHTTPS }
         let port = url.port ?? 443
+        return try await withTimeout(timeout) {
+            try await probeURLSession(host: host, port: port, timeout: timeout)
+        }
+    }
+
+    static func withTimeout<T: Sendable>(_ seconds: TimeInterval, _ work: @escaping @Sendable () async throws -> T) async throws -> T {
+        try await withThrowingTaskGroup(of: T.self) { group in
+            group.addTask { try await work() }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(max(seconds, 1) * 1_000_000_000))
+                throw CertificateProbeError.unreachable("timed out after \(Int(seconds))s")
+            }
+            let first = try await group.next()!
+            group.cancelAll()
+            return first
+        }
+    }
+
+    static func probeURLSession(host: String, port: Int, timeout: TimeInterval) async throws -> CertificateProbeResult {
         let box = Box()
         let cfg = URLSessionConfiguration.ephemeral
         cfg.timeoutIntervalForRequest = timeout
+        cfg.timeoutIntervalForResource = timeout
         cfg.urlCredentialStorage = nil
         cfg.httpCookieStorage = nil
         let session = URLSession(configuration: cfg, delegate: ProbeDelegate(box: box), delegateQueue: nil)
         defer { session.invalidateAndCancel() }
         var req = URLRequest(url: URL(string: "https://\(host.contains(":") ? "[\(host)]" : host):\(port)/")!)
         req.httpMethod = "HEAD"
+        req.timeoutInterval = timeout
         do { _ = try await session.data(for: req) } catch {
+            if let r = box.result { return r }
+            try? await Task.sleep(nanoseconds: 50_000_000)
             if let r = box.result { return r }
             throw CertificateProbeError.unreachable((error as? URLError)?.localizedDescription ?? error.localizedDescription)
         }
@@ -76,16 +99,27 @@ public enum CertificateProbe {
         }
     }
 
-    final class ProbeDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    final class ProbeDelegate: NSObject, URLSessionDelegate, URLSessionTaskDelegate, @unchecked Sendable {
         let box: Box
         init(box: Box) { self.box = box }
+
         func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge,
                         completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+            handle(challenge, completionHandler)
+        }
+
+        func urlSession(_ session: URLSession, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge,
+                        completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+            handle(challenge, completionHandler)
+        }
+
+        private func handle(_ challenge: URLAuthenticationChallenge,
+                            _ completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
             let ps = challenge.protectionSpace
             if ps.authenticationMethod == NSURLAuthenticationMethodServerTrust, let t = ps.serverTrust {
                 box.result = CertificateProbe.describe(trust: t, host: ps.host, port: ps.port)
             }
-            completionHandler(.cancelAuthenticationChallenge, nil)   // never proceeds to send a request
+            completionHandler(.cancelAuthenticationChallenge, nil)
         }
     }
 }

@@ -2,13 +2,17 @@
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
 
 import Foundation
+#if canImport(Darwin)
+import Darwin
+#endif
 
 /// Connection hints read from a `netractl` config file (`~/.netra/env`) or a bare API-key file (`~/.netra/api-key`).
-/// Pure parsing, no I/O: the app reads the file the user picks and passes the text here.
+/// Parsing is pure; `loadHome()` is the I/O path used at launch (real home via getpwuid).
 public struct NetractlConfig: Sendable, Equatable {
     public var url: String?
     public var apiKey: String?
-    /// True when the file sets NETRA_TLS_INSECURE. The app never honours it: the certificate is pinned instead.
+    /// True when the file sets NETRA_TLS_INSECURE. The app never skips TLS; it may auto-pin the probed leaf
+    /// once, matching the operator's existing CLI opt-in.
     public var requestedInsecureTLS = false
 
     public init(url: String? = nil, apiKey: String? = nil, requestedInsecureTLS: Bool = false) {
@@ -16,6 +20,32 @@ public struct NetractlConfig: Sendable, Equatable {
     }
 
     public var isEmpty: Bool { url == nil && apiKey == nil }
+
+    /// Reads `~/.netra/env` and `~/.netra/api-key` when present (real home via getpwuid).
+    public static func loadHome(fileManager: FileManager = .default) -> NetractlConfig {
+        load(directory: realHomeDirectory().appendingPathComponent(".netra"), fileManager: fileManager)
+    }
+
+    public static func realHomeDirectory() -> URL {
+        #if canImport(Darwin)
+        if let pw = getpwuid(getuid()), let dir = pw.pointee.pw_dir {
+            return URL(fileURLWithPath: String(cString: dir), isDirectory: true)
+        }
+        #endif
+        return FileManager.default.homeDirectoryForCurrentUser
+    }
+
+    /// Testable directory loader: merges `env` then `api-key` under `directory`.
+    public static func load(directory: URL, fileManager: FileManager = .default) -> NetractlConfig {
+        let names = ["env", "api-key"]
+        var parts: [NetractlConfig] = []
+        for name in names {
+            let url = directory.appendingPathComponent(name)
+            guard let text = try? String(contentsOf: url, encoding: .utf8) else { continue }
+            parts.append(parse(text))
+        }
+        return merge(parts)
+    }
 
     /// Parses `export NETRA_URL=...` / `NETRA_API_KEY=...` lines (quotes and comments tolerated).
     /// A file with no `KEY=` lines is treated as a bare API key (single non-empty line, no whitespace).

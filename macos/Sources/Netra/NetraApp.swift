@@ -14,7 +14,7 @@ struct NetraApp: App {
                 .linkRouting()
                 .environment(model)
                 .frame(minWidth: 960, minHeight: 600)
-                .task { await model.connect() }
+                .task { await model.start() }
         }
         .commands {
             CommandGroup(after: .newItem) {

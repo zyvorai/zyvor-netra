@@ -44,7 +44,9 @@ struct RootView: View {
             ConnectForm().frame(width: 460).padding()
         }
         .onChange(of: model.connection) { _, c in
-            if case .failed = c, model.pendingTrust == nil { model.showConnect = true }
+            if case .failed = c, model.pendingTrust == nil, model.bootstrapNote == nil {
+                model.showConnect = true
+            }
         }
     }
 }
@@ -58,7 +60,11 @@ struct ConnectionBadge: View {
             Circle().fill(color).frame(width: 9, height: 9)
             VStack(alignment: .leading, spacing: 0) {
                 Text(label).font(.callout.weight(.medium))
-                Text([model.activeProfile?.name, model.baseURLText].compactMap { $0 }.joined(separator: " · ")).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                if let note = model.bootstrapNote {
+                    Text(note).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                } else {
+                    Text([model.activeProfile?.name, model.baseURLText].compactMap { $0 }.joined(separator: " · ")).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                }
             }
             Spacer()
         }
@@ -128,14 +134,22 @@ struct ConnectForm: View {
                 Button(role: .destructive) { confirmDelete = true } label: { Image(systemName: "trash") }
                     .disabled(creating || model.profiles.count < 2).help("Delete this profile and its stored token")
             }
-            Text("Each profile keeps its own token in your Keychain; switching servers never carries a token or pinned certificate across.")
+            Text("Each profile keeps its own encrypted token; switching servers never carries a token or pinned certificate across.")
                 .font(.callout).foregroundStyle(.secondary)
             TextField("Profile name", text: $name).textFieldStyle(.roundedBorder)
             TextField("Controller URL", text: $url).textFieldStyle(.roundedBorder)
             SecureField(creating ? "API token (blank if auth is off)" : "API token (blank keeps the stored one)", text: $token).textFieldStyle(.roundedBorder)
             HStack {
+                Button("Use ~/.netra") {
+                    Task {
+                        await model.reimportNetractlAndConnect()
+                        load()
+                        if case .connected = model.connection { dismiss() }
+                    }
+                }
+                .help("Re-read ~/.netra/env and api-key, then connect")
                 Button("Import from file…") { importFromFile() }
-                    .help("Pick a netractl env file or api-key file (usually ~/.netra/env or ~/.netra/api-key) to fill the URL and token")
+                    .help("Pick a netractl env or api-key file to fill the URL and token")
                 if let importNote { Text(importNote).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
             }
             DisclosureGroup("Single sign-on (OIDC)") {
@@ -190,8 +204,8 @@ struct ConnectForm: View {
         }
     }
 
-    /// Fills the URL and token from a netractl config file the user picks. The app is sandboxed, so it can only read what
-    /// the user selects. NETRA_TLS_INSECURE is never honoured; the certificate is pinned instead.
+    /// Fills the URL and token from a netractl config file the user picks.
+    /// Prefer **Use ~/.netra** for the usual path; this is for files elsewhere.
     private func importFromFile() {
         let panel = NSOpenPanel()
         panel.title = "Import netractl config"
@@ -207,13 +221,17 @@ struct ConnectForm: View {
         let configs = panel.urls.compactMap { try? String(contentsOf: $0, encoding: .utf8) }.map(NetractlConfig.parse)
         let merged = NetractlConfig.merge(configs)
         guard !merged.isEmpty else { importNote = "Nothing usable found in that file."; return }
-        if let u = merged.url { url = u }
-        if let k = merged.apiKey { token = k }
-        var parts: [String] = []
-        if merged.url != nil { parts.append("URL") }
-        if merged.apiKey != nil { parts.append("token") }
-        importNote = "Imported " + parts.joined(separator: " and ") + "."
-            + (merged.requestedInsecureTLS ? " Ignored NETRA_TLS_INSECURE: you'll verify the certificate fingerprint instead." : "")
+        Task {
+            await model.applyNetractlConfig(merged)
+            load()
+            if let u = merged.url { url = u }
+            if let k = merged.apiKey { token = k }
+            var parts: [String] = []
+            if merged.url != nil { parts.append("URL") }
+            if merged.apiKey != nil { parts.append("token") }
+            importNote = "Imported " + parts.joined(separator: " and ") + "."
+                + (merged.requestedInsecureTLS ? " Will auto-pin on Connect if the cert is untrusted." : "")
+        }
     }
 
     private func load() {

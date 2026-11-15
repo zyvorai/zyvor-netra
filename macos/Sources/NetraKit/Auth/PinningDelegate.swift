@@ -6,7 +6,7 @@ import Security
 
 /// Accepts a server only if system trust passes, or the leaf SHA-256 equals the pin for host:port.
 /// A pinned host whose certificate differs (and is not system-trusted) is a hard failure.
-public final class PinningDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+public final class PinningDelegate: NSObject, URLSessionDelegate, URLSessionTaskDelegate, @unchecked Sendable {
     public enum Decision: Equatable, Sendable { case accept, reject, mismatch(pinned: String) }
 
     private let pinStore: PinStore
@@ -18,15 +18,24 @@ public final class PinningDelegate: NSObject, URLSessionDelegate, @unchecked Sen
     /// Set when the last connection was refused because the pin changed.
     public var lastMismatch: PinMismatchError? { lock.lock(); defer { lock.unlock() }; return _lastMismatch }
 
-    /// Pure decision logic.
+    /// Pure decision logic. Fingerprints are compared in canonical (normalized) form.
     public static func decide(systemTrusted: Bool, fingerprint: String, pinned: String?) -> Decision {
         if systemTrusted { return .accept }
         guard let pinned else { return .reject }
-        return pinned == fingerprint ? .accept : .mismatch(pinned: pinned)
+        let a = CertificateFingerprint.normalize(fingerprint)
+        let b = CertificateFingerprint.normalize(pinned)
+        return a == b ? .accept : .mismatch(pinned: b)
     }
 
-    public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge,
+    // Task-level only: implementing both session- and task-level handlers can complete the
+    // same challenge twice and surface as a generic TLS failure under App Sandbox.
+    public func urlSession(_ session: URLSession, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge,
                            completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        handle(challenge, completionHandler)
+    }
+
+    private func handle(_ challenge: URLAuthenticationChallenge,
+                        _ completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         let ps = challenge.protectionSpace
         guard ps.authenticationMethod == NSURLAuthenticationMethodServerTrust, let trust = ps.serverTrust,
               let leaf = (SecTrustCopyCertificateChain(trust) as? [SecCertificate])?.first else {
@@ -56,6 +65,10 @@ public extension NetraClient {
     static func pinnedWithDelegate(profile: ConnectionProfile, pinStore: PinStore) -> (client: NetraClient, delegate: PinningDelegate) {
         let d = PinningDelegate(pinStore: pinStore)
         let cfg = URLSessionConfiguration.ephemeral
+        cfg.timeoutIntervalForRequest = 15
+        cfg.timeoutIntervalForResource = 30
+        cfg.urlCredentialStorage = nil
+        cfg.httpCookieStorage = nil
         let s = URLSession(configuration: cfg, delegate: d, delegateQueue: nil)
         return (NetraClient(profile: profile, session: s), d)
     }

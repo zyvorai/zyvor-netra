@@ -27,6 +27,7 @@ private func testStore() -> PinStore { PinStore(keychain: KeychainStore(service:
     #expect(PinningDelegate.decide(systemTrusted: true, fingerprint: "A", pinned: "B") == .accept)
     #expect(PinningDelegate.decide(systemTrusted: false, fingerprint: "A", pinned: nil) == .reject)
     #expect(PinningDelegate.decide(systemTrusted: false, fingerprint: "A", pinned: "A") == .accept)
+    #expect(PinningDelegate.decide(systemTrusted: false, fingerprint: "AA:BB", pinned: "aabb") == .accept)
     #expect(PinningDelegate.decide(systemTrusted: false, fingerprint: "A", pinned: "B") == .mismatch(pinned: "B"))
 }
 

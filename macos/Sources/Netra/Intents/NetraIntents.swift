@@ -13,7 +13,8 @@ enum IntentClient {
         var localizedStringResource: LocalizedStringResource { "Netra has no configured server. Open Netra and connect first." }
     }
     static func make() throws -> NetraClient {
-        let store = ProfileStore()
+        // Same secret store as the app window so Shortcuts see the token start() imported.
+        let store = ProfileStore(secrets: FileSecretStore())
         guard let p = store.active(), let url = p.url, url.scheme != nil else { throw NotConfigured() }
         let profile = ConnectionProfile(baseURL: url, token: store.token(for: p))
         return url.scheme == "https" ? NetraClient.pinned(profile: profile, pinStore: PinStore()) : NetraClient(profile: profile)

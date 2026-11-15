@@ -31,5 +31,12 @@
   </array>
   <key>NSUserActivityTypes</key>
   <array><string>dev.zyvor.netra.section</string></array>
+  <!-- Controllers often use a self-signed cert; PinningDelegate / TOFU decide trust.
+       Without this, URLSession may fail the handshake even after the pin matches. -->
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+  </dict>
 </dict>
 </plist>

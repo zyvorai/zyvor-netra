@@ -5,7 +5,11 @@ import Foundation
 import Security
 import CryptoKit
 
-/// Trust-on-first-use pins, one per `host:port`, stored in the Keychain via `KeychainStore`.
+/// Trust-on-first-use pins, one per `host:port`.
+///
+/// Pins are leaf SHA-256 fingerprints (not secrets), so they live in `UserDefaults` — never the
+/// Keychain. Storing them in the Keychain caused macOS to block the UI on a login-password prompt
+/// whenever an item was created outside the app (or ACL mismatched).
 ///
 /// Integration steps (for the lead):
 /// 1. On connect to an https profile, call `let probe = try await CertificateProbe.probe(url:)`.
@@ -16,40 +20,52 @@ import CryptoKit
 /// 3. Use `NetraClient.pinnedWithDelegate` to keep the delegate: `delegate.lastMismatch` (PinMismatchError)
 ///    is set when the pin changed. Alternatively re-probe and call `pinStore.verify(probe:for:)`.
 ///    Show a hard failure and require an explicit `removePin` before re-prompting. Never auto-repin.
-public struct PinStore: Sendable {
-    public let keychain: KeychainStore
-    public init(keychain: KeychainStore = KeychainStore(service: "dev.zyvor.netra.pins")) {
-        self.keychain = keychain
+public struct PinStore: @unchecked Sendable {
+    public let defaults: UserDefaults
+    public let prefix: String
+
+    public init(defaults: UserDefaults = .standard, prefix: String = "netra.pin.") {
+        self.defaults = defaults
+        self.prefix = prefix
     }
 
-    public static func key(host: String, port: Int) -> String { "pin:\(host.lowercased()):\(port)" }
+    /// Test helper: keeps the old `keychain:` call site working by isolating pins in a suite named after the service.
+    public init(keychain: KeychainStore) {
+        let suite = UserDefaults(suiteName: "pins.\(keychain.service)") ?? .standard
+        self.defaults = suite
+        self.prefix = "netra.pin."
+    }
+
+    public static func key(host: String, port: Int) -> String { "\(host.lowercased()):\(port)" }
 
     static func hostPort(_ url: URL) -> (String, Int)? {
         guard let h = url.host else { return nil }
         return (h, url.port ?? (url.scheme == "http" ? 80 : 443))
     }
 
+    private func defaultsKey(host: String, port: Int) -> String { prefix + Self.key(host: host, port: port) }
+
     public func pin(host: String, port: Int) -> String? {
-        keychain.get(account: Self.key(host: host, port: port))
+        defaults.string(forKey: defaultsKey(host: host, port: port))
     }
     public func pin(for url: URL) -> String? {
         Self.hostPort(url).flatMap { pin(host: $0.0, port: $0.1) }
     }
     public func setPin(_ fingerprint: String, host: String, port: Int) throws {
-        try keychain.set(CertificateFingerprint.normalize(fingerprint), account: Self.key(host: host, port: port))
+        defaults.set(CertificateFingerprint.normalize(fingerprint), forKey: defaultsKey(host: host, port: port))
     }
     public func setPin(_ fingerprint: String, for url: URL) throws {
         guard let hp = Self.hostPort(url) else { throw PinStoreError.invalidURL }
         try setPin(fingerprint, host: hp.0, port: hp.1)
     }
     public func removePin(host: String, port: Int) {
-        keychain.delete(account: Self.key(host: host, port: port))
+        defaults.removeObject(forKey: defaultsKey(host: host, port: port))
     }
 
     /// Throws `PinMismatchError` when a pin exists for the URL and differs from the probed certificate.
     public func verify(probe: CertificateProbeResult, for url: URL) throws {
         guard let hp = Self.hostPort(url), let pinned = pin(host: hp.0, port: hp.1) else { return }
-        if pinned != probe.fingerprint {
+        if CertificateFingerprint.normalize(pinned) != CertificateFingerprint.normalize(probe.fingerprint) {
             throw PinMismatchError(host: hp.0, port: hp.1, pinned: pinned, presented: probe.fingerprint)
         }
     }
