@@ -5,11 +5,14 @@ Netra is available under an annual **enterprise subscription** for production us
 | Plan | What you get | Coverage |
 |------|--------------|----------|
 | Community | Evaluation and non-production use, where the licence allows it | Community resources |
-| Professional | Entry edition, updates and upgrades | Business hours, next-business-day critical response |
-| Enterprise | Advanced edition, updates and upgrades | Priority business hours, four-business-hour critical response |
-| Premium | Contracted enterprise scope and critical escalation | 24x7 critical intake, one-hour initial response target |
+| Enterprise Essentials | Initial production deployment: 50 nodes, 3 clusters, 1 site; updates and upgrades | 8x5; P1 critical response within 4 business hours |
+| Enterprise | Regulated and multi-cluster teams: 200 nodes, 10 clusters, 3 sites; updates and upgrades | 24x7 P1 intake, one-hour response target |
+| Enterprise Scale | Large estates: 1,000 nodes, 25 clusters, 10 sites; updates and upgrades | 24x7 P1, 30-minute response target, TAM |
+| Sovereign / MSP | Air-gapped, sovereign and service-provider deployments (custom) | Mission-critical, contracted |
 
-Priced per edition, sized by managed nodes and clusters, with an annual minimum. Netra Community stays free. Enterprise editions are sized by managed nodes and clusters, and support is part of each edition.
+Plan names follow [Enterprise pricing](sales/enterprise-pricing.md). The first production transaction is a paid 90-day production pilot (up to 25 nodes and 2 clusters), credited to year one if the customer signs within 60 days.
+
+Priced per edition, sized by managed nodes and clusters (the limit reached first applies). Netra Community stays free. Enterprise editions are sized by managed nodes and clusters, and support is part of each edition.
 
 Rates are quoted by Zyvor: contact [sales@zyvor.dev](mailto:sales@zyvor.dev).
 

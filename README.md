@@ -10,7 +10,7 @@
 [![Docs](https://img.shields.io/badge/Docs-zyvorai.github.io%2Fzyvor--netra-0071e3)](https://zyvorai.github.io/zyvor-netra/)
 
 [![Book a demo](https://img.shields.io/badge/Book_a_demo-0071e3?style=for-the-badge)](https://zyvor.dev/schedule?utm_source=github&utm_medium=netra&utm_campaign=readme_hero)
-[![30-day PoC](https://img.shields.io/badge/30--day_PoC-000000?style=for-the-badge)](https://zyvor.dev/poc?utm_source=github&utm_medium=netra&utm_campaign=readme_hero)
+[![Paid production pilot](https://img.shields.io/badge/Paid_production_pilot-000000?style=for-the-badge)](mailto:sales@zyvor.dev?subject=Netra%20production%20pilot)
 [![Quickstart](https://img.shields.io/badge/Install_with_netractl_in_a_minute-63e6be?style=for-the-badge)](#quickstart)
 
 ![Netra — standalone eBPF network observability and emergency network control](docs/social/netra-hero-dark.jpg)
@@ -327,7 +327,7 @@ Contributions: [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privat
 ### See it, contain it, let go automatically
 
 [![Book a demo](https://img.shields.io/badge/Book_a_demo-0071e3?style=for-the-badge)](https://zyvor.dev/schedule?utm_source=github&utm_medium=netra&utm_campaign=readme_footer)
-[![30-day PoC](https://img.shields.io/badge/Start_a_30--day_PoC-000000?style=for-the-badge)](https://zyvor.dev/poc?utm_source=github&utm_medium=netra&utm_campaign=readme_footer)
+[![Paid production pilot](https://img.shields.io/badge/Start_a_paid_production_pilot-000000?style=for-the-badge)](mailto:sales@zyvor.dev?subject=Netra%20production%20pilot)
 [![Pricing](https://img.shields.io/badge/Pricing-1d1d1f?style=for-the-badge)](https://zyvor.dev/pricing?utm_source=github&utm_medium=netra&utm_campaign=readme_footer)
 [![Contact sales](https://img.shields.io/badge/Contact_sales-63e6be?style=for-the-badge)](mailto:sales@zyvor.dev?subject=Netra)
 [![Star on GitHub](https://img.shields.io/github/stars/zyvorai/zyvor-netra?style=for-the-badge&logo=github&label=Star&color=2997ff)](https://github.com/zyvorai/zyvor-netra)
