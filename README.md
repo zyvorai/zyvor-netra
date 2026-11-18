@@ -17,6 +17,8 @@
 
 ### See every packet's story. Contain the bad ones. Let go automatically.
 
+[Client overview (PDF)](docs/Netra-Client-Overview.pdf)
+
 **Standalone eBPF network observability and emergency network control for Linux/Kubernetes — with optional Cilium + Hubble enrichment.** Kernel drop attribution, path and congestion diagnostics, live packet capture, and leased deny rules that return to observe on their own, on any CNI.
 
 **Observe-first** · **Lease-bounded, fails open** · **No CNI required** · **No payload collection** · **215 MCP tools**
