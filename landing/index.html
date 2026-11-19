@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<title>Netra · See every packet&#x27;s story.</title>
+<meta name="description" content="Netra: standalone eBPF network observability and emergency network control for Linux and Kubernetes. Kernel drop attribution, path and congestion diagnostics, live packet capture and leased deny rules that return to observe on their own, on any CNI. Source-available, with a native Mac client.">
+<link rel="canonical" href="https://zyvorai.github.io/zyvor-netra/">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Netra">
+<meta property="og:title" content="Netra · See every packet&#x27;s story.">
+<meta property="og:description" content="Kernel drop attribution, congestion diagnostics, live packet capture and leased deny rules that return to observe on their own. Any CNI.">
+<meta property="og:url" content="https://zyvorai.github.io/zyvor-netra/">
+<meta property="og:image" content="https://zyvorai.github.io/zyvor-netra/social/og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Netra: See every packet&#x27;s story. The window shows the Netra web dashboard with lab data.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Netra · See every packet&#x27;s story.">
+<meta name="twitter:description" content="Kernel drop attribution, congestion diagnostics, live packet capture and leased deny rules that return to observe on their own. Any CNI.">
+<meta name="twitter:image" content="https://zyvorai.github.io/zyvor-netra/social/og.png">
+<meta name="twitter:image:alt" content="Netra: See every packet&#x27;s story. The window shows the Netra web dashboard with lab data.">
+<link rel="stylesheet" href="assets/landing.css">
+<style>:root{--accent-btn:#0071e3;--accent-ink:#0071e3;--accent-grad-a:#0a84ff;--accent-grad-b:#63e6be}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--accent-ink:#2997ff}}:root[data-theme="dark"]{--accent-ink:#2997ff}</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Netra","applicationCategory":"DeveloperApplication","operatingSystem":"Linux (Kubernetes), macOS 15 or later (client app)","softwareVersion":"0.32.0","downloadUrl":"https://github.com/zyvorai/zyvor-netra/releases","url":"https://zyvorai.github.io/zyvor-netra/","description":"Netra: standalone eBPF network observability and emergency network control for Linux and Kubernetes. Kernel drop attribution, path and congestion diagnostics, live packet capture and leased deny rules that return to observe on their own, on any CNI. Source-available, with a native Mac client.","image":"https://zyvorai.github.io/zyvor-netra/social/og.png","publisher":{"@type":"Organization","name":"Zyvor AI Labs Private Limited","url":"https://zyvor.dev"}}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+  <a class="brand" href="./" aria-label="Netra home"><img src="favicon.svg" width="26" height="26" alt=""><span>Netra</span></a>
+  <nav aria-label="Primary"><ul><li><a href="#features">Features</a></li><li><a href="#specs">Specs</a></li><li><a href="#start">Install</a></li><li><a href="#licence">Licence</a></li><li><a href="#faq">FAQ</a></li><li><a href="docs/getting-started/quickstart">Docs</a></li></ul></nav>
+  <a class="btn small primary" href="#start">Install</a>
+</header>
+<main id="main">
+<section class="hero" aria-labelledby="top">
+  <img class="icon" src="favicon.svg" width="96" height="96" alt="Netra app icon">
+  <p class="eyebrow">Zyvor · eBPF network observability</p>
+  <h1 id="top">Netra</h1>
+  <p class="tagline">See every packet&#x27;s story.</p>
+  <p class="promise"><strong>Contain the bad ones. Let go automatically.</strong> Standalone eBPF network observability and emergency network control for Linux and Kubernetes, on any CNI, with optional Cilium and Hubble enrichment. Kernel drop attribution, path and congestion diagnostics, live packet capture, and leased deny rules that return to observe on their own.</p>
+  <p class="cta"><a class="btn primary" href="#start">Get started</a><a class="textlink" href="#features">See the features</a></p>
+  <p class="fine">Linux and Kubernetes · any CNI · source-available · Mac app: macOS 15 or later, notarized, free 30-day trial key from sales@zyvor.dev</p>
+  <figure class="shot hero-shot"><picture><img src="assets/img/hero-img-light-1200.webp" srcset="assets/img/hero-img-light-1200.webp 1200w" sizes="(min-width:1080px) 1040px, 100vw" width="1568" height="696" alt="The Netra dashboard Overview: the headline &#x27;See the network. Diagnose it. Contain it.&#x27; above an Ask Netra panel with a read-only brief built from live aggregates." fetchpriority="high" decoding="async"></picture><figcaption>Web dashboard, Overview. Demo data from a lab deployment.</figcaption></figure>
+</section>
+
+<section class="band" aria-label="Overview">
+  <h2>Observe first. Enforce briefly. Fail open.</h2>
+  <p>Rules can be staged while observing, and nothing is dropped until you enforce. Enforcement is leased: it returns to observe when the lease expires, when the agent cannot refresh controller state, when the controller restarts or when HA leadership changes.</p>
+</section>
+
+<div id="features">
+<h2 class="sr">Features</h2>
+<section class="feature" id="congestion" aria-labelledby="h-congestion"><div class="grid"><div class="copy"><p class="eyebrow">Diagnose</p><h3 id="h-congestion">Where the stack is under pressure.</h3><p>The Congestion Map colors every layer of the Linux network stack by its worst finding, cluster-wide. One click jumps to a capture on the offending node.</p><a class="textlink" href="https://github.com/zyvorai/zyvor-netra/blob/main/docs/kernel-network-diagnostics.md">Kernel diagnostics</a></div><figure class="shot"><picture><img src="assets/img/congestion-light-1200.webp" srcset="assets/img/congestion-light-1200.webp 1200w" sizes="(min-width:960px) 62vw, 100vw" width="1568" height="696" alt="The Netra Congestion Map: ingress and egress stages of the Linux network stack, such as the NIC driver ring, the NAPI softirq backlog and the IP layer, each shown with its health and the drops in the diagnostic window." loading="lazy" decoding="async"></picture><figcaption>Congestion Map. Web dashboard, demo data from a lab deployment.</figcaption></figure></div></section>
+<section class="feature flip" id="path" aria-labelledby="h-path"><div class="grid"><div class="copy"><p class="eyebrow">Path</p><h3 id="h-path">Latency and pressure, per workload.</h3><p>TCP path diagnostics measure connect latency and transport pressure per workload, plus edge-observed handshake and RTT histograms that see NAT&#x27;d flows.</p><a class="textlink" href="https://github.com/zyvorai/zyvor-netra/blob/main/docs/path-diagnostics.md">Path diagnostics</a></div><figure class="shot"><picture><img src="assets/img/path-light-1200.webp" srcset="assets/img/path-light-1200.webp 1200w" sizes="(min-width:960px) 62vw, 100vw" width="1568" height="696" alt="Netra Path diagnostics: a path pulse row with connects timed, average and maximum connect latency, flows under congestion-window pressure and packets in flight, above a list of transport-pressure findings with an Explain button." loading="lazy" decoding="async"></picture><figcaption>TCP Path Diagnostics. Web dashboard, demo data from a lab deployment.</figcaption></figure></div></section>
+<section class="feature" id="capture" aria-labelledby="h-capture"><div class="grid"><div class="copy"><p class="eyebrow">Capture</p><h3 id="h-capture">Packets from one node, now.</h3><p>A filtered, time-bounded capture streams live, color-coded by protocol, with pod and VM attribution. Download the PCAP or export JSON or CSV.</p><a class="textlink" href="https://github.com/zyvorai/zyvor-netra/blob/main/docs/capture.md">Packet capture</a></div><figure class="shot"><picture><img src="assets/img/capture-light-1200.webp" srcset="assets/img/capture-light-1200.webp 1200w" sizes="(min-width:960px) 62vw, 100vw" width="1536" height="682" alt="The Netra Capture live view: a terminal-style feed of captured packets showing time, protocol, direction, length and endpoints labeled with pod names, under filters and Download .pcap, Export JSON and Export CSV buttons." loading="lazy" decoding="async"></picture><figcaption>Capture, live view. Web dashboard, demo data from a lab deployment.</figcaption></figure></div></section>
+<section class="feature flip" id="decode" aria-labelledby="h-decode"><div class="grid"><div class="copy"><p class="eyebrow">Decode</p><h3 id="h-decode">Wireshark-style detail, one click away.</h3><p>Expand any live-view row into a layered decode and hex dump, with the workload attribution on top.</p><a class="textlink" href="https://github.com/zyvorai/zyvor-netra/blob/main/docs/capture.md">Packet capture</a></div><figure class="shot"><picture><img src="assets/img/decode-light-1200.webp" srcset="assets/img/decode-light-1200.webp 1200w" sizes="(min-width:960px) 62vw, 100vw" width="1536" height="682" alt="Netra packet detail expanded under a captured packet row: workload attribution, then Frame, Ethernet II, Internet Protocol version 4 and Transmission Control Protocol fields." loading="lazy" decoding="async"></picture><figcaption>Packet detail. Web dashboard, demo data from a lab deployment.</figcaption></figure></div></section>
+<section class="feature" id="preview" aria-labelledby="h-preview"><div class="grid"><div class="copy"><p class="eyebrow">Contain</p><h3 id="h-preview">Preview the blast radius first.</h3><p>Preflight compares the live policy, runs a Kubernetes dry-run, then issues a five-minute one-shot receipt bound to the exact candidate. Policy apply stays plan-token plus risk confirm.</p><a class="textlink" href="https://github.com/zyvorai/zyvor-netra/blob/main/docs/deny-preview.md">Deny preview</a></div><figure class="shot"><picture><img src="assets/img/preview-light-1200.webp" srcset="assets/img/preview-light-1200.webp 1200w" sizes="(min-width:960px) 62vw, 100vw" width="1568" height="696" alt="The Netra Policies page, Plan, dry-run, apply: a note explaining preflight, buttons for Refresh, Preflight, Simulate against observed traffic, Server dry-run and Apply CRD, and the result &#x27;Server dry-run passed.&#x27;" loading="lazy" decoding="async"></picture><figcaption>Policy dry-run. Web dashboard, demo data from a lab deployment.</figcaption></figure></div></section>
+<section class="feature flip" id="lockdown" aria-labelledby="h-lockdown"><div class="grid"><div class="copy"><p class="eyebrow">Lock down</p><h3 id="h-lockdown">One click, through the same safe path.</h3><p>With Cilium enabled, Pods and VMs get one-click lock down and unlock through the same plan, receipt and apply path as every other rule.</p><a class="textlink" href="https://github.com/zyvorai/zyvor-netra/blob/main/docs/firewall.md">Firewall page</a></div><figure class="shot"><picture><img src="assets/img/lockdown-light-1200.webp" srcset="assets/img/lockdown-light-1200.webp 1200w" sizes="(min-width:960px) 62vw, 100vw" width="1568" height="696" alt="The Netra Pods page: a pod inventory for the netra-system namespace with Lock down, Unlock and Preflight buttons beside the selected pod." loading="lazy" decoding="async"></picture><figcaption>Pods with lock down and unlock. Web dashboard, demo data from a lab deployment.</figcaption></figure></div></section>
+</div>
+
+<section class="more" aria-labelledby="more-h">
+  <h2 id="more-h">And the rest of the toolbox.</h2>
+  <div class="cards"><div class="card"><h3>Per-second metrics</h3><p>Host, network, cgroup, process-group, eBPF and workload RED series every second, with anomaly detection and metric alerts. A spike links to the flows and drops behind it.</p></div><div class="card"><h3>Node isolation</h3><p>A per-node allow-only egress filter in <b>shadow</b> (count what it would block) or <b>enforce</b>, as a standalone TCX program.</p></div><div class="card"><h3>MCP server for AI agents</h3><p>An MCP server for investigation. Mutating tools stay behind <code>NETRA_MCP_ALLOW_MUTATIONS</code>; the built-in AI briefs are read-only.</p></div><div class="card"><h3>Export</h3><p>SIEM (CEF, syslog, JSONL, OTLP), Prometheus, Grafana, Loki, Graphite, and Slack and Teams ChatOps.</p></div></div>
+</section>
+
+<section class="privacy" aria-labelledby="privacy-h">
+  <h2 id="privacy-h">Safe to leave running.</h2>
+  <div class="cards"><div class="card"><h3>Observe-first</h3><p>Rules can be staged while observing. Nothing is dropped until you enforce.</p></div><div class="card"><h3>Leased enforcement</h3><p>Returns to observe when the lease expires, the agent cannot refresh controller state, the controller restarts or HA leadership changes.</p></div><div class="card"><h3>No payloads</h3><p>No application payloads, no argv or cmdline, no Secret contents. Opt-in sampled sensors keep counts only.</p></div></div>
+</section>
+
+<section class="specs" id="specs" aria-labelledby="specs-h">
+  <h2 id="specs-h">Specs and requirements.</h2>
+  <dl class="specs-grid"><div class="spec"><dt>Runs on</dt><dd>Linux with cgroup v2 and bpffs<small>Practical baseline Linux 5.8+ (TCX needs 6.6+). Run netra-doctor first.</small></dd></div><div class="spec"><dt>Install</dt><dd>Helm, via netractl<small>A controller and a node agent DaemonSet. No CNI change.</small></dd></div><div class="spec"><dt>CNI</dt><dd>Any<small>The Cilium and Hubble integration is opt-in.</small></dd></div><div class="spec"><dt>Version</dt><dd>0.32.0<small>Controller, agent and netractl.</small></dd></div><div class="spec"><dt>Mac app</dt><dd>macOS 15 or later<small>Apple silicon and Intel. Developer ID signed and notarized. Free 30-day trial key: sales@zyvor.dev</small></dd></div><div class="spec"><dt>Licence</dt><dd>Source-available<small>Zyvor Production License v1.0. Free for non-production use.</small></dd></div></dl>
+  <div class="limit" role="note"><h3>Honest limits</h3><p>The Mac app is a client of a Netra controller: it ships no agent and needs a controller to connect to. TLS SNI, HTTP Host and DNS names need Linux 5.17+ and are dropped on older kernels. Sampled L7 and TLS plaintext sensors are opt-in and off by default. The Mac app's source code is private.</p></div>
+</section>
+
+<section class="steps" id="start" aria-labelledby="steps-h">
+  <h2 id="steps-h">Get started in three steps.</h2>
+  <ol><li><h3>Install the controller and agent</h3><p><code>make install</code> puts <code>netractl</code> on your path, and <code>netractl install --namespace netra-system</code> deploys the controller and a node agent DaemonSet with Helm. Run <code>netra-doctor</code> first to check the host.</p></li><li><h3>Open the dashboard</h3><p>Browse to <code>https://&lt;node-ip&gt;:30870</code> and accept the self-signed certificate. There is no default password: sign in as <code>admin</code> with the controller API key.</p></li><li><h3>Or use the Mac app</h3><p>Download <code>Netra-0.4.0.dmg</code> below and connect it to your controller. For the free 30-day trial key, write to <b>sales@zyvor.dev</b>.</p></li></ol>
+  <div class="sha"><p>Linux and Kubernetes (Helm)</p><pre><code>make install                              # netractl to /usr/local/bin
+netractl install --namespace netra-system
+netractl status</code></pre></div>
+<div class="sha" style="margin-top:24px"><p>Netra 0.4.0 for Mac · SHA-256</p><pre><code id="sha">4db26f8323f6edc81e835adcde75307717c5c0ff33db7ede661ca057f947f6d0</code></pre><p>Verify: <code>echo "4db26f8323f6edc81e835adcde75307717c5c0ff33db7ede661ca057f947f6d0  Netra-0.4.0.dmg" | shasum -a 256 -c</code></p></div>
+<p class="cta" style="margin-top:28px"><a class="btn primary" href="https://github.com/zyvorai/zyvor-netra/releases/download/macos-v0.4.0/Netra-0.4.0.dmg">Download Netra-0.4.0.dmg</a><a class="textlink" href="https://github.com/zyvorai/zyvor-netra/releases/tag/macos-v0.4.0">Release page</a><a class="textlink" href="https://zyvorai.github.io/zyvor-netra/docs/getting-started/install">Install guide</a></p>
+</section>
+
+<section class="pricing" id="licence" aria-labelledby="pricing-h">
+  <div class="inner">
+  <h2 id="pricing-h" style="text-align:left">Licence and pricing.</h2>
+  <p class="lead">Netra is source-available under the <a href="https://github.com/zyvorai/zyvor-netra/blob/main/LICENSE">Zyvor Production License v1.0</a>. It is <b>free for evaluation, development, testing, research, education and other non-production use</b>. Any production use requires a separate paid commercial licence from Zyvor, offered as an annual enterprise subscription.</p>
+<div class="card buy"><h3>Production use</h3><p>Plans, support levels and terms are in the <a href="https://github.com/zyvorai/zyvor-netra/blob/main/docs/SUBSCRIPTION-MODEL.md">subscription model</a> and the <a href="https://github.com/zyvorai/zyvor-netra/blob/main/docs/sales/enterprise-pricing.md">enterprise pricing sheet</a>. Current prices are on <a href="https://zyvor.dev/pricing">zyvor.dev/pricing</a>.</p><p class="cta"><a class="btn primary" href="mailto:sales@zyvor.dev?subject=Netra">Contact sales</a><a class="btn ghost" href="https://zyvor.dev/schedule" rel="noopener">Book a demo</a><a class="btn ghost" href="https://zyvor.dev/pricing" rel="noopener">Pricing</a></p></div>
+<p class="fine">The Mac app comes with a free 30-day trial key: <a href="mailto:sales@zyvor.dev?subject=Netra%20trial%20key">sales@zyvor.dev</a>. <a href="https://github.com/zyvorai/zyvor-netra/blob/main/LICENSE">Licence terms</a>.</p>
+  </div>
+</section>
+
+<section class="faq" id="faq" aria-labelledby="faq-h">
+  <h2 id="faq-h">Questions, answered.</h2>
+  <details><summary>Does Netra need Cilium?</summary><p>No. The node agent owns its own programs and maps below /sys/fs/bpf/netra and works on any CNI. If Cilium and Hubble exist, Netra can manage CiliumNetworkPolicy and show Hubble flows, but both integrations are opt-in.</p></details>
+<details><summary>Does it collect packet payloads?</summary><p>No application payloads, no argv or cmdline and no Secret contents are collected. Opt-in sampled sensors keep counts only.</p></details>
+<details><summary>What happens to a deny rule if the controller goes away?</summary><p>Enforcement is leased. It returns to observe when the lease expires, the agent cannot refresh controller state, the controller restarts or HA leadership changes.</p></details>
+<details><summary>Is there a free trial of the Mac app?</summary><p>Yes: a free 30-day trial key from sales@zyvor.dev.</p></details>
+<details><summary>Which macOS versions does the Mac app need?</summary><p>macOS 15 or later, on Apple silicon or Intel. It is a client of a running Netra controller.</p></details>
+<details><summary>Will macOS warn me when I open it?</summary><p>No. The download is signed with our Developer ID and notarized by Apple, so it opens without a Gatekeeper warning. The SHA-256 is on this page and in the release notes.</p></details>
+<details><summary>How is Netra licensed?</summary><p>Source-available under the Zyvor Production License v1.0: free for non-production use, and a commercial licence for any production use. See Licence and pricing above.</p></details>
+<details><summary>Are the screenshots production traffic?</summary><p>No. They are captures of the web dashboard on a lab deployment.</p></details>
+</section>
+</main>
+<footer class="footer">
+  <p><strong>Netra</strong> · The Netra server, agent and docs are source-available; the Mac app's source is private.</p>
+  <p class="links"><a href="docs/getting-started/quickstart">Docs</a><a href="https://github.com/zyvorai/zyvor-netra/blob/main/docs/Netra-Client-Overview.pdf">Client overview (PDF)</a><a href="https://github.com/zyvorai/zyvor-netra/blob/main/CHANGELOG.md">Changelog</a><a href="https://github.com/zyvorai/zyvor-netra/releases">Releases</a><a href="https://github.com/zyvorai/zyvor-netra">GitHub</a><a href="https://github.com/zyvorai/zyvor-netra/blob/main/LICENSE">LICENSE</a><a href="https://github.com/zyvorai/zyvor-netra/blob/main/SECURITY.md">SECURITY</a><a href="mailto:sales@zyvor.dev">sales@zyvor.dev</a></p>
+  <p>© 2026 Zyvor AI Labs Private Limited · <a href="https://zyvor.dev">zyvor.dev</a> · Zyvor Production License v1.0</p>
+</footer>
+</body>
+</html>

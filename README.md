@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="social/og.png" width="840" alt="Zyvor Netra: see every packet's story. Standalone eBPF network observability and emergency network control, shown with the web dashboard and demo data." />
+
 # Netra
 
 [![CI](https://github.com/zyvorai/zyvor-netra/actions/workflows/ci.yml/badge.svg)](https://github.com/zyvorai/zyvor-netra/actions/workflows/ci.yml)
@@ -13,11 +15,9 @@
 [![Paid production pilot](https://img.shields.io/badge/Paid_production_pilot-000000?style=for-the-badge)](mailto:sales@zyvor.dev?subject=Netra%20production%20pilot)
 [![Quickstart](https://img.shields.io/badge/Install_with_netractl_in_a_minute-63e6be?style=for-the-badge)](#quickstart)
 
-![Netra — standalone eBPF network observability and emergency network control](docs/social/netra-hero-dark.jpg)
-
 ### See every packet's story. Contain the bad ones. Let go automatically.
 
-[Client overview (PDF)](docs/Netra-Client-Overview.pdf)
+**[Website](https://zyvorai.github.io/zyvor-netra/)** &nbsp;·&nbsp; **[Mac app: 30-day trial](https://github.com/zyvorai/zyvor-netra/releases/tag/macos-v0.4.0)** &nbsp;·&nbsp; [Quickstart](#quickstart) &nbsp;·&nbsp; [Client overview (PDF)](docs/Netra-Client-Overview.pdf)
 
 **Standalone eBPF network observability and emergency network control for Linux/Kubernetes — with optional Cilium + Hubble enrichment.** Kernel drop attribution, path and congestion diagnostics, live packet capture, and leased deny rules that return to observe on their own, on any CNI.
 
@@ -31,10 +31,13 @@
 
 ## What's new
 
-From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.30.0):
+From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.32.0):
 
 | | |
 |---|---|
+| **Per-node agent mTLS identity** *(0.32.0)* | Opt-in `NETRA_AGENT_MTLS_BIND_NODE` requires the reported node to match the agent's client certificate; revoked serials can be hot-reloaded. [Docs →](docs/agent-mtls.md) |
+| **Scoped authorization** *(0.32.0)* | OIDC claims and `NETRA_SERVICE_CREDENTIALS_FILE` add namespace, cluster and tenant ACLs on top of viewer, operator and admin. [Docs →](docs/auth-oidc-rbac.md) |
+| **Failed-connection investigation** *(0.32.0)* | A timeline for one failed connection, from the API, `netractl investigate connection` or MCP. [Docs →](docs/investigate-connection.md) |
 | **Per-second metrics** *(0.30.0)* | Host, network, cgroup, process-group, eBPF and workload RED series every second, with anomaly detection, metric alerts, app collectors, exporters, and a link from any chart spike to the flows and drops behind it. [Docs →](docs/metrics.md) |
 | **Node isolation** *(0.30.0)* | A per-node allow-only egress filter in **shadow** (count what it would block) or **enforce**, as a standalone TCX program. [Docs →](docs/node-isolation.md) |
 | **Security review** *(0.30.0)* | DNS query types, versioned threat feeds with expiry, rollback and optional HTTPS refresh, deny-predicate overlap review and exact-workload incident correlation. [Docs →](docs/security-review.md) |
@@ -43,7 +46,7 @@ From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.30.0):
 | **Netlink findings and alerts** | Default route removed, gateway unreachable, uplink down, MTU changed, derived from the recorded changes. |
 | **Who made the change** | An `fentry` on `rtnetlink_rcv_msg` attributes each modifying netlink request to the process that sent it. |
 | **BPF attachment inventory** | Netra notices when its own hooks have silently gone, for example after a NIC or bond is recreated. [Docs →](docs/bpf-attachments.md) |
-| **macOS app** | The Mac app is distributed as a notarized download. Its source is in a private repository. |
+| **macOS app** | [Netra for macOS 0.4.0](https://github.com/zyvorai/zyvor-netra/releases/tag/macos-v0.4.0): a native client for a Netra controller. Notarized, macOS 15 or later, with a free 30-day trial key from sales@zyvor.dev. See [Mac app](#mac-app). Its source is in a private repository. |
 | **One UX contract** | Dashboard and docs site follow one design contract; Apple light by default, dark one click away. |
 | **Stable controller certificate** | `tls.existingSecret` serves a `kubernetes.io/tls` Secret so clients can pin the controller certificate. |
 
@@ -163,6 +166,19 @@ kubectl -n netra-system get secret netra-auth -o jsonpath='{.data.api-key}' | ba
 Requires Linux with cgroup v2 and bpffs; practical baseline Linux 5.8+ (TCX 6.6+). Run `netra-doctor` first. Full steps, Helm values, Cilium/Hubble and CLI examples: **[Install guide](docs/install.md)**.
 
 ---
+
+## Mac app
+
+A native Mac client for a running Netra controller, for operators who want the dashboard as an app. It is a client of the controller API: it ships no agent and needs a controller to connect to.
+
+| | |
+|---|---|
+| **Get it** | [Netra 0.4.0](https://github.com/zyvorai/zyvor-netra/releases/tag/macos-v0.4.0): `Netra-0.4.0.dmg` (SHA-256 `4db26f8323f6edc81e835adcde75307717c5c0ff33db7ede661ca057f947f6d0`, also in the release notes and in `Netra-0.4.0.dmg.sha256`) |
+| **Free 30-day trial key** | **sales@zyvor.dev** |
+| **Requirements** | macOS 15 or later, Apple silicon or Intel |
+| **Notarized** | Developer ID signed and notarized by Apple |
+
+Production use needs a commercial licence like the rest of Netra (see [License](#license)). The Mac app's source code is private.
 
 ## Observe
 
