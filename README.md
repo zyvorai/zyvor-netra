@@ -174,7 +174,7 @@ A native Mac client for a running Netra controller, for operators who want the d
 | | |
 |---|---|
 | **Get it** | [Netra 0.4.1](https://github.com/zyvorai/zyvor-netra/releases/tag/macos-v0.4.1): `Netra-0.4.1.dmg` (SHA-256 `033624d44c07ea6b5cc9f0364343cd08a1a67c369cdb73d809947605f2328a95`, also in the release notes and in `Netra-0.4.1.dmg.sha256`) |
-| **Free 30-day trial key** | **sales@zyvor.dev** |
+| **Trial key** | The app runs without a key. For a free 30-day trial key, email **sales@zyvor.dev** |
 | **Requirements** | macOS 15 or later, Apple silicon or Intel |
 | **Notarized** | Developer ID signed and notarized by Apple |
 
