@@ -5,7 +5,7 @@ name: Deploy Docs Site
 on:
   push:
     branches: [main]
-    paths: ['website/**', 'docs/**', 'CHANGELOG.md', 'server.json', 'scripts/gen-site-facts.py', '.github/workflows/pages.yml']
+    paths: ['landing/**', 'website/**', 'docs/**', 'CHANGELOG.md', 'server.json', 'scripts/gen-site-facts.py', '.github/workflows/pages.yml']
   workflow_dispatch: {}
 concurrency:
   group: pages
@@ -21,6 +21,9 @@ jobs:
       with: {node-version: '22', cache: npm, cache-dependency-path: website/package-lock.json}
     - run: npm --prefix website ci
     - run: npm --prefix website run build
+    # The product landing page (landing/, built from the Zyvor marketing kit) is served at the site root.
+    # robots.txt and sitemap.xml stay Docusaurus-generated.
+    - run: rsync -a --exclude robots.txt --exclude sitemap.xml landing/ website/build/
     - uses: actions/upload-pages-artifact@v5
       with: {path: website/build}
   deploy:
