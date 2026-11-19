@@ -58,6 +58,25 @@ The server stays authoritative; the client mirrors its rules so the UI cannot be
 - Policy apply keeps the server's plan-token plus risk-confirm rule; the threat-feed and
   security-review surfaces stay read-only. Netlink, BPF attachment and map pages only read.
 
+## Licence key and 30-day trial
+
+The app can hold a Zyvor licence key (`ZYV1.<payload>.<signature>`, Ed25519) and verifies it offline against the
+Netra public key compiled into `NetraKit` (`macos/Sources/NetraKit/Licence/`). This repository contains the verifier
+and the public key only; keys are issued by Zyvor, not by anything in this tree. A key is either a 30-day **trial** or a
+**pro** key and is checked for signature, product (`netra`) and expiry. There is no network call and no hardware binding.
+
+- **Netra > Licence…** (also Settings > Licence): paste the key, *Verify and Save*, see licensee, edition, expiry and
+  days left, or *Remove Key…*. The key is kept in the Keychain; if the Keychain refuses (a Developer ID build without a
+  provisioning profile may), it is kept in `~/Library/Application Support/Netra/licence.key` with mode 0600.
+- **Status line** at the bottom of the main window: no key shows what [LICENSE](../LICENSE) already allows without one
+  (evaluation, proof-of-concept and other non-production use are free; production use needs a licence) with
+  *Get a licence* (https://zyvor.dev/buy) and *Free 30-day trial key: sales@zyvor.dev*; a trial shows
+  `Trial: N days left`; a pro key shows `Licensed, N days left` (warning at 14 days or fewer); an expired key shows
+  `Licence expired on DATE` with the buy link.
+- **Soft enforcement only.** Nothing in the app is disabled in any state, including expired or invalid keys.
+
+Tests: `swift test --package-path macos --filter LicenceTests`.
+
 ## Pages by sidebar group
 
 The inventory is `NavSection` and `SectionGroup.all` in `macos/Sources/Netra/Sections.swift`;

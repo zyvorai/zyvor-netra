@@ -7,6 +7,7 @@ import NetraKit
 @main
 struct NetraApp: App {
     @State private var model = AppModel()
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
         WindowGroup("Netra", id: "main") {
@@ -17,6 +18,9 @@ struct NetraApp: App {
                 .task { await model.start() }
         }
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Licence…") { openWindow(id: "licence") }
+            }
             CommandGroup(after: .newItem) {
                 Button("Connect…") { model.showConnect = true }.keyboardShortcut("k", modifiers: [.command, .shift])
                 Button("Reconnect") { Task { await model.connect() } }.keyboardShortcut("r", modifiers: .command)
@@ -27,6 +31,8 @@ struct NetraApp: App {
                 }
             }
         }
+
+        Window("Licence", id: "licence") { LicenceView() }.windowResizability(.contentSize)
 
         MenuBarExtra {
             MenuBarView().environment(model)
@@ -39,8 +45,9 @@ struct NetraApp: App {
             TabView {
                 ConnectForm().environment(model).padding().tabItem { Label("Connection", systemImage: "network") }
                 NotificationSettingsView().padding().tabItem { Label("Notifications", systemImage: "bell") }
+                LicenceView().tabItem { Label("Licence", systemImage: "key") }
             }
-            .frame(width: 440)
+            .frame(width: 540)
         }
     }
 }

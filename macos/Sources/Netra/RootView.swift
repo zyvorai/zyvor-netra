@@ -33,6 +33,7 @@ struct RootView: View {
             case let s: PageRouter(section: s).id(s)
             }
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) { LicenceStatusBar() }
         .paletteOverlay()
         // While the connect form is open it shows the fingerprint inline, so don't stack a second sheet on top.
         .sheet(item: Binding(get: { model.showConnect ? nil : model.pendingTrust.map(TrustItem.init) }, set: { if $0 == nil { model.pendingTrust = nil } })) { item in

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **macOS app 0.4.0: licence key and 30-day trial support.** The app verifies a Zyvor licence key (Ed25519, product `netra`) offline: Netra > Licence… to paste, verify, save and remove a key, plus a small status line (no key, trial, licensed, expired). Soft enforcement only: no feature is disabled, no network call is added, no hardware binding. The repository holds only the verifier and the public key. For a trial key write to sales@zyvor.dev; licences: https://zyvor.dev/buy. Docs: `docs/macos-app.md`.
 - **Toolchain Go 1.27.4.** CI and `go.mod` toolchain move past GO-2026-6809 (`crypto/x509`) and GO-2026-6859 (`net/http`); both are fixed in 1.27.3 / 1.27.4.
 - **Security: no built-in admin key.** `scripts/deploy-remote.sh` no longer defaults `NETRA_API_KEY` to the published `Admin@321`; it mints a random key (still written to `~/.netra/api-key`) unless `NETRA_API_KEY` is set. The dashboard login no longer maps `admin` / `Admin@321` to a baked-in token: the password is the API key. Controllers deployed with the old default should rotate their key. Docs: `docs/dashboard-login.md`.
 
