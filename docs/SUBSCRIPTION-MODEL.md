@@ -14,7 +14,9 @@ Plan names follow [Enterprise pricing](sales/enterprise-pricing.md). The first p
 
 Priced per edition, sized by managed nodes and clusters (the limit reached first applies). Netra Community stays free. Enterprise editions are sized by managed nodes and clusters, and support is part of each edition.
 
-Rates are quoted by Zyvor: contact [sales@zyvor.dev](mailto:sales@zyvor.dev).
+List prices per year (USD worldwide, excl. tax / India INR incl. 18% GST): Enterprise Essentials USD 15,000 / INR 1,486,800; Enterprise USD 36,000 / INR 3,568,320; Enterprise Scale USD 72,000 / INR 7,136,640; single node USD 257 / INR 25,499 per node per year. Each edition price is also its annual minimum. Founding offer USD 29,000 / INR 2,874,480 (first three reference customers, two-year price protection). Paid production pilot USD 6,000 to 12,000 / INR 594,720 to 1,189,440, credited to year one.
+
+Prices: INR incl. 18% GST in India; US dollars excl. tax elsewhere (VAT, GST or sales tax added where applicable). Pay online by UPI, card or netbanking where a buy page exists; international cards work (charged in rupees); or request a US-dollar invoice by bank transfer. Custom pricing: contact [sales@zyvor.dev](mailto:sales@zyvor.dev). Buy or get a quote: [zyvor.dev/buy](https://zyvor.dev/buy). A 30-day trial key is available for the Mac app and production evaluation.
 
 ## Terms
 
