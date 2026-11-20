@@ -331,8 +331,7 @@ Netra's latest release is **0.32.0** ([CHANGELOG.md](CHANGELOG.md)). Shipped obs
 
 Netra is source-available under the **[Zyvor Production License v1.0](LICENSE)** (SPDX `LicenseRef-Zyvor-Production-1.0`, also in [LICENSES/](LICENSES/LicenseRef-Zyvor-Production-1.0.txt)).
 
-- **Free** for evaluation, development, testing, research, education, non-production labs and all other non-production use.
-- **Production use** requires an annual enterprise subscription. Plans, support levels and terms: [docs/SUBSCRIPTION-MODEL.md](docs/SUBSCRIPTION-MODEL.md) · [Enterprise pricing](docs/sales/enterprise-pricing.md) · [Pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=netra&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev).
+- **Running Netra** requires an annual enterprise subscription. Plans, support levels and terms: [docs/SUBSCRIPTION-MODEL.md](docs/SUBSCRIPTION-MODEL.md) · [Enterprise pricing](docs/sales/enterprise-pricing.md) · [Pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=netra&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev).
 
 **Pricing (annual, production use).**
 

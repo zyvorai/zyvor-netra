@@ -6,11 +6,10 @@
 <!--
   Source of the five Netra Enterprise pricing sheets (the JPEGs in this folder and
   ../Zyvor-Netra-Enterprise-Pricing.pdf). Build: ./build.sh
-  Licence wording follows /LICENSE: the Zyvor Production License v1.0 is free for
-  evaluation and non-production use; production use needs a commercial license.
+  Licence wording follows /LICENSE: the Zyvor Production License v1.0; production use needs a commercial license.
 -->
 <style>
-  :root { --ink:#111111; --signal:#ff5a15; --deep:#cc420a; --tint:#fdf5f2; --rule:#e6dfda; --grey:#5b5651;
+  :root { --ink:#1d1d1f; --signal:#0071e3; --deep:#0066cc; --tint:#f5f5f7; --rule:#d2d2d7; --grey:#6e6e73;
     --body:'Avenir Next','Avenir','Helvetica Neue',Helvetica,Arial,sans-serif;
     --head:'Avenir Next Condensed','Avenir Next','Arial Narrow',Impact,sans-serif; }
   * { box-sizing:border-box; }
@@ -95,21 +94,21 @@
     <p class="sub">Packaging, feature boundary, and recommended pricing.</p>
     <div class="pill">Source-available dataplane. Enterprise operations.</div>
     <div class="two">
-      <div class="box light"><div class="lab">Community</div><p>Free for evaluation and non-production use under the Zyvor Production License v1.0: eBPF observability, lease-bounded emergency enforcement, packet capture, Linux network diagnostics, HA, basic SIEM export, AI/MCP, ChatOps, GitOps, and in-cluster fleet visibility.</p></div>
+      <div class="box light"><div class="lab">Core platform</div><p>Included in every edition under the Zyvor Production License v1.0: eBPF observability, lease-bounded emergency enforcement, packet capture, Linux network diagnostics, HA, basic SIEM export, AI/MCP, ChatOps, GitOps, and in-cluster fleet visibility.</p></div>
       <div class="box dark"><div class="lab">Enterprise</div><p>Multi-cluster command, enterprise identity and RBAC, durable retention, policy governance, compliance evidence, managed integrations, certified releases, and accountable support.</p></div>
     </div>
     <div class="panel"><h2>Commercial recommendation</h2>
       <ul class="b">
         <li>Sell Netra Enterprise as an annual subscription priced by managed nodes and clusters.</li>
         <li>Do not charge by user, packet, flow, API call, data volume, or dashboard seat.</li>
-        <li>Keep the existing capabilities in Community. Do not restrict the current repository.</li>
+        <li>Keep the existing core capabilities in every edition. Do not restrict the current repository.</li>
         <li>Use a paid production pilot as the first transaction and credit it against year one on conversion.</li>
         <li>Every order form must mark each commercial module as GA, beta, or committed roadmap.</li>
       </ul>
     </div>
     <div class="entry"><div class="l"><b>NETRA<br>ENTERPRISE</b><span>RECOMMENDED ENTRY</span></div>
       <div class="r"><div class="price">INR 30 lakh <i>/ USD 36,000</i></div><div class="per">PER YEAR</div><p>Up to 200 nodes, 10 clusters, and 3 sites. Includes 24&times;7 P1 support with a one-hour response target.</p></div></div>
-    <p class="foot">Scope basis: Netra repository commit a37b996, reviewed 17 September 2026. This proposal keeps all current functionality in Community.</p>
+    <p class="foot">Scope basis: Netra repository commit a37b996, reviewed 17 September 2026. This proposal keeps all current functionality in the core platform.</p>
   </div>
   <div class="bar bot"><span>Zyvor AI Labs &middot; sales@zyvor.dev</span><span class="pg">01 / 05</span></div>
 </section>
@@ -119,7 +118,7 @@
   <div class="bar top"><div class="brand"><img src="../../../web/public/zyvor-logomark.svg" alt=""><span>ZYVOR</span><span class="sl">/</span><span class="nt">NETRA</span></div><div class="tag">Enterprise v1 launch scope</div></div>
   <div class="main">
     <h1>Paid capabilities <em>worth building</em></h1>
-    <p class="sub">Enterprise operations around the existing Netra dataplane. Community stays intact.</p>
+    <p class="sub">Enterprise operations around the existing Netra dataplane. The core platform stays intact.</p>
     <table class="edge">
       <thead><tr><th style="width:18%">Capability</th><th style="width:38%">Customer value</th><th>Launch package</th></tr></thead>
       <tbody>
@@ -133,7 +132,7 @@
         <tr><td>Accountable support</td><td>Give customers an escalation path and deployment ownership.</td><td>SLAs, architecture reviews, upgrade guidance, incident assistance, and TAM options.</td></tr>
       </tbody>
     </table>
-    <div class="dnm"><h2>Do not move out of Community</h2>
+    <div class="dnm"><h2>Do not move out of the core platform</h2>
       <div class="cols">
         <ul class="b"><li>Standalone eBPF observability and Linux/Kubernetes coverage</li><li>Lease-bounded emergency firewall and fail-open safety</li><li>TCP, DNS, drop, congestion, and sysctl diagnostics</li><li>Packet capture, pcap export, and in-browser analysis</li></ul>
         <ul class="b"><li>Existing active/passive HA and persistence</li><li>Existing basic SIEM export, webhooks, ChatOps, AI/MCP, and GitOps</li><li>In-cluster node inventory and BPF program coverage</li></ul>
@@ -152,7 +151,6 @@
     <table>
       <thead><tr><th style="width:17%">Edition</th><th style="width:23%">Annual price</th><th style="width:26%">Capacity</th><th style="width:16%">Support</th><th>Best fit</th></tr></thead>
       <tbody>
-        <tr><td>Community</td><td class="pr">Free (non-production)</td><td>Unlimited non-production nodes; single deployment</td><td>Community</td><td>Labs, evaluation, and testing</td></tr>
         <tr><td>Enterprise Essentials</td><td class="pr">INR 12 lakh / USD 15k</td><td>50 nodes; 3 clusters; 1 site</td><td>8&times;5; next business day</td><td>Initial production deployment</td></tr>
         <tr><td>Enterprise</td><td class="pr">INR 30 lakh / USD 36k</td><td>200 nodes; 10 clusters; 3 sites</td><td>24&times;7 P1; 1 hour</td><td>Regulated and multi-cluster teams</td></tr>
         <tr><td>Enterprise Scale</td><td class="pr">INR 60 lakh / USD 72k</td><td>1,000 nodes; 25 clusters; 10 sites</td><td>24&times;7 P1; 30 min + TAM</td><td>Large estates and critical networks</td></tr>
@@ -171,7 +169,7 @@
       <li>Three-year prepaid commitment: 10% discount. Five-year prepaid commitment: 15% discount.</li>
       <li>GST, withholding, travel, cloud consumption, and third-party licences are extra.</li>
       <li>Expansion is quoted before capacity is exceeded. Avoid surprise metered bills.</li>
-      <li>Community is licensed under the Zyvor Production License v1.0: free for evaluation and non-production use. Production use needs a commercial license, and Enterprise modules use a Zyvor commercial EULA.</li>
+      <li>Netra is licensed under the Zyvor Production License v1.0. Production use needs a commercial license, and Enterprise modules use a Zyvor commercial EULA. A 30-day trial key is available for evaluation.</li>
     </ul>
   </div>
   <div class="bar bot"><span>Zyvor AI Labs &middot; sales@zyvor.dev</span><span class="pg">03 / 05</span></div>
@@ -217,13 +215,13 @@
     <h1>Ship what you can <em>support</em></h1>
     <p class="sub">The commercial proposal should reflect what is actually ready to operate and support.</p>
     <div class="cards3">
-      <div class="card top"><h3>Now: Community</h3><p>Keep and harden the current repository: eBPF dataplane, firewall, diagnostics, capture, HA, exports, AI/MCP, ChatOps, GitOps, and in-cluster fleet.</p></div>
+      <div class="card top"><h3>Now: core platform</h3><p>Keep and harden the current repository: eBPF dataplane, firewall, diagnostics, capture, HA, exports, AI/MCP, ChatOps, GitOps, and in-cluster fleet.</p></div>
       <div class="card topdk" style="flex:1.15"><h3>Enterprise v1</h3><p>Multi-cluster controller, OIDC/SAML/SCIM, scoped RBAC, durable storage, policy governance, compliance evidence, managed connectors, certified build pipeline, and support operations.</p></div>
       <div class="card top"><h3>Post-GA</h3><p>MSP multi-tenancy, delegated customer portals, white-label, cross-region federation, advanced behavior analytics, and FIPS validation after technical and commercial demand is proven.</p></div>
     </div>
     <h2>Release gates before the first Enterprise contract</h2>
     <ul class="b" style="font-size:19px">
-      <li>Define Community and Enterprise repositories, build provenance, and commercial licence enforcement under the Zyvor Production License.</li>
+      <li>Define the core and Enterprise repositories, build provenance, and commercial licence enforcement under the Zyvor Production License.</li>
       <li>Publish a support matrix for Linux kernels, Kubernetes versions, CNIs, CPU architectures, and storage backends.</li>
       <li>Create signed release artifacts, SBOMs, a CVE response policy, upgrade/rollback procedures, and an enterprise release channel.</li>
       <li>Run live-kernel verification for features documented as build/test verified but not yet live-kernel verified.</li>
