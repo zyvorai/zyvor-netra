@@ -334,6 +334,17 @@ Netra is source-available under the **[Zyvor Production License v1.0](LICENSE)**
 - **Free** for evaluation, development, testing, research, education, non-production labs and all other non-production use.
 - **Production use** requires an annual enterprise subscription. Plans, support levels and terms: [docs/SUBSCRIPTION-MODEL.md](docs/SUBSCRIPTION-MODEL.md) · [Enterprise pricing](docs/sales/enterprise-pricing.md) · [Pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=netra&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev).
 
+**Pricing (annual, production use).**
+
+| Edition | Capacity | Price per year |
+|---|---|---|
+| Essentials | 50 nodes · 3 clusters · 1 site | USD 15,000 |
+| Enterprise | 200 nodes · 10 clusters · 3 sites | USD 36,000 |
+| Scale | 1,000 nodes · 25 clusters · 10 sites | USD 72,000 |
+| Single node | 1 node | ₹25,499 per node per year incl. GST (about USD 257) |
+
+Founding offer: USD 29,000 for the first three reference customers, with two-year price protection. Paid production pilot: USD 6,000 to 12,000 for 90 days, credited to year one.
+
 Contributions: [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately per [SECURITY.md](SECURITY.md).
 
 ---
