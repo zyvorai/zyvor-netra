@@ -336,14 +336,14 @@ Netra is source-available under the **[Zyvor Production License v1.0](LICENSE)**
 
 **Pricing (annual, production use).**
 
-| Edition | Capacity | Price per year |
-|---|---|---|
-| Essentials | 50 nodes · 3 clusters · 1 site | USD 15,000 |
-| Enterprise | 200 nodes · 10 clusters · 3 sites | USD 36,000 |
-| Scale | 1,000 nodes · 25 clusters · 10 sites | USD 72,000 |
-| Single node | 1 node | ₹25,499 per node per year incl. GST (about USD 257) |
+| Edition | Capacity | USD per year (worldwide, excl. tax) | India (INR per year, incl. 18% GST) |
+|---|---|---|---|
+| Essentials | 50 nodes · 3 clusters · 1 site | USD 15,000 | INR 1,486,800 |
+| Enterprise | 200 nodes · 10 clusters · 3 sites | USD 36,000 | INR 3,568,320 |
+| Scale | 1,000 nodes · 25 clusters · 10 sites | USD 72,000 | INR 7,136,640 |
+| Single node | 1 node | USD 257 per node per year | INR 25,499 per node per year |
 
-Founding offer: USD 29,000 for the first three reference customers, with two-year price protection. Paid production pilot: USD 6,000 to 12,000 for 90 days, credited to year one.
+Founding offer: USD 29,000 (INR 2,874,480 in India) for the first three reference customers, with two-year price protection. Paid production pilot: USD 6,000 to 12,000 (INR 594,720 to 1,189,440 in India) for 90 days, credited to year one. A 30-day trial key is available for the Mac app and production evaluation; Netra's free non-production use stays free. Prices: INR incl. 18% GST in India; US dollars excl. tax elsewhere (VAT, GST or sales tax added where applicable). Pay online by UPI, card or netbanking where a buy page exists; international cards work (charged in rupees); or request a US-dollar invoice by bank transfer. Custom pricing: contact [sales@zyvor.dev](mailto:sales@zyvor.dev). Buy or get a quote: [zyvor.dev/buy](https://zyvor.dev/buy).
 
 Contributions: [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately per [SECURITY.md](SECURITY.md).
 
