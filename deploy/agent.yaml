@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: netra-agent
+  namespace: netra-system
+spec:
+  selector:
+    matchLabels: {app.kubernetes.io/name: netra-agent}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: netra-agent}
+    spec:
+      serviceAccountName: netra-agent
+      automountServiceAccountToken: false
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      tolerations: [{operator: Exists}]
+      containers:
+      - name: agent
+        image: ghcr.io/zyvorai/netra-agent:0.32.0
+        securityContext: {privileged: true}
+        env:
+        - {name: NETRA_SERVER, value: https://netra.netra-system.svc:30870}
+        - {name: NETRA_TLS_INSECURE, value: "true"}
+        - {name: NETRA_CGROUP_ENABLED, value: "true"}
+        - {name: NETRA_CGROUP_PATH, value: /sys/fs/cgroup}
+        - {name: NETRA_CGROUP_SCAN_INTERVAL, value: 10s}
+        - {name: NETRA_INTERFACES, value: ""}
+        - {name: NETRA_XDP_INTERFACES, value: ""}
+        - {name: NETRA_BPF_PIN, value: /sys/fs/bpf/netra}
+        - {name: NETRA_FAILSAFE_AFTER, value: 60s}
+        - name: NODE_NAME
+          valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+        - name: NETRA_AGENT_KEY
+          valueFrom: {secretKeyRef: {name: netra-auth, key: agent-key}}
+        volumeMounts:
+        - {name: bpffs, mountPath: /sys/fs/bpf, mountPropagation: Bidirectional}
+        - {name: cgroupfs, mountPath: /sys/fs/cgroup, readOnly: true}
+        # Host tracefs, read-only: tracepoint record layouts for the TCP event
+        # sensors and the kfree_skb sensor (docs/tcp-events.md).
+        - {name: tracefs, mountPath: /sys/kernel/tracing, readOnly: true}
+      volumes:
+      - name: bpffs
+        hostPath: {path: /sys/fs/bpf, type: Directory}
+      - name: cgroupfs
+        hostPath: {path: /sys/fs/cgroup, type: Directory}
+      - name: tracefs
+        hostPath: {path: /sys/kernel/tracing, type: Directory}

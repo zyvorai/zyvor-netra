@@ -1,0 +1,22 @@
+replicaCount: 3
+
+ha:
+  enabled: true
+  leaseName: netra-controller
+  leaseDuration: 15s
+  renewDeadline: 10s
+  retryPeriod: 2s
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# Supply auth keys at install time or set auth.existingSecret.
+auth:
+  existingSecret: netra-auth
+
+persistence:
+  enabled: true
+  storageClass: your-rwx-storage-class
+  accessModes: [ReadWriteMany]
+  size: 1Gi
+  stateFile: /var/lib/netra/state.json

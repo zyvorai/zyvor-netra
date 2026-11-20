@@ -1,0 +1,12 @@
+{
+  "apiVersion": "cilium.io/v2",
+  "kind": "CiliumNetworkPolicy",
+  "metadata": {"name": "payments-egress", "namespace": "payments"},
+  "spec": {
+    "endpointSelector": {"matchLabels": {"app": "payments"}},
+    "egress": [{
+      "toFQDNs": [{"matchName": "api.example.com"}],
+      "toPorts": [{"ports": [{"port": "443", "protocol": "TCP"}]}]
+    }]
+  }
+}

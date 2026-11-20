@@ -1,0 +1,481 @@
+image:
+  repository: ghcr.io/zyvorai/netra
+  tag: "0.32.0"
+  pullPolicy: IfNotPresent
+agentImage:
+  repository: ghcr.io/zyvorai/netra-agent
+  tag: "0.32.0"
+replicaCount: 1
+ha:
+  enabled: false
+  leaseName: netra-controller
+  leaseDuration: 15s
+  renewDeadline: 10s
+  retryPeriod: 2s
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+workloadConsole:
+  # In-browser pod logs/exec and VM VNC. Expands controller RBAC
+  # (pods/log, pods/exec, virtualmachineinstances/vnc). Default off.
+  enabled: false
+cilium:
+  enabled: false
+hubble:
+  enabled: false
+  address: hubble-relay.kube-system.svc:80
+auth:
+  allowUnauthenticated: false
+  existingSecret: ""
+  apiKey: ""
+  agentKey: ""
+  # Optional bearer token that gates GET /metrics. Empty (default) leaves
+  # /metrics open exactly as before. With existingSecret, add a "metrics-token"
+  # key to that Secret instead; a missing key means "not set".
+  metricsToken: ""
+  # Optional OIDC/JWT login alongside the static keys, which keep working as
+  # admin (break-glass). Callers send an IdP-issued JWT as a Bearer token;
+  # its claims map to viewer < operator < admin (docs/auth-oidc-rbac.md).
+  # `issuer` and `audience` are both required when enabled.
+  oidc:
+    enabled: false
+    issuer: ""
+    audience: ""
+    jwksURL: ""            # optional; discovered from issuer when empty
+    rolesClaim: roles      # e.g. groups, or realm_access.roles for Keycloak
+    roleMap: ""            # "netra-admins=admin,sre=operator,all=viewer"; empty = literal viewer/operator/admin
+    defaultRole: ""        # role for valid tokens that map to nothing; empty = deny (403)
+    identityClaim: ""      # empty = email, falling back to sub
+policy:
+  requirePreflight: true
+# Optional OpenAI-compatible rewrite for /api/v1/ai/ask. Off by default.
+# Heuristic briefs always work without these settings. The AI layer is
+# read-only and never sees packet payloads.
+ai:
+  enabled: false
+  baseURL: "https://api.openai.com/v1"
+  model: "gpt-4o-mini"
+  # Existing secret (keys: api-key) — never commit the key into values.
+  existingSecret: ""
+  apiKey: ""
+# Optional OTLP/HTTP push to an OpenTelemetry collector. Off by default.
+# Pushes metrics (the same series /metrics serves), audit events as logs, and
+# block/deny events as spans. Leader-only in HA. `endpoint` is the collector's
+# base URL (e.g. http://otel-collector.observability:4318); /v1/{metrics,logs,
+# traces} is appended. `signals` is a comma-separated subset of
+# metrics,logs,traces (empty = all). Auth headers ("k=v,k2=v2") come from an
+# existing Secret (key: headers) — never put a token in values.
+otlp:
+  enabled: false
+  endpoint: ""
+  interval: 30s
+  signals: ""
+  existingSecret: ""
+# Optional push of audit events (including SLO burn/recovery) and block/deny
+# events to Grafana Loki. Off by default. Leader-only in HA. Streams carry a
+# small bounded label set (job, class, severity, node + `labels` below); the
+# whole event is the JSON log line, queried with `| json`. `url` is Loki's base
+# URL (http://loki:3100) or its full /loki/api/v1/push URL. Credentials come from
+# an existing Secret with any of the keys: username, password (basic auth) and
+# headers ("k=v,k2=v2") — never put them in values. See docs/loki-push.md.
+loki:
+  enabled: false
+  url: ""
+  tenantId: ""        # X-Scope-OrgID for multi-tenant Loki
+  interval: 15s
+  classes: ""         # subset of audit,block; empty = both
+  labels: {}          # extra static stream labels, e.g. {cluster: prod}
+  existingSecret: ""
+# Optional policy-as-code / GitOps reconciliation. Off by default. Reads
+# CiliumNetworkPolicy manifests from `dir` inside the netrad container —
+# populate it with your own git-sync-style sidecar (not included in this
+# chart) mounting the same "gitops-manifests" emptyDir this chart creates.
+# autoApply=false (the default even when enabled) computes and shows plans
+# only; nothing is applied without an explicit netractl policy gitops
+# resync, and a high/critical-risk change is never auto-applied regardless.
+gitops:
+  enabled: false
+  dir: /gitops/policies
+  autoApply: false
+  interval: 60s
+# GA metadata-only DNS anomaly detection (tunneling, DGA, beaconing,
+# NXDOMAIN/SERVFAIL storms). On by default. Observe-only — findings feed
+# alerting/SIEM, never enforcement. Fed by matched DNS-response events on
+# the interval below; every threshold not listed here keeps
+# internal/dnsdetect.DefaultConfig()'s own default.
+dnsdetect:
+  enabled: true
+  interval: 30s
+  maxUniqueSubdomains: 200
+  nxdomainRatio: 0.7
+  servfailRatio: 0.7
+  maxDomains: 50000
+  findingsTTL: 30m
+# GA port-scan / fan-out / lateral-movement / SYN-flood detection
+# from per-connection-attempt TCP flag data. On by default. Observe-only.
+# Allowed (non-blocked) traffic is only sampled by the datapath, so this
+# sees every blocked/reset attempt but a sampled fraction of allowed ones.
+scandetect:
+  enabled: true
+  interval: 30s
+  window: 60s
+  maxDestIps: 50
+  maxDestPorts: 50
+  minAttempts: 20
+# GA volumetric auto-mitigation (SYN-flood → conn-rate / Shield;
+# high UDP packet deltas → leased deny). On by default. Requires an
+# active enforce lease; fails open on expiry. Prefer keeping scandetect
+# enabled for the SYN-flood path.
+automitigate:
+  enabled: true
+  interval: 30s
+  connRate: 10
+  udpDelta: 100000
+  shieldSynPps: 10000
+  shieldUdpPps: 20000
+# Optional multi-cluster read-only fleet peers (comma-separated
+# name|url|apikey or name|url|apikey|tenant). Off when empty.
+# See docs/fleet-clusters.md / docs/fleet-tenants.md.
+fleet:
+  clusterName: ""
+  clusterTenant: ""
+  peers: ""
+# Optional sanctioned SaaS hostname suffixes for shadow-SaaS detection
+# (comma-separated). Empty uses built-in enterprise defaults.
+# See docs/shadow-saas.md.
+sanctionedHosts: ""
+# Optional Slack ChatOps slash-commands (/netra ...). Off by default. Needs
+# a Slack app's signing secret to verify inbound requests reached the
+# POST /chatops/slack webhook, and a dedicated API key so a compromised
+# Slack app credential can't be replayed as full operator access — this is
+# a separate trust domain from auth.apiKey, matching the existing
+# agent-key convention. allowMutations gates which commands even register
+# (e.g. "/netra mode enforce"); mutating commands always require a second
+# Slack button-click confirmation regardless of this setting.
+chatops:
+  enabled: false
+  allowMutations: false
+  targetURL: "https://127.0.0.1:30870"
+  # Existing secret (keys: signing-secret, api-key) — never commit these into values.
+  existingSecret: ""
+  signingSecret: ""
+  apiKey: ""
+  # Microsoft Teams: the Azure Bot Service app registration's Microsoft App
+  # ID. Unset disables Teams ChatOps entirely (POST /chatops/teams is never
+  # registered), independent of the Slack signing secret above. See
+  # docs/chatops-teams.md.
+  teamsAppId: ""
+
+# Multi-channel outbound alerting (email, Slack, Teams, Twilio, webhooks,
+# HTTP bridge). Off by default. Prefer channelsJson (NETRA_ALERT_CHANNELS);
+# legacy webhooksJson (NETRA_ALERT_WEBHOOKS) still works when channelsJson
+# is empty. Put secrets in existingSecret (key: channels-json) rather than
+# plain values. See docs/alerting.md. Distinct from chatops (inbound).
+alerting:
+  enabled: false
+  pollInterval: "30s"
+  cooldown: "5m"
+  workers: 2
+  queueSize: 256
+  # JSON array of channel objects, or leave empty and use existingSecret.
+  channelsJson: ""
+  # Legacy webhook-only JSON (ignored when channelsJson / secret is set).
+  webhooksJson: ""
+  existingSecret: ""
+  # GA: auto-start filtered capture on critical drop/congestion signals
+  # and persist PCAPs under dir (may include cleartext). Bounded by
+  # duration/cooldown/PPS below. Set enabled: false to disable.
+  # See docs/capture.md / docs/alerting.md.
+  autoCapture:
+    enabled: true
+    duration: "60s"
+    cooldown: "10m"
+    protocol: tcp
+    # ebpf (default) or afpacket — CI smoke uses afpacket without the node agent.
+    backend: ebpf
+    maxPps: 1000
+    maxConcurrent: 5
+    dir: /var/lib/netra/auto-capture
+    maxArtifacts: 50
+    maxTotalMb: 1024
+    maxSessionMb: 50
+service:
+  type: ClusterIP
+  port: 30870
+  nodePort: null
+# Envoy in front of the API/UI, through Gateway API (works with Envoy Gateway
+# or any Gateway API implementation). Off by default; Netra's own auth is
+# unchanged. See docs/envoy-gateway.md.
+gateway:
+  enabled: false
+  # Gateway to attach to, e.g. [{name: eg, namespace: envoy-gateway-system}].
+  parentRefs: []
+  hostnames: []
+  path: /
+  annotations: {}
+  # "0s" keeps long-lived SSE / metric streams from being cut by Envoy.
+  requestTimeout: "0s"
+  # Netra's Service is HTTPS by default, so Envoy must verify the pod cert.
+  # Point caCertificateRefs at a ConfigMap holding the CA of tls.existingSecret.
+  backendTLS:
+    enabled: true
+    apiVersion: gateway.networking.k8s.io/v1alpha3
+    hostname: ""
+    caCertificateRefs: []
+    # e.g. [{group: "", kind: ConfigMap, name: netra-ca}]
+    wellKnownCACertificates: ""
+  # Envoy Gateway only. Needed for WebSocket streams when backendTLS is on.
+  backendTrafficPolicy:
+    enabled: false
+    useClientProtocol: true
+tls:
+  # HTTPS is the default. Init container mints a self-signed P-256 cert into
+  # an emptyDir; probes and the Service use scheme/port name https.
+  # Set enabled=false only when TLS is terminated by a trusted proxy/ingress.
+  enabled: true
+  opensslImage: alpine/openssl:3.3.2
+  # kubernetes.io/tls Secret to serve instead of a cert minted per pod start. A
+  # stable cert lets API clients (netractl, Duvora) pin it across restarts.
+  existingSecret: ""
+  # Bypass verify for the chart-generated self-signed cert (agent → controller).
+  # Prefer a trusted cert/CA in hardened environments and set this false.
+  agentInsecureSkipVerify: true
+# Mutual TLS between the agents and the controller (docs/agent-mtls.md).
+# Off by default: nothing about an existing install changes until you set a mode.
+#   optional  the controller verifies a client certificate when an agent presents
+#             one and reports which agents did (/api/v1/agents "mtls": true and
+#             netra_agent_mtls_reports_total), but still accepts agents without.
+#             Use it to move agents over and watch it happen.
+#   required  agent-only requests (report, capture stream, agent config) also need
+#             a certificate signed by the CA below, in addition to the agent key.
+#             People (browser, netractl, API keys) are never asked for one.
+# Needs tls.enabled. By default the certificate is shared by all agents (proves
+# "an agent"). Set bindNode after issuing per-node certs with URI SAN
+# spiffe://netra.local/node/<nodeName> (docs/agent-mtls.md).
+mtls:
+  mode: "off"
+  bindNode: false
+  # Optional Secret containing deny.txt (revoked serials, one per line).
+  denySerialsSecret: ""
+  # A Secret holding ca.crt (the CA that signs agent certificates), tls.crt and
+  # tls.key (the agents' client certificate). The controller mounts only ca.crt.
+  secretName: ""
+  # Or have cert-manager issue and renew the agents' certificate. The issuer must
+  # be a CA issuer (its ca.crt is copied into the Secret); a self-signed or ACME
+  # issuer does not provide one.
+  certManager:
+    enabled: false
+    issuerRef: {name: "", kind: Issuer, group: cert-manager.io}
+    duration: 2160h     # 90 days
+    renewBefore: 360h   # agents pick up the renewed files without a restart
+metrics:
+  enabled: true
+  prometheusAnnotations: false
+  # Opt-in per-workload counters: netra_workload_<name>_total{namespace,workload}.
+  # Off by default (the aggregate metrics carry no workload labels). Cardinality
+  # is bounded: at most `maxWorkloads` named workloads (admitted busiest-first,
+  # then sticky) plus one workload="__other__" bucket; a named workload idle for
+  # `idleTimeout` gives up its slot. See docs/workload-metrics-slo.md.
+  workloadLabels:
+    enabled: false
+    maxWorkloads: 100
+    idleTimeout: 1h
+  # Prometheus Operator ServiceMonitor for /metrics. Requires the operator CRDs.
+  serviceMonitor:
+    enabled: false
+    namespace: ""            # default: the release namespace
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}               # e.g. {release: kube-prometheus-stack}
+    insecureSkipVerify: true # the chart's default cert is self-signed
+    # Bearer token for a token-gated /metrics. Defaults to the "metrics-token" key
+    # of the auth Secret whenever auth.metricsToken is set; otherwise name a
+    # Secret here. (The pod annotations above cannot send a token.)
+    bearerTokenSecret:
+      name: ""
+      key: metrics-token
+  # PrometheusRule: SLO burn alerts plus a few controller-health alerts.
+  prometheusRule:
+    enabled: false
+    namespace: ""
+    labels: {}
+# Network SLOs from Netra's own counters, burn-rate alerted (multi-window,
+# Google SRE style) and audited on every state change. Each entry:
+#   {name, namespace, workload ("Kind/Name"), sli, targetPct, window}
+# sli is http_5xx (cleartext HTTP/1 5xx / responses) or dns_failure (non-zero
+# rcode / queries). workload uses the canonical form Deployment/<name> (a
+# Deployment's ReplicaSet hash suffix is stripped). window takes 1h..90d ("30d",
+# "720h"). Empty namespace/workload matches all. Agents send top-N snapshots, so
+# counts are lower bounds (see metrics.workloadLabels and docs/workload-metrics-slo.md).
+slo:
+  interval: 60s
+  definitions: []
+# The controller holds a 100k-record flow history and decodes multi-MB agent
+# reports every few seconds; 256Mi OOM-killed it in a loop on a real cluster.
+# netrad also sets Go's soft memory limit to 85% of this at startup.
+resources:
+  requests: {cpu: 50m, memory: 128Mi}
+  limits: {cpu: 500m, memory: 512Mi}
+agent:
+  # Privileged node DaemonSet — on by default (like a CNI agent): one pod per
+  # node with tolerations Exists so it lands on every schedulable node.
+  # Set enabled=false only for controller-only installs.
+  enabled: true
+  # Override NETRA_SERVER (default: in-cluster Service URL). Use a NodePort
+  # or host IP when hostNetwork agents cannot reliably resolve/reach CoreDNS
+  # → ClusterIP (multi-node labs with flaky ClusterFirstWithHostNet DNS).
+  server: ""
+  # Keep the privileged agent off nodes where it does not belong (a build
+  # host that shares the cluster, say). Empty means every schedulable node.
+  nodeSelector: {}
+  affinity: {}
+  cgroupEnabled: true
+  cgroupPath: /sys/fs/cgroup
+  cgroupScanInterval: 10s
+  interfaces: ""
+  xdpInterfaces: ""
+  tcx: auto
+  xdpShield: false
+  pinPath: /sys/fs/bpf/netra
+  failsafeAfter: 60s
+  staleAfter: 45s
+  # Optional /proc-derived process metadata (internal/procmeta). Off by
+  # default: enabling it also enables hostPID on the agent DaemonSet, a
+  # real expansion of what this already-privileged agent can see (every
+  # host process's /proc, not just what eBPF hooks already surface). See
+  # docs/process-metadata.md.
+  procMetaEnabled: false
+  # TLS ClientHello JA3/JA4 sampler (bpf/netra_tlsfp.c). auto|off|required.
+  tlsfp: auto
+  # TCP event tracepoints — retransmit/RST attribution and the state-transition
+  # matrix (bpf/netra_tcpevents.c, docs/tcp-events.md). auto|off|required.
+  tcpEvents: auto
+  # Kernel drop attribution — which connections the kernel drops, why, and by
+  # which function (bpf/netra_dropinfo.c, docs/drop-info.md). auto|off|required.
+  # Needs kernel BTF (/sys/kernel/btf/vmlinux); "auto" reports it unavailable
+  # with the reason when the node lacks it.
+  dropInfo: auto
+  # Node isolation — a per-node allow-only egress filter, shadow or enforce,
+  # set through PUT /api/v1/ebpf/node-isolation/{node} (bpf/netra_nodeiso.c,
+  # docs/node-isolation.md). Loading it changes nothing until a policy is set.
+  # auto|off|required.
+  nodeIsolation: auto
+  # Where it attaches (comma-separated). Empty: the agent interfaces, or, when the
+  # agent has none (cgroup mode beside a CNI), the default-route uplinks.
+  nodeIsolationInterfaces: ""
+  # TCP accept-queue depth per listener, from inet_diag (docs/listen-queues.md).
+  # No BPF and no extra privilege. auto|off.
+  listenQueues: auto
+  # Read-only RTNL recorder: link, address, route and neighbor changes plus a
+  # periodic full snapshot (docs/netlink-recorder.md). Uses the agent's host
+  # network namespace; no BPF, no extra privilege, and nothing here can change a
+  # route, link, address or neighbor. auto|off.
+  netlink: auto
+  # Agent-side ring of recorded changes. Overflow is counted, not silent.
+  netlinkEventBuffer: 4096
+  # Read-only inventory of the BPF programs attached to the node's interfaces
+  # (XDP, TCX, classic tc), so a Netra hook that has gone missing is visible
+  # (docs/bpf-attachments.md). No new privilege; it never attaches or detaches
+  # anything. auto|off.
+  bpfAttach: auto
+  # Names the process behind each recorded network change (bpf/netra_rtnl.c, an
+  # fentry on rtnetlink_rcv_msg): comm, pid and cgroup only, never argv or payload.
+  # Needs kernel BTF and fentry; reported as unavailable, with the reason, where the
+  # kernel cannot run it, and the recorder carries on without a requester. Needs the
+  # netlink recorder. auto|off.
+  rtnlActor: auto
+  # Sampled application-protocol observation (bpf/netra_l7sample.c,
+  # docs/l7-sampling.md): which Redis commands, SQL verbs, Kafka APIs and gRPC
+  # methods workloads use and how often they fail. It reads application payload
+  # bytes in the agent's memory (never stored, never exported; only bounded
+  # operation names and coarse outcomes leave), so it is OFF by default.
+  # off|auto|required.
+  l7Sample: "off"
+  # "port:protocol,..." (redis, postgres, mysql, kafka, http2/grpc, http1). Empty
+  # uses the agent default: 6379:redis,5432:postgres,3306:mysql,9092:kafka,50051:grpc.
+  l7SamplePorts: ""
+  # Minimum time between samples of one flow and direction. Empty: 100ms.
+  l7SampleGap: ""
+  # TLS plaintext sampling via OpenSSL uprobes (bpf/netra_ssl.c,
+  # docs/tls-plaintext.md): the same operation counts as l7Sample for HTTPS, read
+  # where the application hands bytes to SSL_write and gets them from SSL_read.
+  # THIS OBSERVES PLAINTEXT, so it is off by default and needs the host's /proc
+  # (hostPID) to find other workloads' libssl. Only bounded metadata is exported
+  # (method, host, status; never paths, headers, cookies or bodies).
+  # off|auto|required.
+  tlsUprobes: "off"
+  # Only observe processes with these command names ("nginx,envoy"). Enforced in
+  # the kernel before any byte is copied. Empty: every process that uses libssl.
+  tlsUprobesComms: ""
+  # Minimum time between samples of one connection and direction. Empty: 100ms.
+  tlsUprobesGap: ""
+  # Mount the host's tracefs (/sys/kernel/tracing) read-only into the agent.
+  # A container's own /sys is a bare sysfs with no tracefs, so without this the
+  # agent cannot read tracepoint record layouts: the TCP event sensors and the
+  # kfree_skb drop-reason sensor both report "unavailable". Set false only on a
+  # node image with no /sys/kernel/tracing directory (the pod would not start).
+  hostTracefs: true
+# Per-second metrics platform (docs/metrics.md): collectors on every agent,
+# streamed into tiered stores on netrad, ML anomaly flags, metric alerts.
+# Separate from metrics: above, which is netrad's own Prometheus /metrics.
+metricsPlatform:
+  enabled: true
+  # netrad store directory; default <state dir>/metrics (on the PVC when
+  # persistence is enabled), "-" keeps everything in memory.
+  dir: ""
+  tier0Retention: 1h      # 1-second samples, in memory
+  tier1Retention: 336h    # 1-minute rollups
+  tier2Retention: 8760h   # 1-hour rollups
+  # Keep below persistence.size: the state file shares the volume.
+  diskQuotaMb: 512
+  maxSeries: 50000        # per node
+  maxNodes: 2000
+  # Score anomalies on netrad too (for agents running with agent.ml=false).
+  parentMl: false
+  agent:
+    ml: true              # per-dimension k-means anomaly models on the node
+    tier0Retention: 1h    # also the replay buffer when netrad is unreachable
+    maxSeries: 20000
+    processGroups: true   # per-comm CPU/memory/IO; never argv or environ
+    processGroupsMax: 40
+    # Chart every container cgroup too (about 3x the cgroup series; the
+    # pod cgroup already includes its containers).
+    cgroupContainers: false
+  # Application collectors on each agent (docs/app-collectors.md).
+  apps:
+    # Find nginx/apache/haproxy/redis/memcached/envoy/coredns/etcd and
+    # *_exporter processes listening in the host network namespace. Reads
+    # /proc/<pid>/comm and socket inodes only (never cmdline); turns on
+    # hostPID for the agent.
+    discovery: false
+    every: 5s
+    # YAML with a top-level apps: list, mounted at /etc/netra/apps/apps.yaml.
+    config: ""
+    # Secret exposed to the agent as environment variables; reference its
+    # keys from config with password_env / bearer_env / username_env.
+    existingSecret: ""
+  alerts:
+    enabled: true
+    defaults: true        # built-in rule pack (docs/metric-alerts.md)
+    # Extra rules (YAML with a top-level alerts: list), mounted at
+    # /etc/netra/metricalert.d. A rule with a built-in name replaces it.
+    rules: ""
+  # Ship stored metrics elsewhere (docs/metrics.md#exporting). Each sink is
+  # off until its target is set. Auth headers come only from existingSecret
+  # (keys: prometheus-rw-headers, otlp-headers), as "K=V,K2=V2".
+  export:
+    resolution: 10s
+    contexts: ""          # comma-separated globs; empty exports everything
+    exclude: ""
+    prefix: netra
+    existingSecret: ""
+    prometheusRemoteWriteUrl: ""   # e.g. http://prometheus:9090/api/v1/write
+    otlpEndpoint: ""               # e.g. http://otel-collector:4318
+    graphiteAddr: ""               # e.g. graphite:2003
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: ""
+  accessModes: [ReadWriteOnce]
+  size: 1Gi
+  stateFile: /var/lib/netra/state.json

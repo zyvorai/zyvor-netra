@@ -1,0 +1,10 @@
+{{- if .Values.metricsPlatform.alerts.rules }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: netra-metricalert
+  labels: {{- include "netra.labels" . | nindent 4 }}
+data:
+  50-values.yaml: |
+{{ .Values.metricsPlatform.alerts.rules | indent 4 }}
+{{- end }}

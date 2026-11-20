@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Netra how it works</title>
+<!-- SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+     1600x560. Rendered by ./build.sh to docs/ux/readme-how-it-works.jpg. Claims are the README's own. -->
+<link rel="stylesheet" href="card.css">
+<style>
+  body { height:560px; }
+  .flow { margin-top:24px; grid-template-columns:repeat(5,1fr); }
+  .flow .card { min-height:212px; }
+  .flow .card:not(:last-child)::after { content:""; position:absolute; right:-31px; top:50%; margin-top:-11px;
+    border-left:16px solid var(--soft); border-top:11px solid transparent; border-bottom:11px solid transparent; }
+  .lease { margin-top:24px; display:flex; align-items:center; gap:16px; background:var(--ink); color:#f3ede4; border-radius:12px; padding:14px 22px; font-family:var(--mono); font-size:21px; }
+  .lease .tag { color:var(--signal); font-weight:700; letter-spacing:.1em; font-size:15px; }
+</style></head><body>
+<div class="bar"></div>
+<div class="wrap">
+  <div class="top"><img src="../../../web/public/zyvor-mark.svg" alt=""><b>Zyvor</b><span>&middot;</span><span>Netra</span><span class="r">How it works</span></div>
+  <h1>Kernel hooks in. Answers out. <em>Nothing left enforcing.</em></h1>
+  <div class="row flow">
+    <div class="card k"><span class="lane">KERNEL</span><h3>eBPF hooks</h3><p>cgroup skb and socket hooks, sockops, optional TCX and XDP. No kernel module.</p></div>
+    <div class="card a"><span class="lane">MAPS</span><h3>Pinned maps</h3><p>Programs and maps live under <b>/sys/fs/bpf/netra</b>. Cilium-owned maps are never touched.</p></div>
+    <div class="card c"><span class="lane">AGENT</span><h3>Node agent</h3><p>One privileged pod per node reads the maps and reports to the controller.</p></div>
+    <div class="card o"><span class="lane">CONTROLLER</span><h3>netrad</h3><p>API, UI and durable state. Attributes traffic to namespace, pod and owner.</p></div>
+    <div class="card o2"><span class="lane">YOU</span><h3>Dashboard, CLI, MCP</h3><p>Browser, <b>netractl</b>, and a stdio MCP server for AI agents.</p></div>
+  </div>
+  <div class="lease"><span class="tag">SAFETY LANE</span><span>Enforcement is leased. It returns to <b>observe</b> on expiry, lost controller state, restart or HA failover.</span></div>
+  <div class="foot"><b>zyvor.dev/netra</b><span class="r">Observe-first &middot; no payload collection</span></div>
+</div>
+</body></html>

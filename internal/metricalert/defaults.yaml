@@ -1,0 +1,497 @@
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+#
+# Built-in metric alert rules. Override any rule by name from
+# NETRA_METRICALERT_DIR (enabled: false turns it off). Reference:
+# docs/metric-alerts.md.
+alerts:
+  # --- CPU ---------------------------------------------------------------
+  - alarm: cpu_usage_high
+    on: system.cpu
+    dimensions: "*"
+    lookup: average -10m
+    aggregate: sum
+    units: "%"
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 75 : 85)'
+    crit: '$this > (($status == $CRITICAL) ? 85 : 95)'
+    delay_down: 15m
+    repeat: 6h
+    class: Utilization
+    info: average CPU utilization over the last 10 minutes (excluding iowait/idle)
+  - alarm: cpu_iowait_high
+    on: system.cpu
+    dimensions: iowait
+    lookup: average -10m
+    units: "%"
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 20 : 40)'
+    crit: '$this > (($status == $CRITICAL) ? 40 : 60)'
+    delay_down: 15m
+    class: Utilization
+    info: CPU time spent waiting for I/O over the last 10 minutes
+  - alarm: cpu_steal_high
+    on: system.cpu
+    dimensions: steal
+    lookup: average -10m
+    units: "%"
+    every: 1m
+    warn: $this > 10
+    crit: $this > 25
+    delay_down: 15m
+    class: Utilization
+    info: CPU stolen by the hypervisor over the last 10 minutes
+  - alarm: load_average_high
+    on: system.load
+    dimensions: load15
+    lookup: max -1m
+    units: load
+    every: 1m
+    warn: $this > 4 * $ncpu
+    crit: $this > 8 * $ncpu
+    delay_down: 15m
+    class: Utilization
+    info: 15-minute load average relative to online CPU count
+  - alarm: cpu_pressure_some
+    on: system.cpu_some_pressure
+    dimensions: avg60
+    lookup: average -5m
+    units: "%"
+    every: 30s
+    warn: '$this > (($status >= $WARNING) ? 30 : 50)'
+    crit: $this > 80
+    delay_down: 10m
+    class: Latency
+    info: share of time some runnable tasks were stalled on CPU
+
+  # --- Memory ------------------------------------------------------------
+  - alarm: ram_in_use
+    on: mem.used_percent
+    lookup: average -1m
+    units: "%"
+    every: 10s
+    warn: '$this > (($status >= $WARNING) ? 85 : 90)'
+    crit: '$this > (($status == $CRITICAL) ? 92 : 97)'
+    delay_down: 15m
+    repeat: 6h
+    class: Utilization
+    info: RAM in use excluding reclaimable cache
+  - alarm: oom_kill
+    on: mem.oom_kill
+    lookup: sum -30m
+    units: kills
+    every: 30s
+    warn: $this > 0
+    delay_down: 30m
+    class: Errors
+    info: kernel out-of-memory kills in the last 30 minutes
+  - alarm: memory_pressure_full
+    on: system.memory_full_pressure
+    dimensions: avg60
+    lookup: average -5m
+    units: "%"
+    every: 30s
+    warn: $this > 5
+    crit: $this > 20
+    delay_down: 10m
+    class: Latency
+    info: share of time all non-idle tasks were stalled on memory
+  - alarm: swap_used_high
+    on: mem.swap
+    lookup: average -5m
+    calc: '($used + $free) > 0 ? $used * 100 / ($used + $free) : nan'
+    units: "%"
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 80 : 90)'
+    crit: $this > 98
+    delay_down: 15m
+    class: Utilization
+    info: swap space in use
+  - alarm: swap_io_heavy
+    on: mem.swapio
+    lookup: average -5m
+    units: KiB/s
+    every: 1m
+    warn: $this > 10240
+    delay_down: 15m
+    class: Latency
+    info: sustained swap-in plus swap-out traffic
+
+  # --- Disk and filesystem -----------------------------------------------
+  - alarm: disk_space_usage
+    on: disk.space_utilization
+    lookup: max -1m
+    units: "%"
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 80 : 90)'
+    crit: '$this > (($status == $CRITICAL) ? 90 : 98)'
+    delay_down: 15m
+    repeat: 12h
+    class: Utilization
+    info: filesystem space used
+  - alarm: disk_inode_usage
+    on: disk.inodes_utilization
+    lookup: max -1m
+    units: "%"
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 80 : 90)'
+    crit: '$this > (($status == $CRITICAL) ? 90 : 98)'
+    delay_down: 15m
+    class: Utilization
+    info: filesystem inodes used
+  - alarm: disk_util_high
+    on: disk.util
+    lookup: average -10m
+    units: "%"
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 85 : 98)'
+    delay_down: 15m
+    class: Utilization
+    info: time the disk was busy over the last 10 minutes
+  - alarm: disk_await_high
+    on: disk.await
+    lookup: average -10m
+    units: ms
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 100 : 500)'
+    crit: $this > 2000
+    delay_down: 15m
+    class: Latency
+    info: average completed I/O operation time
+  - alarm: io_pressure_full
+    on: system.io_full_pressure
+    dimensions: avg60
+    lookup: average -5m
+    units: "%"
+    every: 30s
+    warn: $this > 10
+    crit: $this > 40
+    delay_down: 10m
+    class: Latency
+    info: share of time all non-idle tasks were stalled on I/O
+
+  # --- Network interfaces ------------------------------------------------
+  - alarm: interface_inbound_drops
+    on: net.drops
+    dimensions: inbound
+    lookup: sum -10m
+    units: drops
+    every: 1m
+    warn: $this >= 1000
+    delay_down: 1h
+    class: Errors
+    info: inbound packets dropped by the interface in the last 10 minutes
+  - alarm: interface_outbound_drops
+    on: net.drops
+    dimensions: outbound
+    lookup: sum -10m
+    units: drops
+    every: 1m
+    warn: $this >= 1000
+    delay_down: 1h
+    class: Errors
+    info: outbound packets dropped by the interface in the last 10 minutes
+  - alarm: interface_errors
+    on: net.errors
+    lookup: sum -10m
+    units: errors
+    every: 1m
+    warn: $this >= 100
+    delay_down: 1h
+    class: Errors
+    info: interface receive and transmit errors in the last 10 minutes
+  - alarm: interface_fifo_errors
+    on: net.fifo
+    lookup: sum -10m
+    units: errors
+    every: 1m
+    warn: $this > 0
+    delay_down: 1h
+    class: Errors
+    info: interface FIFO overruns in the last 10 minutes
+  - alarm: interface_down
+    on: net.operstate
+    lookup: last -30s
+    units: state
+    every: 10s
+    warn: $this == 0
+    delay_up: 30s
+    class: Availability
+    info: interface went down after being up (interfaces never seen up are not charted)
+  - alarm: interface_carrier_changes
+    on: net.carrier
+    dimensions: carrier
+    lookup: sum -10m
+    units: events
+    every: 1m
+    warn: $this > 5
+    delay_down: 30m
+    class: Errors
+    info: carrier losses in the last 10 minutes (flapping link)
+  - alarm: softnet_dropped
+    on: system.softnet_stat
+    dimensions: dropped
+    lookup: sum -10m
+    units: packets
+    every: 1m
+    warn: $this > 0
+    delay_down: 1h
+    class: Errors
+    info: packets dropped because the per-CPU backlog was full
+  - alarm: softnet_squeezed
+    on: system.softnet_stat
+    dimensions: squeezed
+    lookup: average -1m
+    units: events/s
+    every: 1m
+    warn: $this > 10
+    delay_down: 30m
+    class: Latency
+    info: NAPI budget or time exhausted with work remaining
+
+  # --- TCP / UDP / IP ----------------------------------------------------
+  - alarm: tcp_listen_overflows
+    on: ip.tcp_accept_queue
+    dimensions: overflows
+    lookup: sum -1m
+    units: overflows
+    every: 10s
+    warn: $this > 1
+    crit: $this > 100
+    delay_down: 5m
+    class: Errors
+    info: SYNs dropped because a listen socket accept queue was full
+  - alarm: tcp_syn_queue_drops
+    on: ip.tcp_syn_queue
+    dimensions: drops
+    lookup: sum -1m
+    units: drops
+    every: 10s
+    warn: $this > 1
+    crit: $this > 100
+    delay_down: 5m
+    class: Errors
+    info: SYNs dropped because the SYN queue was full
+  - alarm: tcp_syncookies_sent
+    on: ip.tcpsyncookies
+    dimensions: sent
+    lookup: sum -1m
+    units: cookies
+    every: 10s
+    warn: $this > 10
+    delay_down: 10m
+    class: Errors
+    info: SYN cookies sent (SYN flood or undersized backlog)
+  - alarm: tcp_backlog_drops
+    on: ip.tcp_backlog_drops
+    lookup: sum -1m
+    units: drops
+    every: 10s
+    warn: $this > 10
+    delay_down: 10m
+    class: Errors
+    info: packets dropped from a full TCP socket backlog
+  - alarm: tcp_retransmit_timeouts
+    on: ip.tcp_retransmits
+    dimensions: timeouts
+    lookup: average -5m
+    units: events/s
+    every: 1m
+    warn: $this > 10
+    crit: $this > 100
+    delay_down: 15m
+    class: Latency
+    info: TCP retransmission timeouts per second
+  - alarm: tcp_memory_pressure
+    on: ip.tcp_memory_pressure
+    lookup: sum -10m
+    units: events
+    every: 1m
+    warn: $this > 0
+    delay_down: 30m
+    class: Utilization
+    info: TCP entered memory pressure mode
+  - alarm: udp_receive_buffer_errors
+    on: ipv4.udperrors
+    dimensions: RcvbufErrors
+    lookup: sum -10m
+    units: errors
+    every: 1m
+    warn: $this > 10
+    delay_down: 30m
+    class: Errors
+    info: UDP datagrams dropped because the receive buffer was full
+  - alarm: udp_send_buffer_errors
+    on: ipv4.udperrors
+    dimensions: SndbufErrors
+    lookup: sum -10m
+    units: errors
+    every: 1m
+    warn: $this > 10
+    delay_down: 30m
+    class: Errors
+    info: UDP datagrams dropped because the send buffer was full
+
+  # --- Conntrack ---------------------------------------------------------
+  - alarm: conntrack_table_full
+    on: netfilter.conntrack_utilization
+    lookup: max -1m
+    units: "%"
+    every: 10s
+    warn: '$this > (($status >= $WARNING) ? 85 : 90)'
+    crit: '$this > (($status == $CRITICAL) ? 90 : 95)'
+    delay_down: 5m
+    class: Utilization
+    info: connection tracker table utilization
+  - alarm: conntrack_insert_failed
+    on: netfilter.conntrack_errors
+    dimensions: "insert_failed,drop,early_drop"
+    lookup: sum -1m
+    units: events
+    every: 10s
+    warn: $this > 0
+    delay_down: 10m
+    class: Errors
+    info: conntrack inserts failed or entries dropped
+
+  # --- System ------------------------------------------------------------
+  - alarm: file_descriptors_high
+    on: system.file_nr_utilization
+    lookup: max -1m
+    units: "%"
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 80 : 90)'
+    crit: $this > 95
+    delay_down: 15m
+    class: Utilization
+    info: system-wide file descriptor utilization
+  - alarm: processes_blocked
+    on: system.processes
+    dimensions: blocked
+    lookup: average -5m
+    units: processes
+    every: 1m
+    warn: $this > 10
+    crit: $this > 50
+    delay_down: 15m
+    class: Latency
+    info: processes blocked in uninterruptible I/O wait
+
+  # --- Workloads (cgroups) -----------------------------------------------
+  - alarm: workload_cpu_throttling
+    on: cgroup.throttled
+    lookup: average -5m
+    units: periods/s
+    every: 1m
+    warn: $this > 5
+    delay_down: 15m
+    class: Latency
+    info: workload CPU quota throttled periods per second
+  - alarm: workload_memory_near_limit
+    on: cgroup.mem_utilization
+    lookup: average -5m
+    units: "%"
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 85 : 90)'
+    crit: $this > 97
+    delay_down: 15m
+    class: Utilization
+    info: workload memory usage relative to its limit
+  - alarm: workload_oom_kill
+    on: cgroup.mem_events
+    dimensions: oom_kill
+    lookup: sum -30m
+    units: kills
+    every: 30s
+    warn: $this > 0
+    delay_down: 30m
+    class: Errors
+    info: workload OOM kills in the last 30 minutes
+
+  # --- Workload network RED (from the datapath) -----------------------------
+  - alarm: workload_tcp_retransmits
+    on: workload.red_errors
+    dimensions: retransmits rtos
+    lookup: average -5m
+    aggregate: sum
+    units: events/s
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 5 : 10)'
+    crit: $this > 100
+    delay_down: 15m
+    class: Errors
+    info: workload TCP retransmissions and RTOs per second
+  - alarm: workload_http_5xx_ratio
+    on: workload.red_http
+    lookup: sum -5m
+    calc: '$responses >= 20 ? $errors_5xx * 100 / $responses : nan'
+    units: "%"
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 2 : 5)'
+    crit: $this > 25
+    delay_down: 15m
+    class: Errors
+    info: share of cleartext HTTP/1 responses that were 5xx over 5 minutes
+  - alarm: workload_srtt_high
+    on: workload.red_duration
+    lookup: average -5m
+    units: ms
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 150 : 200)'
+    crit: $this > 1000
+    delay_down: 15m
+    class: Latency
+    info: workload TCP smoothed round-trip time
+
+  # --- Netra datapath (eBPF) ---------------------------------------------
+  - alarm: kernel_drops_high
+    on: ebpf.kernel_drops
+    lookup: average -5m
+    aggregate: sum
+    per: node
+    units: drops/s
+    every: 30s
+    warn: $this > 100
+    crit: $this > 5000
+    delay_down: 15m
+    class: Errors
+    info: kernel skb drops per second (all reasons) observed by eBPF
+  - alarm: policy_drops_high
+    on: ebpf.policy_drops
+    lookup: average -5m
+    units: packets/s
+    every: 30s
+    warn: $this > 50
+    delay_down: 15m
+    class: Errors
+    info: packets dropped by Netra policy enforcement
+  - alarm: tcp_resets_high
+    on: ebpf.tcp_events
+    dimensions: "rst_sent,rst_received"
+    lookup: average -5m
+    units: resets/s
+    every: 30s
+    warn: $this > 50
+    delay_down: 15m
+    class: Errors
+    info: TCP resets sent and received per second
+
+  # --- Anomaly detection -------------------------------------------------
+  - alarm: node_anomaly_rate
+    on: system.cpu
+    lookup: anomaly-rate -10m
+    per: node
+    units: "%"
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 15 : 25)'
+    delay_down: 15m
+    class: Anomaly
+    info: share of CPU dimensions flagged anomalous by the node models
+  - alarm: network_anomaly_rate
+    on: net.net
+    lookup: anomaly-rate -10m
+    units: "%"
+    every: 1m
+    warn: '$this > (($status >= $WARNING) ? 20 : 40)'
+    delay_down: 15m
+    class: Anomaly
+    info: share of interface bandwidth samples flagged anomalous

@@ -1,0 +1,89 @@
+{{- if and .Values.metrics.enabled .Values.metrics.prometheusRule.enabled }}
+{{- $pr := .Values.metrics.prometheusRule }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: netra
+  {{- with $pr.namespace }}
+  namespace: {{ . }}
+  {{- end }}
+  labels:
+    {{- include "netra.labels" . | nindent 4 }}
+    {{- with $pr.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+  - name: netra.controller
+    rules:
+    - alert: NetraAgentsStale
+      expr: netra_agents_stale > 0
+      for: 5m
+      labels: {severity: warning}
+      annotations:
+        summary: Netra node agents have stopped reporting
+        description: '{{`{{ $value }}`}} agent(s) have not reported within the stale threshold; their nodes are unobserved.'
+    - alert: NetraNoAgentsReporting
+      expr: netra_agents_total == 0
+      for: 10m
+      labels: {severity: warning}
+      annotations:
+        summary: No Netra node agents are known to the controller
+    - alert: NetraStatePersistErrors
+      expr: increase(netra_state_persist_errors_total[15m]) > 0
+      labels: {severity: warning}
+      annotations:
+        summary: Netra failed to persist controller state
+        description: Rule and policy changes may be lost on restart.
+    - alert: NetraAuthFailuresHigh
+      expr: rate(netra_auth_failures_total[5m]) > 1
+      for: 10m
+      labels: {severity: warning}
+      annotations:
+        summary: Sustained rejected API authentication attempts
+        description: More than one rejected credential per second for 10 minutes; possible credential guessing.
+    - alert: NetraRBACDenials
+      expr: increase(netra_rbac_denied_total[15m]) > 20
+      labels: {severity: info}
+      annotations:
+        summary: Many authenticated requests were refused for insufficient role
+  {{- if .Values.slo.definitions }}
+  - name: netra.slo
+    rules:
+    - alert: NetraSLOBurnPage
+      expr: netra_slo_alert_state == 2
+      for: 1m
+      labels: {severity: page}
+      annotations:
+        summary: 'Netra SLO {{`{{ $labels.slo }}`}} is burning its error budget fast'
+        description: The multi-window burn-rate threshold for paging is exceeded; see GET /api/v1/slo.
+    - alert: NetraSLOBurnTicket
+      expr: netra_slo_alert_state == 1
+      for: 15m
+      labels: {severity: ticket}
+      annotations:
+        summary: 'Netra SLO {{`{{ $labels.slo }}`}} is burning its error budget steadily'
+    - alert: NetraSLOErrorBudgetLow
+      expr: netra_slo_has_data == 1 and netra_slo_budget_remaining < 0.1
+      for: 10m
+      labels: {severity: ticket}
+      annotations:
+        summary: 'Netra SLO {{`{{ $labels.slo }}`}} has under 10% of its error budget left'
+  {{- end }}
+  {{- if .Values.metrics.workloadLabels.enabled }}
+  - name: netra.workload-series
+    rules:
+    - alert: NetraWorkloadSeriesSaturated
+      expr: netra_workload_series_named >= netra_workload_series_max
+      for: 30m
+      labels: {severity: info}
+      annotations:
+        summary: Netra per-workload series are at their cap
+        description: Further workloads are aggregated into workload="__other__". Raise metrics.workloadLabels.maxWorkloads if that hides workloads you need.
+    - alert: NetraWorkloadTrackerDroppingEntries
+      expr: increase(netra_workload_tracker_dropped_total[15m]) > 0
+      labels: {severity: warning}
+      annotations:
+        summary: The Netra workload tracker is ignoring agent entries (entry cap reached)
+  {{- end }}
+{{- end }}

@@ -1,0 +1,4 @@
+TcpExt: SyncookiesSent SyncookiesRecv SyncookiesFailed ListenOverflows ListenDrops TCPTimeouts TCPFastRetrans TCPSlowStartRetrans TCPLostRetransmit TCPSynRetrans TCPOFOQueue TCPOFODrop TCPOFOMerge TCPAbortOnData TCPAbortOnClose TCPAbortOnMemory TCPAbortOnTimeout TCPAbortOnLinger TCPAbortFailed TCPMemoryPressures TCPBacklogDrop TCPReqQFullDrop TCPReqQFullDoCookies
+TcpExt: 0 0 0 5 5 10 3 1 0 2 100 0 0 1 2 0 0 0 0 0 0 0 0
+IpExt: InNoRoutes InTruncatedPkts InMcastPkts OutMcastPkts InBcastPkts OutBcastPkts InOctets OutOctets InMcastOctets OutMcastOctets InBcastOctets OutBcastOctets InCsumErrors InNoECTPkts InECT1Pkts InECT0Pkts InCEPkts
+IpExt: 0 0 0 0 0 0 1000000 2000000 0 0 0 0 0 10000 0 0 0

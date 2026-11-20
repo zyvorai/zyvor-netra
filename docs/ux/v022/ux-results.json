@@ -1,0 +1,165 @@
+{
+  "results": [
+    {
+      "page": "Overview",
+      "ok": true,
+      "bad_text": false,
+      "empty": false,
+      "page_errors": [],
+      "api_4xx_5xx": [],
+      "signals": {
+        "has_data": true
+      },
+      "chars": 3426,
+      "snippet": "STANDALONE eBPF \u00b7 OPTIONAL CILIUM |  | See the network. Diagnose it. Contain it. |  | Netra runs its own eBPF datapath for workload flows, TCP health, DNS timing, socket/process identity and leased emergency controls. Cilium and Hubble are optional enrichment. | ",
+      "shot": "00-overview.png"
+    },
+    {
+      "page": "Pods",
+      "ok": true,
+      "bad_text": false,
+      "empty": false,
+      "page_errors": [],
+      "api_4xx_5xx": [],
+      "signals": {},
+      "chars": 6729,
+      "snippet": "STANDALONE eBPF \u00b7 OPTIONAL CILIUM |  | See the network. Diagnose it. Contain it. |  | Netra runs its own eBPF datapath for workload flows, TCP health, DNS timing, socket/process identity and leased emergency controls. Cilium and Hubble are optional enrichment. | ",
+      "shot": "01-pods.png"
+    },
+    {
+      "page": "VMs",
+      "ok": true,
+      "bad_text": false,
+      "empty": false,
+      "page_errors": [],
+      "api_4xx_5xx": [],
+      "signals": {},
+      "chars": 377,
+      "snippet": "STANDALONE eBPF \u00b7 OPTIONAL CILIUM |  | See the network. Diagnose it. Contain it. |  | Netra runs its own eBPF datapath for workload flows, TCP health, DNS timing, socket/process identity and leased emergency controls. Cilium and Hubble are optional enrichment. | ",
+      "shot": "02-vms.png"
+    },
+    {
+      "page": "Network Health",
+      "ok": true,
+      "bad_text": false,
+      "empty": false,
+      "page_errors": [],
+      "api_4xx_5xx": [],
+      "signals": {
+        "tcp": true,
+        "exe_or_pid": false
+      },
+      "chars": 17055,
+      "snippet": "STANDALONE eBPF \u00b7 OPTIONAL CILIUM |  | See the network. Diagnose it. Contain it. |  | Netra runs its own eBPF datapath for workload flows, TCP health, DNS timing, socket/process identity and leased emergency controls. Cilium and Hubble are optional enrichment. | ",
+      "shot": "03-network-health.png"
+    },
+    {
+      "page": "Path Diagnostics",
+      "ok": true,
+      "bad_text": false,
+      "empty": false,
+      "page_errors": [],
+      "api_4xx_5xx": [],
+      "signals": {
+        "path": true
+      },
+      "chars": 15397,
+      "snippet": "STANDALONE eBPF \u00b7 OPTIONAL CILIUM |  | See the network. Diagnose it. Contain it. |  | Netra runs its own eBPF datapath for workload flows, TCP health, DNS timing, socket/process identity and leased emergency controls. Cilium and Hubble are optional enrichment. | ",
+      "shot": "04-path-diagnostics.png"
+    },
+    {
+      "page": "Drop Diagnostics",
+      "ok": true,
+      "bad_text": false,
+      "empty": false,
+      "page_errors": [],
+      "api_4xx_5xx": [],
+      "signals": {
+        "drops": true
+      },
+      "chars": 17537,
+      "snippet": "STANDALONE eBPF \u00b7 OPTIONAL CILIUM |  | See the network. Diagnose it. Contain it. |  | Netra runs its own eBPF datapath for workload flows, TCP health, DNS timing, socket/process identity and leased emergency controls. Cilium and Hubble are optional enrichment. | ",
+      "shot": "05-drop-diagnostics.png"
+    },
+    {
+      "page": "L7 Metadata",
+      "ok": true,
+      "bad_text": false,
+      "empty": false,
+      "page_errors": [],
+      "api_4xx_5xx": [],
+      "signals": {},
+      "chars": 10850,
+      "snippet": "STANDALONE eBPF \u00b7 OPTIONAL CILIUM |  | See the network. Diagnose it. Contain it. |  | Netra runs its own eBPF datapath for workload flows, TCP health, DNS timing, socket/process identity and leased emergency controls. Cilium and Hubble are optional enrichment. | ",
+      "shot": "06-l7-metadata.png"
+    },
+    {
+      "page": "Insights",
+      "ok": true,
+      "bad_text": false,
+      "empty": false,
+      "page_errors": [],
+      "api_4xx_5xx": [],
+      "signals": {
+        "insights": true
+      },
+      "chars": 15741,
+      "snippet": "STANDALONE eBPF \u00b7 OPTIONAL CILIUM |  | See the network. Diagnose it. Contain it. |  | Netra runs its own eBPF datapath for workload flows, TCP health, DNS timing, socket/process identity and leased emergency controls. Cilium and Hubble are optional enrichment. | ",
+      "shot": "07-insights.png"
+    },
+    {
+      "page": "eBPF",
+      "ok": true,
+      "bad_text": false,
+      "empty": false,
+      "page_errors": [],
+      "api_4xx_5xx": [],
+      "signals": {
+        "program_health": true,
+        "histograms": true,
+        "attached": true
+      },
+      "chars": 56418,
+      "snippet": "STANDALONE eBPF \u00b7 OPTIONAL CILIUM |  | See the network. Diagnose it. Contain it. |  | Netra runs its own eBPF datapath for workload flows, TCP health, DNS timing, socket/process identity and leased emergency controls. Cilium and Hubble are optional enrichment. | ",
+      "shot": "08-ebpf.png"
+    },
+    {
+      "page": "Hubble",
+      "ok": true,
+      "bad_text": false,
+      "empty": false,
+      "page_errors": [],
+      "api_4xx_5xx": [],
+      "signals": {},
+      "chars": 17577,
+      "snippet": "STANDALONE eBPF \u00b7 OPTIONAL CILIUM |  | See the network. Diagnose it. Contain it. |  | Netra runs its own eBPF datapath for workload flows, TCP health, DNS timing, socket/process identity and leased emergency controls. Cilium and Hubble are optional enrichment. | ",
+      "shot": "09-hubble.png"
+    },
+    {
+      "page": "Policies",
+      "ok": true,
+      "bad_text": false,
+      "empty": false,
+      "page_errors": [],
+      "api_4xx_5xx": [],
+      "signals": {},
+      "chars": 1263,
+      "snippet": "STANDALONE eBPF \u00b7 OPTIONAL CILIUM |  | See the network. Diagnose it. Contain it. |  | Netra runs its own eBPF datapath for workload flows, TCP health, DNS timing, socket/process identity and leased emergency controls. Cilium and Hubble are optional enrichment. | ",
+      "shot": "10-policies.png"
+    },
+    {
+      "page": "Audit",
+      "ok": true,
+      "bad_text": false,
+      "empty": false,
+      "page_errors": [],
+      "api_4xx_5xx": [],
+      "signals": {},
+      "chars": 2511,
+      "snippet": "STANDALONE eBPF \u00b7 OPTIONAL CILIUM |  | See the network. Diagnose it. Contain it. |  | Netra runs its own eBPF datapath for workload flows, TCP health, DNS timing, socket/process identity and leased emergency controls. Cilium and Hubble are optional enrichment. | ",
+      "shot": "11-audit.png"
+    }
+  ],
+  "pass": 12,
+  "fail": 0
+}

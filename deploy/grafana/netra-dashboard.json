@@ -1,0 +1,162 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Health score",
+      "id": 1,
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "green", "value": 70 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "targets": [
+        { "expr": "netra_network_health_score", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Agents / stale",
+      "id": 2,
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "expr": "netra_agents_total", "legendFormat": "total", "refId": "A" },
+        { "expr": "netra_agents_stale", "legendFormat": "stale", "refId": "B" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Enforce mode",
+      "id": 3,
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "observe", "color": "green" }, "1": { "text": "enforce", "color": "orange" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "targets": [{ "expr": "netra_fastpath_enforce", "refId": "A" }]
+    },
+    {
+      "type": "stat",
+      "title": "Blocked packets",
+      "id": 4,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "netra_ebpf_blocked_packets", "refId": "A" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "TCP health",
+      "id": 5,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "netra_tcp_connections", "legendFormat": "connections", "refId": "A" },
+        { "expr": "netra_tcp_retransmissions", "legendFormat": "retransmits", "refId": "B" },
+        { "expr": "netra_tcp_rtos", "legendFormat": "RTOs", "refId": "C" },
+        { "expr": "netra_tcp_resets", "legendFormat": "RSTs", "refId": "D" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "DNS pulse",
+      "id": 6,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "netra_dns_queries", "legendFormat": "queries", "refId": "A" },
+        { "expr": "netra_dns_responses", "legendFormat": "responses", "refId": "B" },
+        { "expr": "netra_dns_failures", "legendFormat": "failures", "refId": "C" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Datapath volume",
+      "id": 7,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "netra_ebpf_packets", "legendFormat": "packets", "refId": "A" },
+        { "expr": "netra_ebpf_bytes", "legendFormat": "bytes", "refId": "B" },
+        { "expr": "netra_ebpf_blocked_packets", "legendFormat": "blocked", "refId": "C" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Kernel / interface drops",
+      "id": 8,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "netra_kernel_skb_drops", "legendFormat": "kfree_skb", "refId": "A" },
+        { "expr": "netra_softnet_dropped", "legendFormat": "softnet dropped", "refId": "B" },
+        { "expr": "netra_interface_rx_dropped", "legendFormat": "rx dropped", "refId": "C" },
+        { "expr": "netra_interface_tx_dropped", "legendFormat": "tx dropped", "refId": "D" }
+      ]
+    },
+    {
+      "type": "bargauge",
+      "title": "Fast-path rule inventory",
+      "id": 9,
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "displayMode": "lcd" },
+      "targets": [
+        { "expr": "netra_fastpath_blocked_ipv4", "legendFormat": "deny IPv4", "refId": "A" },
+        { "expr": "netra_fastpath_blocked_ipv6", "legendFormat": "deny IPv6", "refId": "B" },
+        { "expr": "netra_fastpath_blocked_cidrs", "legendFormat": "deny CIDR", "refId": "C" },
+        { "expr": "netra_fastpath_blocked_ports", "legendFormat": "deny port", "refId": "D" },
+        { "expr": "netra_fastpath_blocked_dns_names", "legendFormat": "deny DNS", "refId": "E" },
+        { "expr": "netra_fastpath_blocked_sni_names", "legendFormat": "deny SNI", "refId": "F" },
+        { "expr": "netra_fastpath_rate_limits", "legendFormat": "rate limits", "refId": "G" }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["netra", "ebpf", "zyvor"],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 0,
+        "label": "Prometheus"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Netra",
+  "uid": "netra-overview",
+  "version": 1
+}

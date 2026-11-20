@@ -1,0 +1,36 @@
+version: 2
+updates:
+- package-ecosystem: gomod
+  directory: /
+  schedule: {interval: weekly}
+  open-pull-requests-limit: 5
+  groups:
+    aws-sdk: {patterns: ["github.com/aws/aws-sdk-go-v2*"]}
+    x: {patterns: ["golang.org/x/*"]}
+- package-ecosystem: npm
+  directory: /web
+  schedule: {interval: weekly}
+  open-pull-requests-limit: 5
+  groups:
+    # react and react-dom must be the same version; a split bump blanks the dashboard (React #527).
+    react: {patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]}
+- package-ecosystem: npm
+  directory: /website
+  schedule: {interval: weekly}
+  open-pull-requests-limit: 3
+- package-ecosystem: github-actions
+  directory: /
+  schedule: {interval: weekly}
+  groups:
+    actions: {patterns: ["*"]}
+- package-ecosystem: docker
+  directory: /
+  schedule: {interval: weekly}
+  ignore:
+    # The agent image's base OS decides glibc, clang and the kernel-facing tooling
+    # CI verifies; a base-image change is a deliberate, tested migration.
+    - dependency-name: "ubuntu"
+      update-types: ["version-update:semver-major", "version-update:semver-minor"]
+- package-ecosystem: pip
+  directory: /python
+  schedule: {interval: monthly}

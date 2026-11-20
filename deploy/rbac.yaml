@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: netra
+  namespace: netra-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: netra-agent
+  namespace: netra-system
+automountServiceAccountToken: false
+---
+# Required only when NETRA_HA_ENABLED=true. Keeping it in the plain manifest
+# makes switching to the documented HA Helm installation predictable.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: netra-leader-election
+  namespace: netra-system
+rules:
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get","create","update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: netra-leader-election
+  namespace: netra-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: netra-leader-election
+subjects:
+- kind: ServiceAccount
+  name: netra
+  namespace: netra-system
+
+---
+# Read-only Pod and Service metadata is used by the controller to map cgroup IDs
+# to workload labels and resolve dependency-graph destinations. The privileged agent keeps its token disabled.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: netra-workload-metadata
+rules:
+- apiGroups: [""]
+  resources: ["pods","services"]
+  verbs: ["get","list"]
+- apiGroups: ["kubevirt.io"]
+  resources: ["virtualmachines","virtualmachineinstances"]
+  verbs: ["get","list"]
+# Enable with NETRA_WORKLOAD_CONSOLE=true (in-browser logs/exec/VNC).
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  # "get" is required alongside "create": DialPodExec (internal/kube/console.go)
+  # opens a raw WebSocket connection whose opening handshake is always an
+  # HTTP GET per RFC 6455 — the API server's RBAC check for that maps to
+  # the "get" verb, not "create" (which only covers the SPDY-protocol exec
+  # path). See helm/netra/templates/rbac.yaml for the same fix.
+  verbs: ["create","get"]
+- apiGroups: ["subresources.kubevirt.io"]
+  resources: ["virtualmachineinstances/vnc"]
+  verbs: ["get","create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: netra-workload-metadata
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: netra-workload-metadata
+subjects:
+- kind: ServiceAccount
+  name: netra
+  namespace: netra-system

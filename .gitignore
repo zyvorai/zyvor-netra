@@ -1,0 +1,12 @@
+/web/node_modules/
+/web/dist/
+*.tsbuildinfo
+/bin/
+/netractl
+/netrad
+*.o
+.DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/

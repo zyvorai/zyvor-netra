@@ -1,0 +1,85 @@
+FROM golang:1.27-bookworm AS go
+WORKDIR /src
+COPY go.mod ./
+COPY cmd ./cmd
+COPY internal ./internal
+RUN go mod tidy && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/netra-agent ./cmd/netra-agent
+
+# Clang 14 (Debian bookworm) fails on large CT/policy helpers. Ubuntu 24.04 Clang 18
+# matches CI; raise compile-time stack estimate so always_inline helpers can optimize.
+FROM ubuntu:24.04 AS bpf
+RUN apt-get update && apt-get install -y --no-install-recommends clang llvm linux-libc-dev && rm -rf /var/lib/apt/lists/*
+WORKDIR /src
+COPY bpf/ ./
+RUN clang -target bpfel -O2 -g -Wall -Wextra -Werror \
+    -I/usr/include/$(uname -m)-linux-gnu \
+    -mllvm -bpf-stack-size=1024 \
+    -c netra_tc.c -o /out.o
+# Standalone edge TCP intel object — own compilation unit, own verifier
+# budget, per docs/fluxvm-borrow-backlog.md and docs/edge-tcp-intel.md.
+RUN clang -target bpfel -O2 -g -Wall -Wextra -Werror \
+    -I/usr/include/$(uname -m)-linux-gnu \
+    -c netra_edge_intel.c -o /out-edge.o
+# Standalone packet-capture object — same "new sensors stay separate
+# programs" rule as netra_edge_intel.c above; see that file's own comment.
+RUN clang -target bpfel -O2 -g -Wall -Wextra -Werror \
+    -I/usr/include/$(uname -m)-linux-gnu \
+    -c netra_capture.c -o /out-capture.o
+# Standalone TLS ClientHello sampler — own verifier budget so JA3 works
+# even when netra_l7_* is rejected (docs/l7-metadata.md / docs/tls-fingerprints.md).
+RUN clang -target bpfel -O2 -g -Wall -Wextra -Werror \
+    -I/usr/include/$(uname -m)-linux-gnu \
+    -c netra_tlsfp.c -o /out-tlsfp.o
+# Standalone TCP event tracepoints (retransmit/RST/state-transition counters) —
+# own verifier budget; record layouts are patched in at load time from the
+# running kernel's tracefs format files (docs/tcp-events.md).
+RUN clang -target bpfel -O2 -g -Wall -Wextra -Werror \
+    -I/usr/include/$(uname -m)-linux-gnu \
+    -c netra_tcpevents.c -o /out-tcpevents.o
+# Standalone kernel drop attribution (skb:kfree_skb tuple + reason + dropping
+# function). The one object that needs kernel BTF: its three sk_buff reads are
+# CO-RE relocated at load time, so it is compiled with -g and is skipped at
+# runtime, with the reason reported, on a kernel without BTF (docs/drop-info.md).
+RUN clang -target bpfel -O2 -g -Wall -Wextra -Werror \
+    -I/usr/include/$(uname -m)-linux-gnu \
+    -c netra_dropinfo.c -o /out-dropinfo.o
+# Standalone node isolation: an allow-only egress filter at the head of the
+# TCX egress chain, shadow or enforce per node, independent of the cluster
+# mode (docs/node-isolation.md). Ported from FluxVM's pod-policy engine.
+RUN clang -target bpfel -O2 -g -Wall -Wextra -Werror \
+    -I/usr/include/$(uname -m)-linux-gnu \
+    -c netra_nodeiso.c -o /out-nodeiso.o
+# Standalone sampled L7 protocol observer (Redis/Postgres/MySQL/Kafka/HTTP2/gRPC
+# on configured ports). Own verifier budget; off unless NETRA_L7_SAMPLE is set
+# (docs/l7-sampling.md).
+RUN clang -target bpfel -O2 -g -Wall -Wextra -Werror \
+    -I/usr/include/$(uname -m)-linux-gnu \
+    -c netra_l7sample.c -o /out-l7sample.o
+# TLS plaintext sampler (OpenSSL uprobes). One object for amd64 and arm64: the
+# argument registers' offsets are written at load time from the running
+# architecture. Off unless NETRA_TLS_UPROBES is set (docs/tls-plaintext.md).
+RUN clang -target bpfel -O2 -g -Wall -Wextra -Werror \
+    -I/usr/include/$(uname -m)-linux-gnu \
+    -c netra_ssl.c -o /out-ssl.o
+# Standalone rtnetlink requester attribution: an fentry on rtnetlink_rcv_msg that
+# records which process (comm, pid, cgroup) asked for each link/address/route/
+# neighbor change, so the netlink recorder can say who made it. Read-only; needs
+# kernel BTF at load time and is skipped, with the reason reported, without it
+# (docs/netlink-recorder.md).
+RUN clang -target bpfel -O2 -g -Wall -Wextra -Werror \
+    -I/usr/include/$(uname -m)-linux-gnu \
+    -c netra_rtnl.c -o /out-rtnl.o
+
+FROM gcr.io/distroless/static-debian12
+COPY --from=go /out/netra-agent /netra-agent
+COPY --from=bpf /out.o /opt/netra/bpf/netra_tc.o
+COPY --from=bpf /out-edge.o /opt/netra/bpf/netra_edge_intel.o
+COPY --from=bpf /out-capture.o /opt/netra/bpf/netra_capture.o
+COPY --from=bpf /out-tlsfp.o /opt/netra/bpf/netra_tlsfp.o
+COPY --from=bpf /out-tcpevents.o /opt/netra/bpf/netra_tcpevents.o
+COPY --from=bpf /out-dropinfo.o /opt/netra/bpf/netra_dropinfo.o
+COPY --from=bpf /out-nodeiso.o /opt/netra/bpf/netra_nodeiso.o
+COPY --from=bpf /out-l7sample.o /opt/netra/bpf/netra_l7sample.o
+COPY --from=bpf /out-ssl.o /opt/netra/bpf/netra_ssl.o
+COPY --from=bpf /out-rtnl.o /opt/netra/bpf/netra_rtnl.o
+ENTRYPOINT ["/netra-agent"]

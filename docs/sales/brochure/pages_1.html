@@ -1,0 +1,80 @@
+<section class="page cover" data-title="Cover"><div class="body">
+<div class="eyebrow" style="margin-top:.35in">Zyvor &middot; Netra</div>
+<h1 style="font-size:32pt;line-height:1.06">Network observability and emergency control, <span class="accent">without CNI lock-in.</span></h1>
+<p class="lede" style="max-width:6.3in;margin-top:14px">A buyer brochure for enterprises evaluating Netra: how it sees inside a node with eBPF, what happens step by step when traffic starts dropping and how the node's packets are captured as evidence, and everything else it does.</p>
+<div class="pill4" style="margin-top:22px">
+  <div><b>OBSERVE</b><span>Flows, TCP health, DNS timing, kernel drops, workload identity. No CNI required.</span></div>
+  <div><b>DIAGNOSE</b><span>Which connection lost packets, why, and in which kernel function.</span></div>
+  <div><b>CONTAIN</b><span>Leased emergency deny, previewed against observed traffic first.</span></div>
+  <div><b>FAIL OPEN</b><span>Every enforcement rule reverts on its own.</span></div>
+</div>
+<div class="callout" style="margin-top:24px"><div class="eyebrow" style="margin-bottom:5px">New in this edition</div>
+<div class="chips">
+<span class="chip">Kernel drop attribution</span><span class="chip">TCP retransmit and reset events</span><span class="chip">Listen-queue pressure</span>
+<span class="chip">Sampled Redis, SQL, Kafka, gRPC counts</span><span class="chip">TLS plaintext sampling (opt-in)</span>
+<span class="chip">OIDC roles</span><span class="chip">Agent mutual TLS</span><span class="chip">OTLP and Loki push</span>
+<span class="chip">Per-workload metrics and SLOs</span><span class="chip">Batched map reads</span><span class="chip">Tested upgrade, rollback and HA</span>
+</div></div>
+<p class="soft" style="margin-top:30px;font-size:9.6pt">Standalone eBPF for Linux and Kubernetes &nbsp;&middot;&nbsp; Optional Cilium and Hubble enrichment &nbsp;&middot;&nbsp; x86_64 and arm64</p>
+<p class="soft" style="font-size:9.6pt">Licensed under the Zyvor Production License v1.0. A commercial license is required for production use.</p>
+<figure style="margin-top:12px;width:82%"><img class="shot" src="../../ux/00-overview.png" alt=""><figcaption>Illustrative lab UI: the Netra overview. UI captures in this brochure are taken from lab deployments; diagrams are conceptual.</figcaption></figure>
+</div></section>
+
+<section class="page" data-title="Why Netra"><div class="body">
+<h1>When enterprises buy Netra</h1>
+<p class="lede">Modern clusters accumulate network tools faster than operators can trust them. CNI dashboards explain policy verdicts. Host stacks still drop packets in softnet, qdisc and the NIC. Emergency denies that never expire become the next outage. Netra is built for that gap.</p>
+<h2>Buyer problems Netra addresses</h2>
+<ol class="num">
+<li>CNI-only visibility leaves node-level loss unexplained.</li>
+<li>Changing or mixing CNIs should not erase observability and emergency control.</li>
+<li>Incident kill-switches must auto-revert: a permanent silent deny is unacceptable.</li>
+<li>Evidence (capture, alerts, SIEM, AI) must not quietly collect payloads, argv or secrets.</li>
+<li>Security teams need to know exactly what a node sensor can see: what is on by default, what is opt-in, and what is never collected.</li>
+</ol>
+<h2>What Netra is, in one sentence</h2>
+<p>Netra is standalone eBPF network observability and leased emergency containment for Linux and Kubernetes: observe-first, CNI-independent by default, with optional Cilium and Hubble enrichment.</p>
+<h2>Two workloads</h2>
+<div class="cards c2">
+<div class="card"><h3>netra-agent (per node)</h3><p>A privileged DaemonSet that loads the eBPF programs, owns its maps under <code>/sys/fs/bpf/netra</code>, reads them in batches and reports every few seconds. It never touches Cilium-owned maps.</p></div>
+<div class="card"><h3>netrad (controller)</h3><p>The API, the dashboard, the alert poller, the durable state and the enforcement leases. Active/passive HA with a Kubernetes Lease. Serves the UI over HTTPS by default.</p></div>
+</div>
+<h2>At a glance</h2>
+<div class="cards c3">
+<div class="tile"><div class="n">28</div><div class="l">dashboard pages: overview, flows, drops, path, capture, firewall, insights and more</div></div>
+<div class="tile"><div class="n">8</div><div class="l">eBPF objects, each loaded on its own so one cannot break another</div></div>
+<div class="tile"><div class="n">0</div><div class="l">kernel modules and application changes</div></div>
+<div class="tile"><div class="n">180</div><div class="l">MCP tools for AI agents; the 60 that change state are off by default</div></div>
+<div class="tile"><div class="n">2</div><div class="l">CPU architectures verified on real kernels: x86_64 and arm64</div></div>
+<div class="tile"><div class="n">30+</div><div class="l">CI jobs on every change, plus a nightly run</div></div>
+</div>
+</div></section>
+
+<section class="page" data-title="How eBPF does it"><div class="body">
+<h1>How eBPF does it</h1>
+<p class="lede">eBPF lets Netra run small, verified programs inside the Linux kernel at the points where packets, sockets and drops already pass. That is how it sees a node without a kernel module, a sidecar in every pod, or a change to any application.</p>
+<figure class="dia">{{dia:ebpf_pipeline}}<figcaption>From source to a kernel hook and back to the agent. Illustrative.</figcaption></figure>
+<div class="cards c3">
+<div class="card"><h3>What Netra attaches to</h3><p>cgroup packet and socket hooks for every workload, TC/TCX on interfaces you choose, XDP if you opt in, tracepoints for drops and TCP events, and uprobes in OpenSSL if you opt in.</p></div>
+<div class="card"><h3>How the data comes out</h3><p>Programs write counters and samples into maps and ring buffers. The agent reads big maps in batches and keeps only the top entries, so a busy node costs a few dozen syscalls per read.</p></div>
+<div class="card"><h3>What keeps it safe</h3><p>The kernel verifier refuses anything unsafe. Each sensor is its own object. Observing programs never change a packet's verdict. Rules that can drop are leased and fail open.</p></div>
+</div>
+<div class="callout"><b>Proven against the real verifier.</b> Netra's objects are loaded by real kernels in CI, on Linux 6.8 and 6.17, on x86_64 and arm64. When the first sampled-protocol program was rejected (the compiler had removed a bounds check), it was fixed and is now loaded by a test on every run.</div>
+<h2>Why eBPF, not the alternatives</h2>
+<table>
+<tr><th style="width:24%"></th><th>Typical kernel module</th><th>Typical sidecar or proxy</th><th>Netra with eBPF</th></tr>
+<tr><td class="k">Sees node-level drops</td><td>yes</td><td>no</td><td>yes: the drop tracepoint, softnet, qdisc</td></tr>
+<tr><td class="k">Changes to applications</td><td>none</td><td>one per pod</td><td>none</td></tr>
+<tr><td class="k">Risk to the kernel</td><td>a bug can crash the node</td><td>lives in user space</td><td>the verifier proves each program safe before it runs</td></tr>
+</table>
+</div></section>
+
+<section class="page" data-title="Where Netra sits"><div class="body">
+<h1>Where Netra sits in the Linux network stack</h1>
+<p class="lede">A packet crosses the same layers on every node. Netra places a sensor at each layer that matters and reads the rest from what the kernel already exposes, so the picture of an incident is complete from the wire to the application.</p>
+<figure class="dia">{{dia:stack}}</figure>
+<div class="cards c3">
+<div class="card"><h3>Why cgroup hooks</h3><p>They see every workload's traffic with its identity, on any CNI, without an interface to attach to.</p></div>
+<div class="card"><h3>Why a drop tracepoint</h3><p>Most packet loss is decided inside the kernel. The tracepoint says which connection, why, and in which function.</p></div>
+<div class="card"><h3>Why TCX for capture</h3><p>It observes packets on the interface you pick without replacing anything, and never changes a verdict.</p></div>
+</div>
+</div></section>

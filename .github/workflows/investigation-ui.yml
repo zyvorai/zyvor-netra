@@ -1,0 +1,40 @@
+name: Investigation UI
+on:
+  pull_request:
+    paths: ['web/**', '.github/workflows/investigation-ui.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm --prefix web ci
+      - run: npm --prefix web test
+      - run: npm --prefix web run build
+      - run: cd web && npx playwright install --with-deps chromium
+      - name: Browser smoke test against production assets
+        run: |
+          cd web
+          npm exec -- vite preview --host 127.0.0.1 --port 5173 > /tmp/netra-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:5173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/investigation-smoke.cjs
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: investigation-ui-evidence
+          path: |
+            /tmp/netra-*.png
+            /tmp/netra-preview.log

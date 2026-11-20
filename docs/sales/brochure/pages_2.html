@@ -1,0 +1,98 @@
+<section class="page" data-title="The eBPF objects"><div class="body">
+<h1>The eight eBPF objects</h1>
+<p class="lede">Each sensor is a separate object with its own verifier budget and its own switch. A node that cannot run one loses only that sensor, and says why.</p>
+<table>
+<tr><th style="width:15%">Object</th><th style="width:25%">Hook</th><th>What it reads</th><th style="width:14%">Default</th><th style="width:16%">Needs</th></tr>
+<tr><td class="k">netra_tc</td><td>cgroup_skb in/egress, connect, sendmsg, sockops, drop tracepoint; TCX and XDP optional</td><td>flows, policy drops, connection tracking, kernel drop reasons</td><td>on, observe mode</td><td>cgroup v2</td></tr>
+<tr><td class="k">edge_intel</td><td>TCX ingress and egress</td><td>handshake and RTT histograms, retransmit / RST / FIN counters, before NAT</td><td>auto</td><td>Linux 6.6+ (TCX)</td></tr>
+<tr><td class="k">capture</td><td>TCX ingress and egress</td><td>filtered packet copies into a ring buffer</td><td>auto, idle until a session starts</td><td>Linux 6.6+ (TCX)</td></tr>
+<tr><td class="k">tlsfp</td><td>cgroup_skb egress</td><td>first bytes of a TLS ClientHello, for JA3 / JA4 in user space</td><td>auto</td><td>cgroup v2</td></tr>
+<tr><td class="k">tcpevents</td><td>four TCP tracepoints</td><td>retransmit, reset and state change, with the flow tuple</td><td>auto</td><td>tracefs (no BTF)</td></tr>
+<tr><td class="k">dropinfo</td><td>drop tracepoint</td><td>tuple, reason and the kernel function that dropped the packet</td><td>auto</td><td>kernel BTF, tracefs</td></tr>
+<tr><td class="k">l7sample</td><td>cgroup_skb</td><td>first 128 bytes on the ports you configure, parsed in the agent</td><td><b>off</b></td><td>cgroup v2</td></tr>
+<tr><td class="k">ssl</td><td>uprobes on SSL_write / SSL_read</td><td>up to 128 bytes of plaintext, allowlisted processes only</td><td><b>off</b></td><td>host PID view, OpenSSL</td></tr>
+</table>
+<div class="cards c2">
+<div class="card on"><h3>Kernel baselines</h3><p>Ring buffers need Linux 5.8+. Batched map reads need 5.6+. TCX needs 6.6+. Only drop attribution uses kernel type information (BTF); every other sensor works without it.</p></div>
+<div class="card on"><h3>Never in the way of other tools</h3><p>Netra owns only <code>/sys/fs/bpf/netra</code>. It does not pin over Cilium's maps, and its capture and edge programs return the kernel's default verdict, so they cannot change a packet's fate.</p></div>
+</div>
+<h2>Layouts and names come from the running kernel</h2>
+<p>Tracepoint record layouts and drop-reason names are read from the kernel's own description at load time. Reason numbers change between kernels: <code>NETFILTER_DROP</code> is 8 on Linux 6.8 and 12 on 6.17. A table baked into the agent would mislabel every drop on one of them, so Netra never bakes one in. A layout it cannot read safely is counted and reported, never misread.</p>
+<h2>What a node reports when a sensor cannot run</h2>
+<div class="row"><div class="col"><table><tr><th>Node</th><th>Sensor</th><th>Reported</th></tr>
+<tr><td>worker-1</td><td>drop attribution</td><td>running</td></tr>
+<tr><td>worker-2</td><td>drop attribution</td><td>kernel BTF not available</td></tr></table></div>
+<div class="col"><p class="small soft" style="margin-top:8px">Illustrative. Three modes on every sensor: <code>auto</code> runs it if the node can and reports why if not, <code>off</code> skips it, <code>required</code> stops the agent instead of running without it.</p></div></div>
+</div></section>
+
+<section class="page" data-title="Traffic-drop scenario: the incident"><div class="body">
+<div class="eyebrow">Traffic-drop scenario &middot; part 1 of 4</div>
+<h1>Packets start dying on a node</h1>
+<p class="lede">It is 02:10. Pods on <b>worker-3</b> report timeouts and retries. The CNI dashboard shows healthy policies. Nothing explains it. Here is what Netra does, in order, and what each step gives the operator.</p>
+<figure class="dia">{{dia:timeline}}</figure>
+<p class="tiny">Timings are typical, not guarantees. Steps 3 to 6 are the opt-in auto-capture path (off by default); an operator can start the same capture by hand at any time. Diagram is illustrative.</p>
+</div></section>
+
+<section class="page" data-title="Traffic-drop scenario: detect and explain"><div class="body">
+<div class="eyebrow">Traffic-drop scenario &middot; part 2 of 4</div>
+<h1>Detect the drop, and explain it</h1>
+<p class="lede">The sensors that explain a drop are always on where the node supports them, so the evidence exists before anyone asks for it. The controller turns critical signals into an alert, and the dashboard shows where in the stack packets die.</p>
+<figure class="dia">{{dia:detect}}</figure>
+<div class="row">
+<div class="col"><h2>What you can read</h2>
+<ul class="small">
+<li><b>Drops page:</b> kernel skb reasons, softnet pressure, interface counters and policy-drop findings.</li>
+<li><b>Drop attribution:</b> which connection, which reason, which kernel function (<code>nft_do_chain</code> versus <code>__udp4_lib_rcv</code> is the difference between a firewall rule and a closed port).</li>
+<li><b>TCP events:</b> the flows behind retransmits and resets.</li>
+<li><b>Listen queues:</b> which service's accept queue is full.</li></ul></div>
+<div class="col"><h2>Explain, without guessing</h2>
+<ul class="small">
+<li><b>Drop Explain</b> gives an evidence-backed reading of one flow, passively, from data already collected.</li>
+<li><b>Congestion Map</b> paints every stack stage (NIC, softnet, qdisc, socket) by severity across the cluster.</li>
+<li>Tuning advice is review-only with apply and rollback commands. Netra never writes a sysctl.</li></ul></div>
+</div>
+<figure style="width:72%;margin:6px auto 0"><img class="shot" src="../../ux/09-congestion-map.jpg" alt=""><figcaption>Illustrative lab UI: the Congestion Map, colored by severity</figcaption></figure>
+</div></section>
+
+<section class="page" data-title="Traffic-drop scenario: capture"><div class="body">
+<div class="eyebrow">Traffic-drop scenario &middot; part 3 of 4</div>
+<h1>Capture the node's packets</h1>
+<p class="lede">When the signal is critical, Netra freezes the context and starts a filtered, time-boxed capture on the affected node. Two backends produce the same frames, so the operator's view and the saved PCAP do not depend on the kernel.</p>
+<figure class="dia">{{dia:capture}}</figure>
+<div class="row">
+<div class="col" style="flex:1.15"><figure style="margin-top:0"><img class="shot" src="../../ux/10-capture-live.jpg" alt=""><figcaption>Illustrative lab UI: live capture, decoded and labeled by workload</figcaption></figure></div>
+<div class="col"><h3>Guard rails</h3>
+<ul class="small" style="margin-bottom:4px">
+<li>Auto-capture is <b>opt-in</b>, off by default.</li>
+<li>A filter is always required. No whole-interface capture.</li>
+<li>Auto: 60 s, up to 1000 packets/s. Manual: up to 5 minutes.</li>
+<li>Per-node cooldown 10 minutes; at most 5 auto captures at once.</li>
+<li>Store capped at 50 files and 1 GB. Downloading needs the operator role.</li></ul></div>
+</div>
+<div class="row" style="margin-top:4px">
+<div class="col"><h3>The evidence bundle</h3><p class="small soft">A classic <b>.pcap</b> that opens in Wireshark, and a <b>context.json</b> frozen at the moment of the trigger: node, host and kernel, whether CPU or memory was hot, the top workloads, a short comm-only process list, and the drop, softnet and qdisc counters.</p></div>
+<div class="col"><div class="callout red" style="margin:0"><b>What a capture contains.</b> Full frames of the traffic that matches your filter, up to 9000 bytes each. It is a deliberate, filtered, time-boxed exception. Never collected: command lines, environments, executable paths, Secrets or logs.</div></div>
+</div>
+</div></section>
+
+<section class="page" data-title="Traffic-drop scenario: contain"><div class="body">
+<div class="eyebrow">Traffic-drop scenario &middot; part 4 of 4</div>
+<h1>Triage, then contain, then let go</h1>
+<p class="lede">With the PCAP, the context and the drop attribution in hand, the operator knows what is hitting the node. If it must be stopped now, Netra offers a containment that expires on its own.</p>
+<figure class="dia">{{dia:lease}}</figure>
+<div class="row">
+<div class="col"><h2>Before you deny</h2>
+<p class="small">The <b>deny preview</b> scores a proposed rule (an IP, CIDR, port, DNS name, SNI or process) against the counters Netra has already observed and applies nothing: it shows which flows the rule would have matched. The <b>blast-radius</b> view walks the observed dependency graph outward from a workload (1 to 6 hops, 3 by default) and shows what depends on it. Both read observed traffic only, and say so: they are a guide, not a policy verdict.</p>
+<h2>What you can lease</h2>
+<p class="small">Exact IPv4 and IPv6, CIDR (ingress or egress, optional SYN-drop so established connections survive), port, DNS name, TLS SNI, UID, process name, capability-gated socket deny, packet and byte ceilings, and per-workload new-connection caps. Allow-exceptions always win.</p></div>
+<div class="col"><h2>Proven on a real kernel</h2>
+<p class="small">In CI, on every change, a real agent on a veth pair shows that:</p>
+<ul class="small">
+<li>a deny rule never blocks in observe mode;</li>
+<li>in enforce it drops exactly what it names, and a second port on the same host keeps working;</li>
+<li>egress rules guard connections the host starts, ingress rules guard connections the peer starts, and replies to the host's own connections are exempt;</li>
+<li>an allow rule beats a deny rule, and an IPv6 rule drops IPv6 and leaves IPv4 alone;</li>
+<li>a lease expires on its own with the rule still listed;</li>
+<li>the agent fails open when the controller dies.</li></ul></div>
+</div>
+</div></section>

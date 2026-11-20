@@ -1,0 +1,88 @@
+<section class="page" data-title="Access, security and export"><div class="body">
+<h1>Access, security and export</h1>
+<p class="lede">All of it is off by default and additive: nothing about an existing install changes until you turn a piece on, and the static keys keep working.</p>
+<figure class="dia" style="width:92%;margin:4px auto">{{dia:access}}</figure>
+<div class="cards c2">
+<div class="card"><h3>Sign-in and roles</h3><p>People sign in through your identity provider (OIDC) and get viewer, operator or admin; the audit trail names the person. A new mutating route is gated at operator by default, and an identity-provider outage is a temporary error, not a logout.</p></div>
+<div class="card"><h3>Agent mutual TLS</h3><p>A client certificate as a second factor for agent-only requests. Roll out with <b>optional</b>, watch which agents have moved, then switch to <b>required</b>. Certificates renew in place, and any bad setting fails closed.</p></div>
+</div>
+<h2>Metrics and SLOs</h2>
+<p class="small">Aggregate <code>/metrics</code> by default, optionally token-gated. Opt in to per-workload counters with a hard cardinality cap; a dying pod never makes a counter go backwards. Network SLOs with burn-rate alerting, a chart-rendered <b>ServiceMonitor</b> and <b>PrometheusRule</b> (checked with promtool in CI), and a Grafana dashboard.</p>
+<h2>Pushing telemetry out</h2>
+<table>
+<tr><th style="width:20%">Sink</th><th>Sends</th><th style="width:34%">Notes</th></tr>
+<tr><td class="k">OTLP / HTTP</td><td>metrics, audit logs, block and deny events as spans</td><td>OTLP/HTTP JSON to a collector's base URL</td></tr>
+<tr><td class="k">Loki</td><td>audit and block events under a small bounded label set</td><td>Multi-tenant, basic auth or headers</td></tr>
+<tr><td class="k">Syslog, Snowflake</td><td>audit events: RFC 5424 over UDP or TCP; a Snowflake table</td><td>Key-pair authentication for Snowflake</td></tr>
+<tr><td class="k">Alert channels</td><td>severity-filtered alerts</td><td>Webhook (HMAC-signed), e-mail, Slack, Teams, Twilio SMS and WhatsApp, HTTP bridge</td></tr>
+<tr><td class="k">SIEM pull export</td><td>events, audit, blocks and flows</td><td>JSON, JSONL, CEF, RFC 5424 syslog, OTLP</td></tr>
+</table>
+<p class="small soft">Push sinks are best-effort and leader-only in HA, so two replicas never double-ship. Sink credentials are never logged and never appear in an API response; CI plants them and scans every body, log line and response.</p>
+</div></section>
+
+<section class="page" data-title="AI, MCP and ChatOps"><div class="body">
+<h1>AI, MCP and ChatOps: read-only until you say otherwise</h1>
+<div class="cards c2">
+<div class="card"><h3>Ask Netra and digests</h3><p>Briefs, digests, suggestions, explain and draft turn data the controller already computes into operator text. They never flip enforce mode or apply policy. The engine is heuristic by default with no external calls; an OpenAI-compatible rewrite is optional and receives bounded aggregates only (counts, a health score, top-N destinations, DNS names and processes), never packets or secrets.</p></div>
+<div class="card"><h3>netra-mcp for AI agents</h3><p><b>189</b> stdio tools: <b>129</b> read and generator tools are always available; the <b>60</b> that change state exist only when you set <code>NETRA_MCP_ALLOW_MUTATIONS</code>. Mutations reuse the same bearer auth, self-reverting leases and audit log (policy applies also need a single-use preflight receipt), with the MCP actor named. CI runs the real server against a real controller.</p></div>
+<div class="card"><h3>Slack and Teams ChatOps</h3><p>Slash commands and an interactive confirmation flow that mirrors the UI's confirmations, with a separate credential from the operator key.</p></div>
+<div class="card"><h3>netractl and netra-doctor</h3><p>An operator CLI for the main API surfaces (install, status, features, maps, capture, export) and a read-only host-readiness preflight: cgroup v2, bpffs, BTF, tracefs, TCX and drop-reason support.</p></div>
+</div>
+<h2>Alerting</h2>
+<p>A poller evaluates health, path, drop, kernel-network and drift findings on an interval (30 s by default) and publishes new or escalated ones through the configured channels, with severity-aware cooldown and de-duplication. Alerting is off until you configure a channel. Delivery is best-effort with bounded retries; a failed channel does not block the others.</p>
+<h2>Example: an AI agent works the drop scenario</h2>
+<div class="flow"><code>netra_ebpf_drops</code><i>&rarr;</i><code>netra_ebpf_diagnose</code><i>&rarr;</i><code>netra_drops_explain</code><i>&rarr;</i><code>netra_capture_status</code><i>&rarr;</i><code>netra_insights_blast_radius</code><i>&rarr;</i><code class="gated">netra_ebpf_deny_add</code></div>
+<p class="small soft">The first five are read tools. The last exists only when you enable mutations, and a rule it adds drops packets only while an enforcement lease is running. Every step is audited with the MCP actor named.</p>
+<h2>Where the AI and automation stop</h2>
+<ul class="small">
+<li>Nothing suggested by the heuristic engine, the LLM rewrite or a recommendation is ever applied on its own.</li>
+<li>Policy recommendations are generated from observed traffic, which may be incomplete; they are labelled as such.</li>
+<li>Mutating MCP tools, ChatOps actions and the UI go through the same authentication, lease and audit path; policy applies also need a fresh single-use preflight receipt.</li>
+<li>Prompts are advisory text; the real gate is the mutation switch.</li></ul>
+</div></section>
+
+<section class="page" data-title="Deploy, upgrade and test"><div class="body">
+<h1>Deploy, upgrade, and how it is tested</h1>
+<p class="lede">One Helm chart installs the controller and the agent DaemonSet. Plain manifests are available. <code>netra-doctor</code> checks a node before the privileged agent runs on it.</p>
+<figure class="dia">{{dia:deploy_ha}}</figure>
+<h2>Tested for real, not just unit-tested</h2>
+<figure class="dia">{{dia:testing}}</figure>
+<div class="row">
+<div class="col"><p class="small"><b>Enforcement and capture</b> are checked with a real agent on a real kernel and real traffic. <b>Upgrades</b> install the previous release, write state, upgrade to the new one, restart a pod and roll back, and assert the rules, baseline and API key survive. <b>HA</b> checks that exactly one replica serves, the standby refuses the API, and both a crash and a graceful delete promote it with the shared state intact.</p></div>
+<div class="col"><div class="callout" style="margin:0"><b>Honest limits.</b> A real Cilium and Hubble install is not in CI (the chart's Cilium mode is checked by rendering only). HA is tested on one node, so it proves the election and the state lock, not your shared filesystem.</div></div>
+</div>
+</div></section>
+
+<section class="page" data-title="Suite placement and checklist"><div class="body">
+<h1>Zyvor suite placement: Netra and PacketWolf</h1>
+<p>Netra and PacketWolf are suite counterparts, not a wired pipeline. Neither product is a dependency or API consumer of the other today.</p>
+<table>
+<tr><th style="width:20%"></th><th>Netra</th><th>PacketWolf</th></tr>
+<tr><td class="k">Default market</td><td>Mixed or non-Cilium clusters; an easy entry point</td><td>Cilium-standardized fleets</td></tr>
+<tr><td class="k">Core job</td><td>Observe, drops, congestion and leased emergency deny</td><td>Observe, AutoPolicy, healer and platform containment</td></tr>
+<tr><td class="k">CNI dependency</td><td>None (Cilium and Hubble optional)</td><td>Cilium-first</td></tr>
+<tr><td class="k">Policy posture</td><td>Review-only drafts; enforcement is time-leased and fails open</td><td>Learns and operates Cilium policy at platform depth</td></tr>
+<tr><td class="k">Maps</td><td>Owns <code>/sys/fs/bpf/netra</code> only</td><td>Works with the Cilium datapath and policy</td></tr>
+</table>
+<h2>Co-existence rules</h2>
+<ol class="num small">
+<li>The same cluster is allowed but not required; Netra's maps stay isolated.</li>
+<li>Do not dual-own a long-lived deny: PacketWolf and Cilium for durable posture, Netra leases for an incident kill-switch that auto-reverts.</li>
+<li>Enable Hubble and CiliumNetworkPolicy in Netra only for enrichment, not as PacketWolf's datapath.</li>
+<li>There is no Netra to PacketWolf control-plane sync today.</li></ol>
+<p class="small">Pick Netra when you need CNI-independent diagnostics and short-lease emergency deny. Pick PacketWolf when Cilium is already the CNI and you want full platform intelligence, AutoPolicy and healer depth.</p>
+<h1 style="margin-top:14px">Buying checklist</h1>
+<ol class="num small">
+<li>Run <code>netra-doctor</code> on candidate nodes: cgroup v2, bpffs, BTF, tracefs and TCX support.</li>
+<li>Start observe-only: flows, Path, Drops, Congestion Map. No enforcement lease yet.</li>
+<li>Turn on the optional sensors you want and read what each node reports it can and cannot run.</li>
+<li>Exercise capture (and, if you want it, auto-capture) on a non-production signal, and decide who may download PCAPs.</li>
+<li>Pilot a leased deny after its preview, and confirm it reverts on its own.</li>
+<li>Wire alerting, SIEM, OTLP or Loki as needed; keep AI and MCP read-only until trusted; decide on OIDC and agent mutual TLS.</li>
+<li>Rehearse an upgrade, a rollback and an HA failover in staging.</li>
+<li>If Cilium is present, decide explicitly between Netra enrichment and PacketWolf platform ownership.</li></ol>
+<div class="chips" style="margin-top:10px"><span class="chip">See</span><span class="chip">Explain</span><span class="chip">Capture</span><span class="chip">Contain</span><span class="chip">Integrate</span><span class="chip">Trust</span><span class="soft small" style="align-self:center">flows on any CNI &middot; the connection, reason and kernel function &middot; a filtered PCAP &middot; a leased deny &middot; OIDC, mTLS, OTLP, Loki, SIEM, MCP &middot; tested for real</span></div>
+<div class="cta">See the network. Contain the incident. <span class="accent">Fail open by default.</span></div>
+<p style="font-size:12pt;font-weight:700;color:var(--deep)">Talk to sales &rarr; zyvor.dev/netra</p>
+<p class="tiny">&copy; 2026 Zyvor AI Labs &middot; Zyvor Production License v1.0: a commercial license is required for production use &middot; Standalone eBPF network observability and emergency network control</p>
+</div></section>

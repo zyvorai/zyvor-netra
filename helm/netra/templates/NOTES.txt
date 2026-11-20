@@ -1,0 +1,22 @@
+{{- $scheme := ternary "https" "http" .Values.tls.enabled -}}
+Netra {{ .Chart.AppVersion | default .Chart.Version }}
+
+  TLS: {{ if .Values.tls.enabled }}ENABLED (default) — self-signed in-pod cert via gen-cert init{{ else }}DISABLED — set tls.enabled=true for HTTPS{{ end }}
+  Listen: {{ $scheme }}://netra.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}
+
+{{- if eq .Values.service.type "NodePort" }}
+  NodePort: {{ $scheme }}://<node-ip>:{{ .Values.service.nodePort | default .Values.service.port }}
+{{- else if eq .Values.service.type "LoadBalancer" }}
+  External: wait for SERVICE-IP, then {{ $scheme }}://<EXTERNAL-IP>:{{ .Values.service.port }}
+{{- else }}
+  Port-forward:
+    kubectl -n {{ .Release.Namespace }} port-forward svc/netra {{ .Values.service.port }}:{{ .Values.service.port }}
+    open {{ $scheme }}://127.0.0.1:{{ .Values.service.port }}
+{{- end }}
+
+{{- if .Values.tls.enabled }}
+  Tip: browsers will warn on the self-signed cert; curl -skf {{ $scheme }}://127.0.0.1:{{ .Values.service.port }}/livez
+  CLI: make install && netractl status
+       (loopback skips verify; or export NETRA_TLS_INSECURE=true / use ~/.netra/env)
+  Opt out only with --set tls.enabled=false (trusted ingress/proxy termination).
+{{- end }}

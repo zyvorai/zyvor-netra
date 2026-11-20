@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Netra capabilities</title>
+<!-- SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+     1600x700. Rendered by ./build.sh to docs/ux/readme-capabilities.jpg. Every item is a feature named in docs/capabilities.md. -->
+<link rel="stylesheet" href="card.css">
+<style>
+  body { height:700px; }
+  .grid { margin-top:24px; grid-template-columns:repeat(4,1fr); gap:24px; }
+  .grid .card { min-height:400px; }
+  .grid .card h3 { font-size:30px; }
+</style></head><body>
+<div class="bar"></div>
+<div class="wrap">
+  <div class="top"><img src="../../../web/public/zyvor-mark.svg" alt=""><b>Zyvor</b><span>&middot;</span><span>Netra</span><span class="r">Capabilities at a glance</span></div>
+  <h1>See everything. Diagnose fast. <em>Contain safely.</em></h1>
+  <div class="row grid">
+    <div class="card c"><span class="lane">OBSERVE</span><h3>Know what talks to what</h3><ul>
+      <li>IPv4/IPv6 flows with pod attribution</li><li>TCP health: RTT, retransmits, RTOs</li><li>DNS latency and failures</li><li>TLS SNI and HTTP Host metadata</li><li>Behavior baselines and drift</li></ul></div>
+    <div class="card o"><span class="lane">DIAGNOSE</span><h3>Find where it breaks</h3><ul>
+      <li>Kernel drop reasons and functions</li><li>TCP path and edge diagnostics</li><li>Congestion Map</li><li>Live packet capture, Wireshark-style decode</li><li>Drop Explain and blast radius</li></ul></div>
+    <div class="card k"><span class="lane">CONTAIN</span><h3>Act, then let go</h3><ul>
+      <li>Leased deny: IP, CIDR, port, DNS, SNI</li><li>Per-workload scope preview</li><li>One-click pod lockdown</li><li>Plan token and risk confirm</li><li>Auto-return to observe</li></ul></div>
+    <div class="card a"><span class="lane">INTEGRATE</span><h3>Fit your stack</h3><ul>
+      <li>Prometheus, Grafana, OTLP, Loki</li><li>SIEM: CEF, syslog, JSONL</li><li>OIDC roles, mutual TLS</li><li>Slack and Teams ChatOps</li><li>MCP server, 189 tools</li></ul></div>
+  </div>
+  <div class="foot"><b>zyvor.dev/netra</b><span class="r">Cilium and Hubble optional &middot; Linux 5.8+</span></div>
+</div>
+</body></html>

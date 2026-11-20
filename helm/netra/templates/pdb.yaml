@@ -1,0 +1,11 @@
+{{- if and .Values.ha.enabled .Values.ha.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: netra
+spec:
+  minAvailable: {{ .Values.ha.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: netra
+{{- end }}

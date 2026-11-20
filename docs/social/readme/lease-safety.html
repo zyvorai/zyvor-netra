@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Netra lease safety</title>
+<!-- SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+     1600x560. Rendered by ./build.sh to docs/ux/readme-lease-safety.jpg. The four triggers are the README's own list. -->
+<link rel="stylesheet" href="card.css">
+<style>
+  body { height:560px; }
+  .tl { margin-top:26px; grid-template-columns:1fr 1.3fr 1fr; }
+  .tl .card { min-height:150px; }
+  .tl .card:not(:last-child)::after { content:""; position:absolute; right:-31px; top:50%; margin-top:-11px;
+    border-left:16px solid var(--soft); border-top:11px solid transparent; border-bottom:11px solid transparent; }
+  .trig { margin-top:26px; grid-template-columns:repeat(4,1fr); gap:18px; }
+  .trig div { border:2px solid var(--signal); border-radius:12px; padding:12px 16px; font-size:20px; font-weight:700; color:var(--deep); background:#1d1d1f; }
+  .lab { margin-top:22px; font-family:var(--mono); font-size:16px; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
+</style></head><body>
+<div class="bar"></div>
+<div class="wrap">
+  <div class="top"><img src="../../../web/public/zyvor-mark.svg" alt=""><b>Zyvor</b><span>&middot;</span><span>Netra</span><span class="r">Lease-bounded enforcement</span></div>
+  <h1>Enforcement <em>expires.</em> Observe never does.</h1>
+  <div class="row tl">
+    <div class="card o"><span class="lane">OBSERVE</span><h3>Default state</h3><p>Rules can be staged here. Nothing is dropped.</p></div>
+    <div class="card k"><span class="lane">ENFORCE &middot; LEASED</span><h3>Time-limited deny</h3><p>A lease from 1&nbsp;min to 24&nbsp;h. Never permanent by default.</p></div>
+    <div class="card o"><span class="lane">OBSERVE</span><h3>Back on its own</h3><p>Fails open. No operator action needed.</p></div>
+  </div>
+  <div class="lab">Returns to observe when&hellip;</div>
+  <div class="row trig" style="margin-top:10px">
+    <div>the lease expires</div><div>the agent cannot refresh controller state</div><div>the controller restarts</div><div>HA leadership changes</div>
+  </div>
+  <div class="foot"><b>zyvor.dev/netra</b><span class="r">Policy apply stays plan-token + risk confirm</span></div>
+</div>
+</body></html>

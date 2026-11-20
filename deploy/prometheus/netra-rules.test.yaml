@@ -1,0 +1,167 @@
+# promtool unit tests for the chart's PrometheusRule (helm/netra/templates/
+# prometheusrule.yaml). Run by scripts/ci-prometheus-rules.sh, which renders the
+# chart to rules.yaml beside this file first.
+rule_files:
+  - rules.yaml
+evaluation_interval: 1m
+
+tests:
+  # --- SLO: a page fires only once the server-side multi-window state is 2 ---
+  - interval: 1m
+    input_series:
+      - series: 'netra_slo_alert_state{slo="checkout"}'
+        values: '0 0 2 2 2 2 2 2'
+    alert_rule_test:
+      - eval_time: 2m # state first reaches 2 here: pending, `for: 1m` not yet satisfied
+        alertname: NetraSLOBurnPage
+        exp_alerts: []
+      - eval_time: 6m
+        alertname: NetraSLOBurnPage
+        exp_alerts:
+          - exp_labels: {severity: page, slo: checkout}
+            exp_annotations:
+              summary: "Netra SLO checkout is burning its error budget fast"
+              description: "The multi-window burn-rate threshold for paging is exceeded; see GET /api/v1/slo."
+
+  # A ticket-level burn must never page.
+  - interval: 1m
+    input_series:
+      - series: 'netra_slo_alert_state{slo="checkout"}'
+        values: '1x30'
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: NetraSLOBurnPage
+        exp_alerts: []
+      - eval_time: 10m # ticket needs 15m of sustained burn
+        alertname: NetraSLOBurnTicket
+        exp_alerts: []
+      - eval_time: 20m
+        alertname: NetraSLOBurnTicket
+        exp_alerts:
+          - exp_labels: {severity: ticket, slo: checkout}
+            exp_annotations:
+              summary: "Netra SLO checkout is burning its error budget steadily"
+
+  # Low budget alerts only when there is data: an SLO with no observations
+  # reports remaining budget 1, but a defensive rule must not fire on absence.
+  - interval: 1m
+    input_series:
+      - series: 'netra_slo_has_data{slo="a"}'
+        values: '1x20'
+      - series: 'netra_slo_budget_remaining{slo="a"}'
+        values: '0.05x20'
+      - series: 'netra_slo_has_data{slo="b"}'
+        values: '0x20'
+      - series: 'netra_slo_budget_remaining{slo="b"}'
+        values: '0x20'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: NetraSLOErrorBudgetLow
+        exp_alerts:
+          - exp_labels: {severity: ticket, slo: a}
+            exp_annotations:
+              summary: "Netra SLO a has under 10% of its error budget left"
+
+  # --- controller health -----------------------------------------------------
+  - interval: 1m
+    input_series:
+      - series: 'netra_agents_stale'
+        values: '0 0 0 3x10'
+      - series: 'netra_agents_total'
+        values: '3x13'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: NetraAgentsStale
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: NetraAgentsStale
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: "Netra node agents have stopped reporting"
+              description: "3 agent(s) have not reported within the stale threshold; their nodes are unobserved."
+      - eval_time: 12m
+        alertname: NetraNoAgentsReporting
+        exp_alerts: []
+
+  - interval: 1m
+    input_series:
+      - series: 'netra_agents_total'
+        values: '0x15'
+    alert_rule_test:
+      - eval_time: 12m
+        alertname: NetraNoAgentsReporting
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: "No Netra node agents are known to the controller"
+
+  - interval: 1m
+    input_series:
+      - series: 'netra_state_persist_errors_total'
+        values: '0 0 0 1 2 2 2 2'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: NetraStatePersistErrors
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: NetraStatePersistErrors
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: "Netra failed to persist controller state"
+              description: "Rule and policy changes may be lost on restart."
+
+  # Sustained (not bursty) auth failures only.
+  - interval: 1m
+    input_series:
+      - series: 'netra_auth_failures_total'
+        values: '0+120x30' # 2/s
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: NetraAuthFailuresHigh
+        exp_alerts: []
+      - eval_time: 20m
+        alertname: NetraAuthFailuresHigh
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations:
+              summary: "Sustained rejected API authentication attempts"
+              description: "More than one rejected credential per second for 10 minutes; possible credential guessing."
+  - interval: 1m
+    input_series:
+      - series: 'netra_auth_failures_total'
+        values: '0+6x30' # 0.1/s: ordinary typos
+    alert_rule_test:
+      - eval_time: 25m
+        alertname: NetraAuthFailuresHigh
+        exp_alerts: []
+
+  # --- per-workload series cap ----------------------------------------------
+  - interval: 1m
+    input_series:
+      - series: 'netra_workload_series_named'
+        values: '100x40'
+      - series: 'netra_workload_series_max'
+        values: '100x40'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: NetraWorkloadSeriesSaturated
+        exp_alerts: []
+      - eval_time: 35m
+        alertname: NetraWorkloadSeriesSaturated
+        exp_alerts:
+          - exp_labels: {severity: info}
+            exp_annotations:
+              summary: "Netra per-workload series are at their cap"
+              description: 'Further workloads are aggregated into workload="__other__". Raise metrics.workloadLabels.maxWorkloads if that hides workloads you need.'
+  - interval: 1m
+    input_series:
+      - series: 'netra_workload_series_named'
+        values: '40x40'
+      - series: 'netra_workload_series_max'
+        values: '100x40'
+    alert_rule_test:
+      - eval_time: 35m
+        alertname: NetraWorkloadSeriesSaturated
+        exp_alerts: []

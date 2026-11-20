@@ -1,0 +1,206 @@
+{{- if .Values.agent.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: netra-agent
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: netra-agent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: netra-agent
+    spec:
+      serviceAccountName: netra-agent
+      automountServiceAccountToken: false
+      hostNetwork: true
+      {{- if or .Values.agent.procMetaEnabled (and .Values.agent.tlsUprobes (ne (.Values.agent.tlsUprobes | toString) "off")) .Values.metricsPlatform.apps.discovery }}
+      # Required for internal/procmeta to resolve a host PID's /proc entry
+      # from inside the agent container. This is a real expansion of what
+      # the already-privileged agent can see (every host process's /proc,
+      # not just what eBPF hooks already surface) — see
+      # docs/process-metadata.md. Off unless agent.procMetaEnabled is set. TLS
+      # plaintext sampling (agent.tlsUprobes) needs it too, to find the libssl
+      # every other workload maps (docs/tls-plaintext.md). App discovery
+      # (metricsPlatform.apps.discovery) matches host listeners to comm.
+      hostPID: true
+      {{- end }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- with .Values.agent.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.agent.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      tolerations:
+      - operator: Exists
+      containers:
+      - name: agent
+        image: "{{ .Values.agentImage.repository }}:{{ .Values.agentImage.tag }}"
+        securityContext:
+          privileged: true
+        env:
+        - name: NETRA_SERVER
+          value: {{ default (printf "%s://netra.%s.svc:%v" (ternary "https" "http" .Values.tls.enabled) .Release.Namespace .Values.service.port) .Values.agent.server | quote }}
+        {{- if and .Values.tls.enabled .Values.tls.agentInsecureSkipVerify }}
+        - {name: NETRA_TLS_INSECURE, value: "true"}
+        {{- end }}
+        {{- if ne (include "netra.mtlsMode" .) "off" }}
+        - {name: NETRA_CLIENT_CERT, value: /mtls/tls.crt}
+        - {name: NETRA_CLIENT_KEY, value: /mtls/tls.key}
+        {{- end }}
+        - name: NETRA_CGROUP_ENABLED
+          value: {{ .Values.agent.cgroupEnabled | quote }}
+        - name: NETRA_CGROUP_PATH
+          value: {{ .Values.agent.cgroupPath | quote }}
+        - name: NETRA_CGROUP_SCAN_INTERVAL
+          value: {{ .Values.agent.cgroupScanInterval | quote }}
+        - name: NETRA_INTERFACES
+          value: {{ .Values.agent.interfaces | quote }}
+        - name: NETRA_XDP_INTERFACES
+          value: {{ .Values.agent.xdpInterfaces | quote }}
+        - name: NETRA_TCX
+          value: {{ .Values.agent.tcx | default "auto" | quote }}
+        - name: NETRA_XDP_SHIELD
+          value: {{ .Values.agent.xdpShield | default false | quote }}
+        - name: NETRA_BPF_PIN
+          value: {{ .Values.agent.pinPath | quote }}
+        - name: NETRA_FAILSAFE_AFTER
+          value: {{ .Values.agent.failsafeAfter | quote }}
+        - name: NETRA_PROCMETA_ENABLED
+          value: {{ .Values.agent.procMetaEnabled | default false | quote }}
+        - name: NETRA_TLSFP
+          value: {{ .Values.agent.tlsfp | default "auto" | quote }}
+        - name: NETRA_TCP_EVENTS
+          value: {{ .Values.agent.tcpEvents | default "auto" | quote }}
+        - name: NETRA_DROP_INFO
+          value: {{ .Values.agent.dropInfo | default "auto" | quote }}
+        - name: NETRA_NODE_ISOLATION
+          value: {{ .Values.agent.nodeIsolation | default "auto" | quote }}
+        - name: NETRA_NODE_ISOLATION_INTERFACES
+          value: {{ .Values.agent.nodeIsolationInterfaces | default "" | quote }}
+        - name: NETRA_LISTEN_QUEUES
+          value: {{ .Values.agent.listenQueues | default "auto" | quote }}
+        - name: NETRA_NETLINK
+          value: {{ .Values.agent.netlink | default "auto" | quote }}
+        - name: NETRA_NETLINK_EVENT_BUFFER
+          value: {{ .Values.agent.netlinkEventBuffer | default 4096 | quote }}
+        - name: NETRA_BPF_ATTACH
+          value: {{ .Values.agent.bpfAttach | default "auto" | quote }}
+        - name: NETRA_RTNL_ACTOR
+          value: {{ .Values.agent.rtnlActor | default "auto" | quote }}
+        - name: NETRA_TLS_UPROBES
+          value: {{ .Values.agent.tlsUprobes | default "off" | quote }}
+        {{- if .Values.agent.tlsUprobesComms }}
+        - name: NETRA_TLS_UPROBES_COMMS
+          value: {{ .Values.agent.tlsUprobesComms | quote }}
+        {{- end }}
+        {{- if .Values.agent.tlsUprobesGap }}
+        - name: NETRA_TLS_UPROBES_GAP
+          value: {{ .Values.agent.tlsUprobesGap | quote }}
+        {{- end }}
+        - name: NETRA_L7_SAMPLE
+          value: {{ .Values.agent.l7Sample | default "off" | quote }}
+        {{- if .Values.agent.l7SamplePorts }}
+        - name: NETRA_L7_SAMPLE_PORTS
+          value: {{ .Values.agent.l7SamplePorts | quote }}
+        {{- end }}
+        {{- if .Values.agent.l7SampleGap }}
+        - name: NETRA_L7_SAMPLE_GAP
+          value: {{ .Values.agent.l7SampleGap | quote }}
+        {{- end }}
+        {{- with .Values.metricsPlatform }}
+        - name: NETRA_METRICS_ENABLED
+          value: {{ .enabled | quote }}
+        - name: NETRA_METRICS_ML
+          value: {{ .agent.ml | quote }}
+        - name: NETRA_METRICS_TIER0_RETENTION
+          value: {{ .agent.tier0Retention | quote }}
+        - name: NETRA_METRICS_MAX_SERIES
+          value: {{ .agent.maxSeries | quote }}
+        - name: NETRA_METRICS_PROCESS_GROUPS
+          value: {{ .agent.processGroups | quote }}
+        - name: NETRA_METRICS_PROCESS_GROUPS_MAX
+          value: {{ .agent.processGroupsMax | quote }}
+        - name: NETRA_METRICS_CGROUP_CONTAINERS
+          value: {{ .agent.cgroupContainers | default false | quote }}
+        - name: NETRA_APPS_DISCOVERY
+          value: {{ .apps.discovery | quote }}
+        - name: NETRA_APPS_EVERY
+          value: {{ .apps.every | quote }}
+        - name: NETRA_APPS_CONFIG
+          value: /etc/netra/apps/apps.yaml
+        {{- end }}
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: NETRA_AGENT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "netra.authSecretName" . }}
+              key: agent-key
+        {{- with .Values.metricsPlatform.apps.existingSecret }}
+        envFrom:
+        - secretRef:
+            name: {{ . | quote }}
+        {{- end }}
+        volumeMounts:
+        {{- if .Values.metricsPlatform.apps.config }}
+        - name: apps-config
+          mountPath: /etc/netra/apps
+          readOnly: true
+        {{- end }}
+        - name: bpffs
+          mountPath: /sys/fs/bpf
+          mountPropagation: Bidirectional
+        - name: cgroupfs
+          mountPath: {{ .Values.agent.cgroupPath | quote }}
+          readOnly: true
+        - name: kmsg
+          mountPath: /dev/kmsg
+          readOnly: true
+        {{- if ne (include "netra.mtlsMode" .) "off" }}
+        - name: agent-mtls
+          mountPath: /mtls
+          readOnly: true
+        {{- end }}
+        {{- if .Values.agent.hostTracefs }}
+        - name: tracefs
+          mountPath: /sys/kernel/tracing
+          readOnly: true
+        {{- end }}
+      volumes:
+      {{- if .Values.metricsPlatform.apps.config }}
+      - name: apps-config
+        configMap:
+          name: netra-apps
+      {{- end }}
+      - name: bpffs
+        hostPath:
+          path: /sys/fs/bpf
+          type: Directory
+      - name: cgroupfs
+        hostPath:
+          path: /sys/fs/cgroup
+          type: Directory
+      - name: kmsg
+        hostPath:
+          path: /dev/kmsg
+          type: CharDevice
+      {{- if ne (include "netra.mtlsMode" .) "off" }}
+      - name: agent-mtls
+        secret:
+          secretName: {{ include "netra.mtlsSecret" . }}
+          defaultMode: 256   # 0400
+      {{- end }}
+      {{- if .Values.agent.hostTracefs }}
+      - name: tracefs
+        hostPath:
+          path: /sys/kernel/tracing
+          type: Directory
+      {{- end }}
+{{- end }}

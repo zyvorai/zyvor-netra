@@ -1,0 +1,571 @@
+{{- if and .Values.ha.enabled (lt (int .Values.replicaCount) 2) }}
+{{- fail "ha.enabled=true requires replicaCount >= 2" }}
+{{- end }}
+{{- if and .Values.ha.enabled (not .Values.persistence.enabled) }}
+{{- fail "ha.enabled=true requires persistence.enabled=true" }}
+{{- end }}
+{{- if and .Values.ha.enabled (not .Values.persistence.existingClaim) (not (has "ReadWriteMany" .Values.persistence.accessModes)) }}
+{{- fail "HA with a chart-managed PVC requires persistence.accessModes to include ReadWriteMany. For an existingClaim, ensure the claim is RWX and supports POSIX file locking." }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netra
+spec:
+  replicas: {{ .Values.replicaCount }}
+  {{- if .Values.ha.enabled }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxUnavailable: 1, maxSurge: 1}
+  {{- else if .Values.persistence.enabled }}
+  strategy:
+    type: Recreate
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: netra
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: netra
+      {{- if and .Values.metrics.enabled .Values.metrics.prometheusAnnotations }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "30870"
+        prometheus.io/scheme: {{ if .Values.tls.enabled }}"https"{{ else }}"http"{{ end }}
+      {{- end }}
+    spec:
+      serviceAccountName: netra
+      terminationGracePeriodSeconds: 20
+      {{- if .Values.ha.enabled }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels: {app.kubernetes.io/name: netra}
+      {{- end }}
+      securityContext:
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: {type: RuntimeDefault}
+      {{- if .Values.tls.enabled }}
+      initContainers:
+      - name: gen-cert
+        image: {{ .Values.tls.opensslImage | quote }}
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          {{- if .Values.tls.existingSecret }}
+          cp /tls-secret/tls.crt /tls-secret/tls.key /certs/
+          {{- else }}
+          openssl req -x509 -nodes -days 3650 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -keyout /certs/tls.key -out /certs/tls.crt -subj "/CN=netra/O=Zyvor AI Labs" -addext "subjectAltName=DNS:netra,DNS:netra.{{ .Release.Namespace }}.svc,DNS:localhost,IP:127.0.0.1"
+          {{- end }}
+          chown 65532:65532 /certs/tls.key /certs/tls.crt
+          chmod 600 /certs/tls.key
+        securityContext: {runAsUser: 0, runAsNonRoot: false}
+        volumeMounts:
+        - {name: tls-certs, mountPath: /certs}
+        {{- if .Values.tls.existingSecret }}
+        - {name: tls-secret, mountPath: /tls-secret, readOnly: true}
+        {{- end }}
+      {{- end }}
+      containers:
+      - name: netra
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: {{ if .Values.tls.enabled }}https{{ else }}http{{ end }}
+          containerPort: 30870
+        env:
+        - {name: NETRA_LISTEN, value: ":30870"}
+        {{- if .Values.tls.enabled }}
+        - {name: NETRA_TLS_CERT, value: /certs/tls.crt}
+        - {name: NETRA_TLS_KEY, value: /certs/tls.key}
+        {{- end }}
+        {{- if ne (include "netra.mtlsMode" .) "off" }}
+        - {name: NETRA_AGENT_MTLS, value: {{ include "netra.mtlsMode" . | quote }}}
+        - {name: NETRA_AGENT_CLIENT_CA, value: /mtls/ca.crt}
+        {{- if .Values.mtls.bindNode }}
+        - {name: NETRA_AGENT_MTLS_BIND_NODE, value: "true"}
+        {{- end }}
+        {{- if .Values.mtls.denySerialsSecret }}
+        - {name: NETRA_AGENT_MTLS_DENY_SERIALS, value: /mtls-deny/deny.txt}
+        {{- end }}
+        {{- end }}
+        - name: NETRA_CILIUM_ENABLED
+          value: {{ .Values.cilium.enabled | quote }}
+        - name: NETRA_WORKLOAD_CONSOLE
+          value: {{ .Values.workloadConsole.enabled | quote }}
+        - name: NETRA_HUBBLE_ENABLED
+          value: {{ .Values.hubble.enabled | quote }}
+        - name: NETRA_HUBBLE_ADDR
+          value: {{ .Values.hubble.address | quote }}
+        - name: NETRA_AGENT_STALE_AFTER
+          value: {{ .Values.agent.staleAfter | quote }}
+        - name: NETRA_ALLOW_UNAUTHENTICATED
+          value: {{ .Values.auth.allowUnauthenticated | quote }}
+        - name: NETRA_REQUIRE_PREFLIGHT
+          value: {{ .Values.policy.requirePreflight | quote }}
+        - name: NETRA_HA_ENABLED
+          value: {{ .Values.ha.enabled | quote }}
+        {{- if .Values.ha.enabled }}
+        - name: NETRA_HA_LEASE_NAME
+          value: {{ .Values.ha.leaseName | quote }}
+        - name: NETRA_HA_LEASE_DURATION
+          value: {{ .Values.ha.leaseDuration | quote }}
+        - name: NETRA_HA_RENEW_DEADLINE
+          value: {{ .Values.ha.renewDeadline | quote }}
+        - name: NETRA_HA_RETRY_PERIOD
+          value: {{ .Values.ha.retryPeriod | quote }}
+        - name: NETRA_NAMESPACE
+          valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
+        - name: NETRA_POD_NAME
+          valueFrom: {fieldRef: {fieldPath: metadata.name}}
+        {{- end }}
+        {{- if .Values.persistence.enabled }}
+        - name: NETRA_STATE_FILE
+          value: {{ .Values.persistence.stateFile | quote }}
+        {{- end }}
+        - name: NETRA_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "netra.authSecretName" . }}
+              key: api-key
+        - name: NETRA_AGENT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "netra.authSecretName" . }}
+              key: agent-key
+        # optional: absent key => env var not set => /metrics stays open.
+        - name: NETRA_METRICS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "netra.authSecretName" . }}
+              key: metrics-token
+              optional: true
+        {{- if .Values.auth.oidc.enabled }}
+        - name: NETRA_OIDC_ISSUER
+          value: {{ required "auth.oidc.issuer is required when auth.oidc.enabled=true" .Values.auth.oidc.issuer | quote }}
+        - name: NETRA_OIDC_AUDIENCE
+          value: {{ required "auth.oidc.audience is required when auth.oidc.enabled=true" .Values.auth.oidc.audience | quote }}
+        {{- if .Values.auth.oidc.jwksURL }}
+        - name: NETRA_OIDC_JWKS_URL
+          value: {{ .Values.auth.oidc.jwksURL | quote }}
+        {{- end }}
+        {{- if .Values.auth.oidc.rolesClaim }}
+        - name: NETRA_OIDC_ROLES_CLAIM
+          value: {{ .Values.auth.oidc.rolesClaim | quote }}
+        {{- end }}
+        {{- if .Values.auth.oidc.roleMap }}
+        - name: NETRA_OIDC_ROLE_MAP
+          value: {{ .Values.auth.oidc.roleMap | quote }}
+        {{- end }}
+        {{- if .Values.auth.oidc.defaultRole }}
+        - name: NETRA_OIDC_DEFAULT_ROLE
+          value: {{ .Values.auth.oidc.defaultRole | quote }}
+        {{- end }}
+        {{- if .Values.auth.oidc.identityClaim }}
+        - name: NETRA_OIDC_IDENTITY_CLAIM
+          value: {{ .Values.auth.oidc.identityClaim | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.loki.enabled }}
+        - name: NETRA_LOKI_URL
+          value: {{ required "loki.url is required when loki.enabled=true" .Values.loki.url | quote }}
+        - name: NETRA_LOKI_INTERVAL
+          value: {{ .Values.loki.interval | quote }}
+        {{- if .Values.loki.tenantId }}
+        - name: NETRA_LOKI_TENANT
+          value: {{ .Values.loki.tenantId | quote }}
+        {{- end }}
+        {{- if .Values.loki.classes }}
+        - name: NETRA_LOKI_CLASSES
+          value: {{ .Values.loki.classes | quote }}
+        {{- end }}
+        {{- if .Values.loki.labels }}
+        - name: NETRA_LOKI_LABELS
+          value: {{ include "netra.lokiLabels" . | quote }}
+        {{- end }}
+        {{- if .Values.loki.existingSecret }}
+        - name: NETRA_LOKI_USERNAME
+          valueFrom:
+            secretKeyRef: {name: {{ .Values.loki.existingSecret | quote }}, key: username, optional: true}
+        - name: NETRA_LOKI_PASSWORD
+          valueFrom:
+            secretKeyRef: {name: {{ .Values.loki.existingSecret | quote }}, key: password, optional: true}
+        - name: NETRA_LOKI_HEADERS
+          valueFrom:
+            secretKeyRef: {name: {{ .Values.loki.existingSecret | quote }}, key: headers, optional: true}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.metrics.workloadLabels.enabled }}
+        - name: NETRA_METRICS_WORKLOAD_LABELS
+          value: "on"
+        - name: NETRA_METRICS_WORKLOAD_MAX
+          value: {{ .Values.metrics.workloadLabels.maxWorkloads | quote }}
+        - name: NETRA_METRICS_WORKLOAD_IDLE
+          value: {{ .Values.metrics.workloadLabels.idleTimeout | quote }}
+        {{- end }}
+        {{- if .Values.slo.definitions }}
+        - name: NETRA_SLO_DEFINITIONS
+          value: {{ .Values.slo.definitions | toJson | quote }}
+        {{- end }}
+        {{- if or .Values.metrics.workloadLabels.enabled .Values.slo.definitions }}
+        - name: NETRA_WORKLOAD_OBS_INTERVAL
+          value: {{ .Values.slo.interval | quote }}
+        {{- end }}
+        {{- if .Values.ai.enabled }}
+        - name: NETRA_AI_BASE_URL
+          value: {{ .Values.ai.baseURL | quote }}
+        - name: NETRA_AI_MODEL
+          value: {{ .Values.ai.model | quote }}
+        {{- if .Values.ai.existingSecret }}
+        - name: NETRA_AI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.ai.existingSecret | quote }}
+              key: api-key
+        {{- else if .Values.ai.apiKey }}
+        - name: NETRA_AI_API_KEY
+          value: {{ .Values.ai.apiKey | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.otlp.enabled }}
+        - name: NETRA_OTLP_ENDPOINT
+          value: {{ required "otlp.endpoint is required when otlp.enabled=true" .Values.otlp.endpoint | quote }}
+        - name: NETRA_OTLP_INTERVAL
+          value: {{ .Values.otlp.interval | quote }}
+        {{- if .Values.otlp.signals }}
+        - name: NETRA_OTLP_SIGNALS
+          value: {{ .Values.otlp.signals | quote }}
+        {{- end }}
+        {{- if .Values.otlp.existingSecret }}
+        - name: NETRA_OTLP_HEADERS
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.otlp.existingSecret | quote }}
+              key: headers
+        {{- end }}
+        {{- end }}
+        {{- if .Values.gitops.enabled }}
+        - name: NETRA_GITOPS_DIR
+          value: {{ .Values.gitops.dir | quote }}
+        - name: NETRA_GITOPS_AUTO_APPLY
+          value: {{ .Values.gitops.autoApply | quote }}
+        - name: NETRA_GITOPS_INTERVAL
+          value: {{ .Values.gitops.interval | quote }}
+        {{- end }}
+        {{- if .Values.dnsdetect.enabled }}
+        - name: NETRA_DNSDETECT_ENABLED
+          value: "true"
+        - name: NETRA_DNSDETECT_INTERVAL
+          value: {{ .Values.dnsdetect.interval | quote }}
+        - name: NETRA_DNSDETECT_MAX_UNIQUE_SUBDOMAINS
+          value: {{ .Values.dnsdetect.maxUniqueSubdomains | quote }}
+        - name: NETRA_DNSDETECT_NXDOMAIN_RATIO
+          value: {{ .Values.dnsdetect.nxdomainRatio | quote }}
+        - name: NETRA_DNSDETECT_SERVFAIL_RATIO
+          value: {{ .Values.dnsdetect.servfailRatio | quote }}
+        - name: NETRA_DNSDETECT_MAX_DOMAINS
+          value: {{ .Values.dnsdetect.maxDomains | quote }}
+        - name: NETRA_DNSDETECT_FINDINGS_TTL
+          value: {{ .Values.dnsdetect.findingsTTL | quote }}
+        {{- end }}
+        {{- if .Values.scandetect.enabled }}
+        - name: NETRA_SCANDETECT_ENABLED
+          value: "true"
+        - name: NETRA_SCANDETECT_INTERVAL
+          value: {{ .Values.scandetect.interval | quote }}
+        - name: NETRA_SCANDETECT_WINDOW
+          value: {{ .Values.scandetect.window | quote }}
+        - name: NETRA_SCANDETECT_MAX_DEST_IPS
+          value: {{ .Values.scandetect.maxDestIps | quote }}
+        - name: NETRA_SCANDETECT_MAX_DEST_PORTS
+          value: {{ .Values.scandetect.maxDestPorts | quote }}
+        - name: NETRA_SCANDETECT_MIN_ATTEMPTS
+          value: {{ .Values.scandetect.minAttempts | quote }}
+        {{- end }}
+        {{- if .Values.automitigate.enabled }}
+        - name: NETRA_AUTOMITIGATE_ENABLED
+          value: "true"
+        - name: NETRA_AUTOMITIGATE_INTERVAL
+          value: {{ .Values.automitigate.interval | quote }}
+        - name: NETRA_AUTOMITIGATE_CONN_RATE
+          value: {{ .Values.automitigate.connRate | quote }}
+        - name: NETRA_AUTOMITIGATE_UDP_DELTA
+          value: {{ .Values.automitigate.udpDelta | quote }}
+        - name: NETRA_AUTOMITIGATE_SHIELD_SYN_PPS
+          value: {{ .Values.automitigate.shieldSynPps | quote }}
+        - name: NETRA_AUTOMITIGATE_SHIELD_UDP_PPS
+          value: {{ .Values.automitigate.shieldUdpPps | quote }}
+        {{- end }}
+        {{- if .Values.fleet.clusterName }}
+        - name: NETRA_CLUSTER_NAME
+          value: {{ .Values.fleet.clusterName | quote }}
+        {{- end }}
+        {{- if .Values.fleet.clusterTenant }}
+        - name: NETRA_CLUSTER_TENANT
+          value: {{ .Values.fleet.clusterTenant | quote }}
+        {{- end }}
+        {{- if .Values.fleet.peers }}
+        - name: NETRA_FLEET_PEERS
+          value: {{ .Values.fleet.peers | quote }}
+        {{- end }}
+        {{- if .Values.sanctionedHosts }}
+        - name: NETRA_SANCTIONED_HOSTS
+          value: {{ .Values.sanctionedHosts | quote }}
+        {{- end }}
+        {{- if .Values.chatops.enabled }}
+        - name: NETRA_CHATOPS_ALLOW_MUTATIONS
+          value: {{ .Values.chatops.allowMutations | quote }}
+        - name: NETRA_CHATOPS_TARGET_URL
+          value: {{ .Values.chatops.targetURL | quote }}
+        {{- if .Values.chatops.teamsAppId }}
+        - name: NETRA_CHATOPS_TEAMS_APP_ID
+          value: {{ .Values.chatops.teamsAppId | quote }}
+        {{- end }}
+        {{- if .Values.chatops.existingSecret }}
+        - name: NETRA_CHATOPS_SIGNING_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.chatops.existingSecret | quote }}
+              key: signing-secret
+        - name: NETRA_CHATOPS_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.chatops.existingSecret | quote }}
+              key: api-key
+        {{- else }}
+        {{- if .Values.chatops.signingSecret }}
+        - name: NETRA_CHATOPS_SIGNING_SECRET
+          value: {{ .Values.chatops.signingSecret | quote }}
+        {{- end }}
+        {{- if .Values.chatops.apiKey }}
+        - name: NETRA_CHATOPS_API_KEY
+          value: {{ .Values.chatops.apiKey | quote }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- if or .Values.alerting.enabled .Values.alerting.autoCapture.enabled }}
+        {{- if .Values.alerting.enabled }}
+        - name: NETRA_ALERT_POLL_INTERVAL
+          value: {{ .Values.alerting.pollInterval | quote }}
+        - name: NETRA_ALERT_COOLDOWN
+          value: {{ .Values.alerting.cooldown | quote }}
+        - name: NETRA_ALERT_WORKERS
+          value: {{ .Values.alerting.workers | quote }}
+        - name: NETRA_ALERT_QUEUE_SIZE
+          value: {{ .Values.alerting.queueSize | quote }}
+        {{- if .Values.alerting.existingSecret }}
+        - name: NETRA_ALERT_CHANNELS
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.alerting.existingSecret | quote }}
+              key: channels-json
+        {{- else if .Values.alerting.channelsJson }}
+        - name: NETRA_ALERT_CHANNELS
+          value: {{ .Values.alerting.channelsJson | quote }}
+        {{- else if .Values.alerting.webhooksJson }}
+        - name: NETRA_ALERT_WEBHOOKS
+          value: {{ .Values.alerting.webhooksJson | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.alerting.autoCapture.enabled }}
+        - name: NETRA_AUTO_CAPTURE
+          value: "true"
+        - name: NETRA_AUTO_CAPTURE_DURATION
+          value: {{ .Values.alerting.autoCapture.duration | quote }}
+        - name: NETRA_AUTO_CAPTURE_COOLDOWN
+          value: {{ .Values.alerting.autoCapture.cooldown | quote }}
+        - name: NETRA_AUTO_CAPTURE_PROTOCOL
+          value: {{ .Values.alerting.autoCapture.protocol | quote }}
+        {{- if .Values.alerting.autoCapture.backend }}
+        - name: NETRA_AUTO_CAPTURE_BACKEND
+          value: {{ .Values.alerting.autoCapture.backend | quote }}
+        {{- end }}
+        - name: NETRA_AUTO_CAPTURE_MAX_PPS
+          value: {{ .Values.alerting.autoCapture.maxPps | quote }}
+        - name: NETRA_AUTO_CAPTURE_MAX_CONCURRENT
+          value: {{ .Values.alerting.autoCapture.maxConcurrent | quote }}
+        - name: NETRA_AUTO_CAPTURE_DIR
+          value: {{ .Values.alerting.autoCapture.dir | quote }}
+        - name: NETRA_AUTO_CAPTURE_MAX_ARTIFACTS
+          value: {{ .Values.alerting.autoCapture.maxArtifacts | quote }}
+        - name: NETRA_AUTO_CAPTURE_MAX_TOTAL_MB
+          value: {{ .Values.alerting.autoCapture.maxTotalMb | quote }}
+        - name: NETRA_AUTO_CAPTURE_MAX_SESSION_MB
+          value: {{ .Values.alerting.autoCapture.maxSessionMb | quote }}
+        {{- end }}
+        {{- end }}
+        {{- with .Values.metricsPlatform }}
+        - name: NETRA_METRICS_ENABLED
+          value: {{ .enabled | quote }}
+        {{- if .dir }}
+        - name: NETRA_METRICS_DIR
+          value: {{ .dir | quote }}
+        {{- end }}
+        - name: NETRA_METRICS_TIER0_RETENTION
+          value: {{ .tier0Retention | quote }}
+        - name: NETRA_METRICS_TIER1_RETENTION
+          value: {{ .tier1Retention | quote }}
+        - name: NETRA_METRICS_TIER2_RETENTION
+          value: {{ .tier2Retention | quote }}
+        - name: NETRA_METRICS_DISK_QUOTA_MB
+          value: {{ .diskQuotaMb | quote }}
+        - name: NETRA_METRICS_MAX_SERIES
+          value: {{ .maxSeries | quote }}
+        - name: NETRA_METRICS_MAX_NODES
+          value: {{ .maxNodes | quote }}
+        - name: NETRA_METRICS_PARENT_ML
+          value: {{ .parentMl | quote }}
+        - name: NETRA_METRICALERT_ENABLED
+          value: {{ .alerts.enabled | quote }}
+        - name: NETRA_METRICALERT_DEFAULTS
+          value: {{ .alerts.defaults | quote }}
+        {{- with .export }}
+        {{- if or .prometheusRemoteWriteUrl .otlpEndpoint .graphiteAddr }}
+        - name: NETRA_EXPORT_RESOLUTION
+          value: {{ .resolution | quote }}
+        - name: NETRA_EXPORT_CONTEXTS
+          value: {{ .contexts | quote }}
+        - name: NETRA_EXPORT_EXCLUDE
+          value: {{ .exclude | quote }}
+        - name: NETRA_EXPORT_PREFIX
+          value: {{ .prefix | quote }}
+        {{- end }}
+        {{- if .prometheusRemoteWriteUrl }}
+        - name: NETRA_EXPORT_PROMETHEUS_RW_URL
+          value: {{ .prometheusRemoteWriteUrl | quote }}
+        {{- if .existingSecret }}
+        - name: NETRA_EXPORT_PROMETHEUS_RW_HEADERS
+          valueFrom:
+            secretKeyRef: {name: {{ .existingSecret | quote }}, key: prometheus-rw-headers, optional: true}
+        {{- end }}
+        {{- end }}
+        {{- if .otlpEndpoint }}
+        - name: NETRA_EXPORT_OTLP_ENDPOINT
+          value: {{ .otlpEndpoint | quote }}
+        {{- if .existingSecret }}
+        - name: NETRA_EXPORT_OTLP_HEADERS
+          valueFrom:
+            secretKeyRef: {name: {{ .existingSecret | quote }}, key: otlp-headers, optional: true}
+        {{- end }}
+        {{- end }}
+        {{- if .graphiteAddr }}
+        - name: NETRA_EXPORT_GRAPHITE_ADDR
+          value: {{ .graphiteAddr | quote }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        resources: {{- toYaml .Values.resources | nindent 10 }}
+        {{- if or .Values.tls.enabled .Values.persistence.enabled .Values.gitops.enabled .Values.alerting.autoCapture.enabled .Values.metricsPlatform.alerts.rules }}
+        volumeMounts:
+        {{- if .Values.tls.enabled }}
+        - {name: tls-certs, mountPath: /certs, readOnly: true}
+        {{- end }}
+        {{- if ne (include "netra.mtlsMode" .) "off" }}
+        - {name: agent-mtls-ca, mountPath: /mtls, readOnly: true}
+        {{- if .Values.mtls.denySerialsSecret }}
+        - {name: agent-mtls-deny, mountPath: /mtls-deny, readOnly: true}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.persistence.enabled }}
+        - name: state
+          mountPath: /var/lib/netra
+        {{- end }}
+        {{- if and .Values.alerting.autoCapture.enabled (not .Values.persistence.enabled) }}
+        - name: auto-capture
+          mountPath: {{ .Values.alerting.autoCapture.dir | quote }}
+        {{- end }}
+        {{- if .Values.gitops.enabled }}
+        - name: gitops-manifests
+          mountPath: {{ .Values.gitops.dir | quote }}
+          readOnly: true
+        {{- end }}
+        {{- if .Values.metricsPlatform.alerts.rules }}
+        - name: metricalert-rules
+          mountPath: /etc/netra/metricalert.d
+          readOnly: true
+        {{- end }}
+        {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities: {drop: ["ALL"]}
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: {{ if .Values.tls.enabled }}https{{ else }}http{{ end }}
+            {{- if .Values.tls.enabled }}
+            scheme: HTTPS
+            {{- end }}
+          initialDelaySeconds: 2
+          periodSeconds: 3
+          # Kubernetes' 1s default timeoutSeconds is tight for a TLS
+          # handshake under real node CPU pressure (observed on a loaded
+          # host: a 500m-CPU-limited pod's HTTPS probe missing the 1s
+          # default consistently enough to crash-loop a perfectly healthy
+          # server via repeated liveness kills). 5s gives real handshake
+          # variance room without meaningfully slowing genuine failure
+          # detection, since failureThreshold still gates how many misses
+          # are tolerated.
+          timeoutSeconds: 5
+          failureThreshold: 2
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: {{ if .Values.tls.enabled }}https{{ else }}http{{ end }}
+            {{- if .Values.tls.enabled }}
+            scheme: HTTPS
+            {{- end }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+      {{- if or .Values.tls.enabled .Values.persistence.enabled .Values.gitops.enabled .Values.alerting.autoCapture.enabled .Values.metricsPlatform.alerts.rules }}
+      volumes:
+      {{- if .Values.tls.enabled }}
+      - {name: tls-certs, emptyDir: {}}
+      {{- if .Values.tls.existingSecret }}
+      - {name: tls-secret, secret: {secretName: {{ .Values.tls.existingSecret | quote }}}}
+      {{- end }}
+      {{- end }}
+      {{- if ne (include "netra.mtlsMode" .) "off" }}
+      - name: agent-mtls-ca
+        secret:
+          secretName: {{ include "netra.mtlsSecret" . }}
+          items: [{key: ca.crt, path: ca.crt}]   # never the agents' private key
+      {{- if .Values.mtls.denySerialsSecret }}
+      - name: agent-mtls-deny
+        secret:
+          secretName: {{ .Values.mtls.denySerialsSecret | quote }}
+          items: [{key: deny.txt, path: deny.txt}]
+      {{- end }}
+      {{- end }}
+      {{- if .Values.persistence.enabled }}
+      - name: state
+        persistentVolumeClaim:
+          claimName: {{ default "netra-state" .Values.persistence.existingClaim }}
+      {{- end }}
+      {{- if and .Values.alerting.autoCapture.enabled (not .Values.persistence.enabled) }}
+      - {name: auto-capture, emptyDir: {}}
+      {{- end }}
+      {{- if .Values.gitops.enabled }}
+      # An emptyDir shared with an operator-supplied git-sync-style sidecar
+      # (not part of this chart — patch this Deployment to add one) that
+      # keeps this directory in sync with a Git ref. netrad only ever reads
+      # from it (readOnly mount above); the chart stays Git-agnostic.
+      - {name: gitops-manifests, emptyDir: {}}
+      {{- end }}
+      {{- if .Values.metricsPlatform.alerts.rules }}
+      - name: metricalert-rules
+        configMap:
+          name: netra-metricalert
+      {{- end }}
+      {{- end }}

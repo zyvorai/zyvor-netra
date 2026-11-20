@@ -1,0 +1,16 @@
+name: tcp_send_reset
+ID: 1698
+format:
+	field:unsigned short common_type;	offset:0;	size:2;	signed:0;
+	field:unsigned char common_flags;	offset:2;	size:1;	signed:0;
+	field:unsigned char common_preempt_count;	offset:3;	size:1;	signed:0;
+	field:int common_pid;	offset:4;	size:4;	signed:1;
+
+	field:const void * skbaddr;	offset:8;	size:8;	signed:0;
+	field:const void * skaddr;	offset:16;	size:8;	signed:0;
+	field:int state;	offset:24;	size:4;	signed:1;
+	field:enum sk_rst_reason reason;	offset:28;	size:4;	signed:0;
+	field:__u8 saddr[28];	offset:32;	size:28;	signed:0;
+	field:__u8 daddr[28];	offset:60;	size:28;	signed:0;
+
+print fmt: "skbaddr=%p skaddr=%p src=%pISpc dest=%pISpc state=%s reason=%s", REC->skbaddr, REC->skaddr, REC->saddr, REC->daddr, REC->state ? __print_symbolic(REC->state, { TCP_ESTABLISHED, "TCP_ESTABLISHED" }, { TCP_SYN_SENT, "TCP_SYN_SENT" }, { TCP_SYN_RECV, "TCP_SYN_RECV" }, { TCP_FIN_WAIT1, "TCP_FIN_WAIT1" }, { TCP_FIN_WAIT2, "TCP_FIN_WAIT2" }, { TCP_TIME_WAIT, "TCP_TIME_WAIT" }, { TCP_CLOSE, "TCP_CLOSE" }, { TCP_CLOSE_WAIT, "TCP_CLOSE_WAIT" }, { TCP_LAST_ACK, "TCP_LAST_ACK" }, { TCP_LISTEN, "TCP_LISTEN" }, { TCP_CLOSING, "TCP_CLOSING" }, { TCP_NEW_SYN_RECV, "TCP_NEW_SYN_RECV" }) : "UNKNOWN", __print_symbolic(REC->reason, { 0, "NOT_SPECIFIED" }, { 1, "NO_SOCKET" }, { 2, "TCP_INVALID_ACK_SEQUENCE" }, { 3, "TCP_RFC7323_PAWS" }, { 4, "TCP_TOO_OLD_ACK" }, { 5, "TCP_ACK_UNSENT_DATA" }, { 6, "TCP_FLAGS" }, { 7, "TCP_OLD_ACK" }, { 8, "TCP_ABORT_ON_DATA" }, { 9, "TCP_TIMEWAIT_SOCKET" }, { 10, "INVALID_SYN" }, { 11, "TCP_ABORT_ON_CLOSE" }, { 12, "TCP_ABORT_ON_LINGER" }, { 13, "TCP_ABORT_ON_MEMORY" }, { 14, "TCP_STATE" }, { 15, "TCP_KEEPALIVE_TIMEOUT" }, { 16, "TCP_DISCONNECT_WITH_DATA" }, { 17, "MPTCP_RST_EUNSPEC" }, { 18, "MPTCP_RST_EMPTCP" }, { 19, "MPTCP_RST_ERESOURCE" }, { 20, "MPTCP_RST_EPROHIBIT" }, { 21, "MPTCP_RST_EWQ2BIG" }, { 22, "MPTCP_RST_EBADPERF" }, { 23, "MPTCP_RST_EMIDDLEBOX" }, { 24, "ERROR" }, { 25, "MAX" })

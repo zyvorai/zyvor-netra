@@ -1,0 +1,71 @@
+<section class="page" data-title="Privacy and boundaries"><div class="body">
+<h1>What Netra collects, and what it never does</h1>
+<p class="lede">The old promise was "no payloads". The accurate one is stronger and more useful: nothing that could carry your data is collected by default, every exception is opt-in, limited and stated here.</p>
+<div class="cards c3">
+<div class="card on"><h3>By default</h3><p>Metadata only: flow tuples and counters, workload and process identity (comm, pid, uid, cgroup), DNS query names on UDP/53, TLS SNI and JA3/JA4 fingerprints, the HTTP/1 method and Host of a single cleartext packet. No payload bytes are copied to user space.</p></div>
+<div class="card"><h3>Opt-in, and limited</h3><p><b>Packet capture:</b> full frames of a filtered, time-boxed session. <b>Sampled L7:</b> the first 128 bytes on ports you configure, parsed in the agent. <b>TLS plaintext:</b> up to 128 bytes per call, from processes you name. Each is off until you turn it on.</p></div>
+<div class="card"><h3>Never</h3><p>Command lines, environments, executable paths, Secret contents, logs or dmesg. Request paths, query strings, headers, bodies, SQL text and cache keys from the sampling sensors. API keys or sink credentials in a log, an API response or a metric.</p></div>
+</div>
+<table>
+<tr><th style="width:22%">Question</th><th>Answer</th></tr>
+<tr><td class="k">Does Netra decrypt TLS?</td><td>Not by default. TLS plaintext sampling is a separate opt-in that reads OpenSSL's buffers in the agent, for processes you list. The list is enforced <b>in the kernel before any byte is copied</b>. The plaintext is parsed in memory and never exported; only counts (method, status, a validated host name) leave the agent.</td></tr>
+<tr><td class="k">What can a sampled count contain?</td><td>An allowlisted operation name (a Redis command, a SQL verb, a Kafka API, an HTTP method and status, a gRPC method), a coarse outcome, or a validated pattern. This is enforced by the shape of the output and tested by planting secrets in real requests and asserting they appear nowhere the agent or controller exposes.</td></tr>
+<tr><td class="k">What does the host-PID view widen?</td><td>Finding each process's OpenSSL library needs a view of the host's processes. The chart asks for it only when TLS sampling or process metadata is enabled.</td></tr>
+<tr><td class="k">Who can download a capture?</td><td>The operator role or above. With OIDC on, the audit trail names the person.</td></tr>
+<tr><td class="k">Can a busy node be made to spend unbounded resources?</td><td>No. Sampling is rate-limited per flow and the kernel counts what it skipped; capture has a packet-rate cap, a time box and a store cap; per-workload metrics have a hard cardinality cap.</td></tr>
+<tr><td class="k">Are credentials for exports safe?</td><td>Headers, tokens, secrets and passwords are never logged and never appear in an API response. CI plants them and scans every request body, log line and response.</td></tr>
+</table>
+<div class="callout"><b>Coverage limits, stated plainly.</b> TLS sampling sees OpenSSL only: not Go's crypto/tls, statically linked BoringSSL, or applications with their own TLS. HTTP metadata by default is one cleartext HTTP/1 packet. DNS parsing is ordinary UDP/53; DoH, DoT and TCP DNS are not inspected. The agent is privileged and should run only on trusted nodes.</div>
+</div></section>
+
+<section class="page" data-title="Latest kernel sensors"><div class="body">
+<h1>The newest kernel sensors</h1>
+<p class="lede">Five sensors answer the questions that used to need a lab: which connection lost packets, which flows retransmit, which service is refusing connections, and what the application protocols are doing.</p>
+<div class="cards c2">
+<div class="card on"><h3>Drop attribution <span class="chip" style="float:right">auto</span></h3><p>The dropped packet's connection, the reason (named by the running kernel) and the kernel function that dropped it. No header yet? It is counted with no tuple, never a made-up one.</p></div>
+<div class="card on"><h3>TCP events <span class="chip" style="float:right">auto</span></h3><p>Retransmits, resets and state changes per flow, with the tuple. Names the flows behind the older aggregate counters. No BTF needed.</p></div>
+<div class="card on"><h3>Listen queues <span class="chip" style="float:right">auto</span></h3><p>Accept-queue depth and overflow per listening socket through the kernel's socket-diagnostics interface: no BPF program, no payload.</p></div>
+<div class="card"><h3>Sampled L7 <span class="chip o" style="float:right">opt-in</span></h3><p>Redis commands, PostgreSQL and MySQL verbs, Kafka APIs, HTTP/1 and HTTP/2 status, gRPC methods and errors. Counts carry a role (issued or served) so a request seen twice is never counted twice.</p></div>
+</div>
+<div class="card" style="margin-bottom:6px"><h3>TLS plaintext sampling <span class="chip o" style="float:right">opt-in</span></h3><p>HTTPS method, status and host from OpenSSL, on the processes you allowlist. The same allowlisted counts as cleartext protocols, read where the application hands bytes to the library.</p></div>
+<figure class="dia">{{dia:sampling}}</figure>
+<p class="small soft">What each sensor costs is measured and shown on the next page, with where and with what caveats.</p>
+</div></section>
+
+<section class="page" data-title="Diagnostics"><div class="body">
+<h1>Diagnostics an SRE already recognises, made cheaper and deeper</h1>
+<p class="lede">The dashboard keeps the views operators rely on and adds the kernel-level evidence behind them.</p>
+<div class="cards c2">
+<div class="card"><h3>Path diagnostics</h3><p>Active TCP connect latency and transport pressure (cwnd, packets out, retransmits, lost, delivered rate) per cgroup and workload, from a socket-level program.</p></div>
+<div class="card"><h3>Edge TCP intel</h3><p>A passive TCX observer adds handshake and RTT histograms and retransmit / RST / FIN counters for forwarded flows that the local socket layer never attaches to.</p></div>
+<div class="card"><h3>Observability</h3><p>L3/L4 flows with direction and hook, DNS timing, TLS SNI and JA3/JA4, cleartext HTTP method and Host, workload identity, a live topology, and a queryable flow history with RED metrics.</p></div>
+<div class="card"><h3>Kernel and host</h3><p>Softnet, interface and qdisc pressure, a read-only sysctl audit against a baseline, per-node CPU, memory and load, and listen-queue depth.</p></div>
+</div>
+<figure style="width:66%;margin:6px auto"><img class="shot" src="../../ux/08-path-edge-intel.png" alt=""><figcaption>Illustrative lab UI: Path Diagnostics with edge TCP intel</figcaption></figure>
+<h2>Cheap by design: what each sensor costs (measured)</h2>
+<table>
+<tr><th style="width:26%">Sensor</th><th style="width:30%">Measured cost</th><th>Where, and the caveat</th></tr>
+<tr><td class="k">Drop attribution</td><td>about 100 ns per drop; about 540 ns on a shared runner</td><td>4-vCPU arm64 VM on Linux 6.8, and a GitHub runner on 6.17. Loopback, not a NIC under load. It runs only for dropped packets; on a host dropping millions per second use <code>off</code>.</td></tr>
+<tr><td class="k">Sampled L7</td><td>about 29 ns on an unconfigured port, 65 ns on a configured one</td><td>Per packet, Linux 6.8 arm64 VM, loopback.</td></tr>
+<tr><td class="k">TLS plaintext</td><td>about 1.0 &micro;s (x86_64) and 1.4 &micro;s (arm64) per probe; about 3 to 4% on an HTTPS request that includes a handshake</td><td>Shared CI runners, loopback, one client library.</td></tr>
+<tr><td class="k">Agent map reads</td><td>194% of a core down to about 23%; memory 313 MiB down to about 114 MiB</td><td>A busy shared lab host with about 130,000 flows per table. Batched reads, and identical report output (checked against the old code).</td></tr>
+</table>
+<p class="small soft">Measured on lab hosts and CI runners; results depend on your kernel, hardware and traffic.</p>
+</div></section>
+
+<section class="page" data-title="Firewall and insights"><div class="body">
+<h1>Emergency firewall and behavior insights</h1>
+<h2>Emergency firewall: leased enforce</h2>
+<p>Netra's containment layer is deliberately an emergency tool, not a full CNI policy engine, QoS system, L7 proxy or IDS/IPS. It starts in observe mode, enforcement needs a lease, and everything reverts on its own.</p>
+<div class="row">
+<div class="col"><ul class="small"><li>Exact IPv4 / IPv6 and CIDR deny, ingress or egress, with optional SYN-drop mode.</li><li>Port, DNS name, TLS SNI, UID and process name, with allow-exceptions.</li><li>Packet and byte ceilings, and per-workload new-connection caps.</li><li>Optional XDP early ingress on interfaces you list; optional native NetPol allow-list and default-deny per workload.</li></ul></div>
+<div class="col"><ul class="small"><li>Workload scoping: enforce only the workloads you select; unresolved traffic fails open.</li><li>Blast-radius and deny preview apply nothing.</li><li>Every change is audited, with the person named when OIDC is on.</li><li>Rules survive restarts and HA failover; enforcement never does.</li></ul></div>
+</div>
+
+<h2>Behavior and rate insights</h2>
+<p>Controller-side insights turn eBPF metadata into a workload dependency graph, a known-good behavior baseline, drift detection for newly observed destinations, DNS names, SNI and HTTP hosts, time-window rate baselines with deterministic multipliers, exposure scoring, and review-only remediation proposals.</p>
+<div class="callout"><b>Netra never auto-applies learned policy.</b> A baseline is an explicit operator decision, and clearing it needs a dedicated confirmation. Recommendations come from observed traffic, which may be incomplete, and are labelled as such.</div>
+<h2>Policy authoring and GitOps</h2>
+<p class="small">When Cilium is present, Netra plans and applies <code>CiliumNetworkPolicy</code> with a fresh single-use preflight receipt, risk confirmation for high-impact plans, rollback history, and optional policy-as-code reconciliation from a mounted directory.</p>
+<div class="row" style="margin-top:6px"><figure class="col" style="margin:0"><img class="shot" src="../../ux/04-ebpf.png" alt=""><figcaption>Illustrative lab UI: the Firewall page</figcaption></figure><figure class="col" style="margin:0"><img class="shot" src="../../ux/05-policy-dryrun.png" alt=""><figcaption>Illustrative lab UI: plan, dry-run and apply with a one-shot receipt</figcaption></figure></div>
+</div></section>

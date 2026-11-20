@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# Advisories scripts/ci-govulncheck.sh tolerates. One per line: ID, then why.
+# Remove an entry as soon as the advisory is corrected or the dependency fixed.
+GO-2026-6665 Snowflake Go Driver may write sensitive information to its logger (no fixed version published yet; Netra only opens Snowflake when an operator configures a snowflake sink, never logs DSN passwords itself, and does not enable the driver's verbose auth logging)

@@ -1,0 +1,40 @@
+{{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled }}
+{{- $sm := .Values.metrics.serviceMonitor }}
+{{- $portName := ternary "https" "http" .Values.tls.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: netra
+  {{- with $sm.namespace }}
+  namespace: {{ . }}
+  {{- end }}
+  labels:
+    {{- include "netra.labels" . | nindent 4 }}
+    {{- with $sm.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: netra
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  endpoints:
+  - port: {{ $portName }}
+    path: /metrics
+    scheme: {{ $portName }}
+    interval: {{ $sm.interval }}
+    scrapeTimeout: {{ $sm.scrapeTimeout }}
+    {{- if .Values.tls.enabled }}
+    tlsConfig:
+      insecureSkipVerify: {{ $sm.insecureSkipVerify }}
+    {{- end }}
+    {{- if or .Values.auth.metricsToken $sm.bearerTokenSecret.name }}
+    authorization:
+      type: Bearer
+      credentials:
+        name: {{ default (include "netra.authSecretName" .) $sm.bearerTokenSecret.name }}
+        key: {{ $sm.bearerTokenSecret.key }}
+    {{- end }}
+{{- end }}

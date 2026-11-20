@@ -1,0 +1,7 @@
+Ip6InReceives                   	500
+Ip6OutRequests                  	400
+Ip6InDelivers                   	500
+Udp6InDatagrams                 	10
+Udp6OutDatagrams                	10
+Icmp6InMsgs                     	5
+Icmp6OutMsgs                    	5

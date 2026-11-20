@@ -1,0 +1,96 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-netra-workload-metadata
+rules:
+- apiGroups: [""]
+  resources: ["pods","services"]
+  verbs: ["get","list"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get","list"]
+- apiGroups: ["kubevirt.io"]
+  resources: ["virtualmachines","virtualmachineinstances"]
+  verbs: ["get","list"]
+{{- if .Values.workloadConsole.enabled }}
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  # "get" is required alongside "create": DialPodExec (internal/kube/console.go)
+  # opens a raw WebSocket connection via gorilla/websocket, whose opening
+  # handshake is always an HTTP GET per RFC 6455 — the API server's RBAC
+  # check for that request maps to the "get" verb, not "create" (which only
+  # covers the SPDY-protocol exec path client-go's remotecommand executor
+  # uses). Without "get" here, exec fails with a 403 even though the
+  # connection itself succeeds at the network level.
+  verbs: ["create","get"]
+- apiGroups: ["subresources.kubevirt.io"]
+  resources: ["virtualmachineinstances/vnc"]
+  verbs: ["get","create"]
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}-netra-workload-metadata
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: {{ .Release.Name }}-netra-workload-metadata}
+subjects:
+- {kind: ServiceAccount, name: netra, namespace: {{ .Release.Namespace }} }
+---
+{{ if .Values.cilium.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-netra
+rules:
+- apiGroups: ["cilium.io"]
+  resources: ["ciliumnetworkpolicies"]
+  verbs: ["get","list","watch","create","update","patch","delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}-netra
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: {{ .Release.Name }}-netra}
+subjects:
+- {kind: ServiceAccount, name: netra, namespace: {{ .Release.Namespace }} }
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}-netra-features
+rules:
+# Live feature toggles (POST /api/v1/features/{id}) patch controller/agent env.
+- apiGroups: ["apps"]
+  resources: ["deployments", "daemonsets"]
+  verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}-netra-features
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: {{ .Release.Name }}-netra-features}
+subjects:
+- {kind: ServiceAccount, name: netra, namespace: {{ .Release.Namespace }} }
+{{- if .Values.ha.enabled }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}-netra-leader-election
+rules:
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get","create","update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}-netra-leader-election
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: {{ .Release.Name }}-netra-leader-election}
+subjects:
+- {kind: ServiceAccount, name: netra, namespace: {{ .Release.Namespace }} }
+{{- end }}

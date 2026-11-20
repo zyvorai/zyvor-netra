@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "netra": {
+      "command": "/usr/local/bin/netra-mcp",
+      "args": [],
+      "env": {
+        "NETRA_URL": "https://127.0.0.1:30870",
+        "NETRA_API_KEY": "replace-me",
+        "NETRA_TLS_INSECURE": "true",
+        "NETRA_MCP_ACTOR": "mcp:claude-desktop",
+        "NETRA_MCP_ALLOW_MUTATIONS": "false"
+      }
+    }
+  }
+}

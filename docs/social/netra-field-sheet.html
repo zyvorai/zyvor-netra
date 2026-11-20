@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Netra Field Sheet</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --paper:#ffffff;
+    --paper-warm:#f5f5f7;
+    --ink:#1d1d1f;
+    --ink-soft:#6e6e73;
+    --signal:#0071e3;
+    --signal-deep:#0066cc;
+    --line:#d2d2d7;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:#e8e3dc;
+    color:var(--ink);
+    font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;
+    padding-block:32px;
+    padding-inline:16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:28px;
+  }
+  h1,h2,h3{text-wrap:balance;margin:0;}
+  p{margin:0;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',ui-monospace,monospace;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--signal-deep);
+  }
+  .sheet{
+    background:var(--paper);
+    width:min(816px,100%);
+    aspect-ratio:8.5/11;
+    box-shadow:0 20px 60px rgba(13,13,12,.22);
+    padding:clamp(26px,4.6vw,60px);
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+  .rule{border:none;border-top:1px solid var(--line);margin:0;}
+  .titleblock{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    padding-bottom:14px;
+    border-bottom:2px solid var(--ink);
+  }
+  .titleblock .doc{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--ink-soft);}
+  .z-mark{width:22px;height:22px;flex:none;}
+  .brand-row{display:flex;align-items:center;gap:8px;}
+  .brand-row span{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.12em;}
+
+  /* ---------- Page 1: cover ---------- */
+  .cover-body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:clamp(18px,3vw,28px);}
+  .cover-mark{width:clamp(52px,8vw,72px);height:clamp(52px,8vw,72px);}
+  .cover h1{
+    font-family:'IBM Plex Sans Condensed',ui-sans-serif,sans-serif;
+    font-weight:700;
+    letter-spacing:-.01em;
+    font-size:clamp(34px,6.4vw,64px);
+    line-height:1.03;
+  }
+  .cover h1 .accent{color:var(--signal);}
+  .cover .sub{
+    max-width:520px;
+    font-size:clamp(15px,2vw,18px);
+    line-height:1.5;
+    color:var(--ink-soft);
+  }
+  .badge-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;}
+  .badge{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    padding:7px 12px;
+    border:1.5px solid var(--signal);
+    color:var(--signal-deep);
+    border-radius:2px;
+  }
+  .footerbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding-top:12px;
+    border-top:1px solid var(--line);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    letter-spacing:.04em;
+  }
+  .footerbar b{color:var(--ink);}
+
+  /* ---------- Page 2: capabilities ---------- */
+  .spec-row{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:0;
+    border:1px solid var(--line);
+    margin-top:16px;
+  }
+  .spec-cell{padding:10px 12px;border-right:1px solid var(--line);}
+  .spec-cell:last-child{border-right:none;}
+  .spec-cell .k{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);}
+  .spec-cell .v{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13px;margin-top:3px;}
+  .cap-grid{
+    flex:1;
+    margin-top:20px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0;
+    border-top:1px solid var(--line);
+    border-left:1px solid var(--line);
+  }
+  .cap{
+    padding:20px 22px;
+    border-right:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .cap .num{
+    width:9px;height:9px;background:var(--signal);flex:none;
+  }
+  .cap .cap-head{display:flex;align-items:center;gap:8px;}
+  .cap .cap-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.12em;color:var(--signal-deep);}
+  .cap h3{font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:700;font-size:19px;letter-spacing:-.005em;}
+  .cap p{font-size:13.3px;line-height:1.5;color:var(--ink-soft);}
+
+  /* ---------- Page 3: license / contact ---------- */
+  .terms-grid{
+    flex:1;
+    margin-top:18px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0;
+    border:1px solid var(--line);
+  }
+  .term{padding:22px 24px;display:flex;flex-direction:column;gap:10px;}
+  .term:first-child{border-right:1px solid var(--line);}
+  .term h3{font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:700;font-size:18px;}
+  .term p{font-size:13.3px;line-height:1.55;color:var(--ink-soft);}
+  .term a{color:var(--signal-deep);font-weight:600;text-decoration:none;border-bottom:1px solid var(--signal);}
+  .cta-row{display:flex;gap:14px;margin-top:22px;flex-wrap:wrap;}
+  .cta{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;font-weight:600;letter-spacing:.06em;
+    padding:13px 18px;
+    display:flex;align-items:center;gap:10px;
+    text-decoration:none;
+    border-radius:2px;
+  }
+  .cta.primary{background:var(--signal);color:#fff;}
+  .cta.ghost{border:1.5px solid var(--ink);color:var(--ink);}
+  .cta .arrow{color:inherit;}
+
+  @media (max-width:520px){
+    .cap-grid,.terms-grid{grid-template-columns:1fr;}
+    .cap,.term{border-right:none !important;}
+    .term:first-child{border-bottom:1px solid var(--line);}
+    .spec-row{grid-template-columns:1fr 1fr;}
+    .spec-cell:nth-child(2){border-right:none;}
+  }
+
+  @media print{
+    body{background:#fff;padding:0;gap:0;}
+    .sheet{
+      box-shadow:none;
+      width:8.5in;height:11in;aspect-ratio:auto;
+      padding:.65in;
+      page-break-after:always;
+    }
+    .sheet:last-child{page-break-after:auto;}
+  }
+  @page{size:letter;margin:0;}
+</style>
+</head>
+<body>
+
+<section class="sheet cover">
+  <div class="titleblock">
+    <div class="brand-row">
+      <svg class="z-mark" viewBox="0 0 18 18" role="img" aria-label="Zyvor"><path d="M2 2h14L6.6 16H16" fill="none" stroke="#ff5a15" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      <span>ZYVOR</span>
+    </div>
+    <div class="doc">NETRA · FIELD SHEET · REV 0.27.94</div>
+  </div>
+
+  <div class="cover-body">
+    <svg class="cover-mark" viewBox="0 0 64 64" role="img" aria-label="Zyvor mark">
+      <defs><linearGradient id="bg" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#2997ff"/><stop offset="1" stop-color="#0071e3"/>
+      </linearGradient></defs>
+      <rect width="64" height="64" rx="15" fill="url(#bg)"/>
+      <path d="M18.5,20.5 45.5,20.5 18.5,43.5 45.5,43.5" fill="none" stroke="#ffffff" stroke-width="8.3" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+
+    <p class="eyebrow">Standalone eBPF datapath</p>
+    <h1>See the network.<br>Diagnose it.<br><span class="accent">Contain it.</span></h1>
+    <p class="sub">Netra runs its own eBPF datapath for workload flows, TCP health, DNS timing, socket identity, and leased emergency controls — independent of any CNI.</p>
+
+    <div class="badge-row">
+      <span class="badge">Diagnose</span>
+      <span class="badge">Capture</span>
+      <span class="badge">Enforce</span>
+      <span class="badge">Integrate</span>
+    </div>
+  </div>
+
+  <div class="footerbar">
+    <span>zyvor.dev</span>
+    <span><b>github.com/zyvorai/zyvor-netra</b> · Zyvor Production License v1.0</span>
+    <span>01 / 03</span>
+  </div>
+</section>
+
+<section class="sheet">
+  <div class="titleblock">
+    <div class="brand-row">
+      <svg class="z-mark" viewBox="0 0 18 18" role="img" aria-label="Zyvor"><path d="M2 2h14L6.6 16H16" fill="none" stroke="#ff5a15" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      <span>ZYVOR</span>
+    </div>
+    <div class="doc">NETRA · FIELD SHEET · REV 0.27.94</div>
+  </div>
+
+  <p class="eyebrow" style="margin-top:20px;">What's running under the hood</p>
+  <div class="spec-row">
+    <div class="spec-cell"><div class="k">Kernel path</div><div class="v">eBPF · TCX / cgroup v2</div></div>
+    <div class="spec-cell"><div class="k">CNI dependency</div><div class="v">None</div></div>
+    <div class="spec-cell"><div class="k">Enforcement model</div><div class="v">Leased, observe-first</div></div>
+    <div class="spec-cell"><div class="k">Deployment</div><div class="v">Helm · one agent DaemonSet</div></div>
+  </div>
+
+  <div class="cap-grid">
+    <div class="cap">
+      <div class="cap-head"><span class="num"></span><span class="cap-eyebrow">Diagnose</span></div>
+      <h3>Nine-stage Congestion Map</h3>
+      <p>A pictorial, cluster-wide view of exactly where the Linux network stack is under pressure — NIC ring, NAPI, IP, conntrack, TCP queues, qdisc — colored live, with per-node drill-down instead of a bare healthy/unhealthy badge.</p>
+    </div>
+    <div class="cap">
+      <div class="cap-head"><span class="num"></span><span class="cap-eyebrow">Capture</span></div>
+      <h3>Live packet capture, decoded</h3>
+      <p>Wireshark-style layered decode, multi-node bulk capture, automatic pod/VM attribution by IP, saved filter presets, and JSON/CSV/pcap export — streamed straight into the dashboard, no separate tooling.</p>
+    </div>
+    <div class="cap">
+      <div class="cap-head"><span class="num"></span><span class="cap-eyebrow">Enforce</span></div>
+      <h3>Controls that expire themselves</h3>
+      <p>IP, CIDR, port, UID, process, DNS-name, and TLS-SNI deny, plus rate ceilings — every one lease-governed. Enforcement reverts to observe automatically on lease expiry, agent disconnect, or controller restart.</p>
+    </div>
+    <div class="cap">
+      <div class="cap-head"><span class="num"></span><span class="cap-eyebrow">Integrate</span></div>
+      <h3>AI-native, not a black box</h3>
+      <p>A 133-tool MCP server, ChatOps for Slack and Teams, heuristic-first briefs and explanations, and CEF/syslog/OTLP export into the SIEM your team already runs.</p>
+    </div>
+  </div>
+
+  <div class="footerbar">
+    <span>zyvor.dev</span>
+    <span>Built to be read at 2am during an incident, not just at a QBR.</span>
+    <span>02 / 03</span>
+  </div>
+</section>
+
+<section class="sheet">
+  <div class="titleblock">
+    <div class="brand-row">
+      <svg class="z-mark" viewBox="0 0 18 18" role="img" aria-label="Zyvor"><path d="M2 2h14L6.6 16H16" fill="none" stroke="#ff5a15" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      <span>ZYVOR</span>
+    </div>
+    <div class="doc">NETRA · FIELD SHEET · REV 0.27.94</div>
+  </div>
+
+  <p class="eyebrow" style="margin-top:20px;">Licensing</p>
+
+  <div class="terms-grid">
+    <div class="term">
+      <h3>Zyvor Production License v1.0</h3>
+      <p>A paid commercial license from Zyvor is required for production, customer workloads, SaaS, managed services, OEM, and redistribution. See LICENSE in the repository.</p>
+    </div>
+    <div class="term">
+      <h3>Enterprise</h3>
+      <p>Commercial licenses for production use, support, SLAs, and Zyvor Enterprise products. Contact <a href="mailto:sales@zyvor.dev">sales@zyvor.dev</a> or see <a href="https://zyvor.dev">zyvor.dev</a>.</p>
+    </div>
+  </div>
+
+  <div class="cta-row">
+    <a class="cta primary" href="https://github.com/zyvorai/zyvor-netra">Get started on GitHub <span class="arrow">→</span></a>
+    <a class="cta ghost" href="mailto:sales@zyvor.dev">Talk to sales <span class="arrow">→</span></a>
+  </div>
+
+  <div style="flex:1;"></div>
+
+  <div class="footerbar">
+    <span style="display:flex;align-items:center;gap:8px;">
+      <svg width="16" height="16" viewBox="0 0 18 18" role="img" aria-label="Zyvor"><path d="M2 2h14L6.6 16H16" fill="none" stroke="#ff5a15" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      © 2026 Zyvor AI Labs · zyvor.dev
+    </span>
+    <span>03 / 03</span>
+  </div>
+</section>
+
+</body>
+</html>

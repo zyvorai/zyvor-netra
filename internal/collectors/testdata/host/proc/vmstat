@@ -1,0 +1,7 @@
+pgpgin 1000
+pgpgout 2000
+pswpin 10
+pswpout 20
+pgfault 100000
+pgmajfault 100
+oom_kill 0

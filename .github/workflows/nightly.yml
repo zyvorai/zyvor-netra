@@ -1,0 +1,152 @@
+name: Nightly
+# The expensive checks that would slow every pull request: the whole test suite under the
+# race detector, longer fuzzing, the kernel-facing suites on every runner image (so a
+# kernel or verifier difference shows up the day it appears, not the day a customer hits
+# it), multi-architecture image builds, and two-replica high availability on a real
+# cluster. Runs every night and on demand (Actions > Nightly > Run workflow).
+on:
+  schedule:
+  - cron: '17 2 * * *'
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  race-all:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-go@v7
+      with: {go-version: '1.27.4', cache: true}
+    - name: The whole suite under the race detector
+      run: go test -race -count=1 ./...
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-go@v7
+      with: {go-version: '1.27.4', cache: true}
+    - name: Fuzz the sampled-payload parsers for 10 minutes
+      run: go test ./internal/l7sample/ -run xxx -fuzz FuzzParse -fuzztime 10m
+    - uses: actions/upload-artifact@v7
+      if: failure()
+      with:
+        name: fuzz-crashers
+        path: internal/l7sample/testdata/fuzz
+  kernels:
+    # The privileged suites on each runner image. The image's kernel is not selectable, so
+    # this varies the kernel the way GitHub ships it; each step reports its own result and
+    # the kernel is printed so a failure can be tied to a version.
+    name: kernels (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - {os: ubuntu-24.04, experimental: false}
+        - {os: ubuntu-24.04-arm, experimental: false}
+        # The 22.04 image runs a 6.8 azure kernel (the family docs/l7-metadata.md records a
+        # verifier limit on) but ships clang 14, which cannot build the objects (no
+        # -bpf-stack-size), so the leg installs a current clang from apt.llvm.org. Failures
+        # here are information about the support matrix, not a red nightly.
+        - {os: ubuntu-22.04, experimental: true, llvm: 18}
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-go@v7
+      with: {go-version: '1.27.4', cache: true}
+    - name: Install clang and tcpdump
+      run: sudo apt-get update && sudo apt-get install -y clang llvm linux-libc-dev tcpdump iperf3
+    - name: A current clang (the image's own is too old to build the BPF objects)
+      if: matrix.llvm != ''
+      run: |
+        curl -fsSL https://apt.llvm.org/llvm.sh -o /tmp/llvm.sh
+        sudo bash /tmp/llvm.sh ${{ matrix.llvm }}
+        sudo ln -sf "/usr/bin/clang-${{ matrix.llvm }}" /usr/local/bin/clang
+        clang --version | head -1
+    - name: Kernel facts
+      run: |
+        uname -a
+        ls /sys/kernel/btf/vmlinux >/dev/null 2>&1 && echo "BTF: yes" || echo "BTF: no"
+        ls /sys/kernel/tracing >/dev/null 2>&1 && echo "tracefs: yes" || echo "tracefs: no"
+    - name: netra-doctor on this host
+      if: always()
+      run: sudo -E env "PATH=$PATH" "HOME=$HOME" "GOPATH=${GOPATH:-$HOME/go}" "GOMODCACHE=${GOMODCACHE:-}" "GOCACHE=${GOCACHE:-}" ./scripts/ci-doctor-live.sh
+    - name: eBPF compile and privileged tests
+      if: always()
+      run: sudo -E env "PATH=$PATH" "HOME=$HOME" "GOPATH=${GOPATH:-$HOME/go}" "GOMODCACHE=${GOMODCACHE:-}" "GOCACHE=${GOCACHE:-}" ./scripts/ci-ebpf-tests.sh
+    - name: Enforcement on a veth
+      if: always()
+      run: sudo -E env "PATH=$PATH" "HOME=$HOME" "GOPATH=${GOPATH:-$HOME/go}" "GOMODCACHE=${GOMODCACHE:-}" "GOCACHE=${GOCACHE:-}" ./scripts/ci-enforce-veth.sh
+    - name: Manual capture on both backends
+      if: always()
+      run: sudo -E env "PATH=$PATH" "HOME=$HOME" "GOPATH=${GOPATH:-$HOME/go}" "GOMODCACHE=${GOMODCACHE:-}" "GOCACHE=${GOCACHE:-}" ./scripts/ci-capture-live.sh
+    - name: Sampled L7 observation, end to end
+      if: always()
+      run: sudo -E env "PATH=$PATH" "HOME=$HOME" "GOPATH=${GOPATH:-$HOME/go}" "GOMODCACHE=${GOMODCACHE:-}" "GOCACHE=${GOCACHE:-}" ./scripts/ci-l7sample-smoke.sh
+    - name: TLS plaintext sampling, end to end
+      if: always()
+      run: sudo -E env "PATH=$PATH" "HOME=$HOME" "GOPATH=${GOPATH:-$HOME/go}" "GOMODCACHE=${GOMODCACHE:-}" "GOCACHE=${GOCACHE:-}" ./scripts/ci-tlssample-smoke.sh
+    - name: Agent mTLS, end to end
+      if: always()
+      run: sudo -E env "PATH=$PATH" "HOME=$HOME" "GOPATH=${GOPATH:-$HOME/go}" "GOMODCACHE=${GOMODCACHE:-}" "GOCACHE=${GOCACHE:-}" ./scripts/ci-mtls-smoke.sh
+  multiarch-images:
+    # arm64 builds run under QEMU, which is slow: nightly, not per pull request.
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - {image: netra, dockerfile: Dockerfile}
+        - {image: netra-agent, dockerfile: Dockerfile.agent}
+    steps:
+    - uses: actions/checkout@v7
+    - uses: docker/setup-qemu-action@v4
+    - uses: docker/setup-buildx-action@v4
+    - name: Build ${{ matrix.dockerfile }} for amd64 and arm64 (not pushed)
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        file: ${{ matrix.dockerfile }}
+        platforms: linux/amd64,linux/arm64
+        push: false
+        cache-from: type=gha,scope=multiarch-${{ matrix.image }}
+        cache-to: type=gha,scope=multiarch-${{ matrix.image }},mode=max
+  ha-kind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v7
+    - uses: azure/setup-helm@v5
+    - uses: helm/kind-action@v1
+      with: {cluster_name: netra-ci}
+    - name: Two replicas, leader election and failover
+      run: ./scripts/ci-ha-kind.sh
+  report:
+    # One tracking issue, updated rather than duplicated, when a nightly run fails.
+    if: ${{ always() && github.event_name == 'schedule' && contains(needs.*.result, 'failure') }}
+    needs: [race-all, fuzz, kernels, multiarch-images, ha-kind]
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+    - name: Open or update the nightly-failure issue
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        title="Nightly CI is failing"
+        num=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number,title -q ".[]|select(.title==\"$title\")|.number" | head -1)
+        body="The nightly run failed: ${RUN_URL} ($(date -u +%Y-%m-%d))"
+        if [ -n "$num" ]; then
+          gh issue comment "$num" --repo "$GITHUB_REPOSITORY" --body "$body"
+        else
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
+        fi

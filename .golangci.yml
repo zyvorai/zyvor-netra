@@ -1,0 +1,16 @@
+# Deliberately narrow: bug-finding linters only. CI runs this with only-new-issues
+# (PRs and pushes are checked against their base), so legacy findings never block a
+# change that does not touch them. Widen the list as the backlog is cleared.
+version: "2"
+run:
+  timeout: 10m
+  tests: true
+linters:
+  default: none
+  enable:
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+  exclusions:
+    generated: lax

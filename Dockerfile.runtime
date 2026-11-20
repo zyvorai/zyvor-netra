@@ -1,0 +1,10 @@
+# Thin image when binaries + web/dist are prebuilt on the host (faster remote deploys).
+FROM gcr.io/distroless/static-debian12:nonroot
+COPY bin/netrad /usr/local/bin/netrad
+COPY bin/netractl /usr/local/bin/netractl
+COPY web/dist /usr/share/netra/web
+ENV NETRA_WEB_DIR=/usr/share/netra/web
+ENV NETRA_LISTEN=:30870
+EXPOSE 30870
+USER nonroot:nonroot
+ENTRYPOINT ["/usr/local/bin/netrad"]

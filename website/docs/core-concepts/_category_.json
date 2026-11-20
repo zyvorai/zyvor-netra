@@ -1,0 +1,8 @@
+{
+  "label": "Core Concepts",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "description": "How Netra's controller, node agent, and eBPF datapath fit together, and the safety model behind every enforcement feature."
+  }
+}

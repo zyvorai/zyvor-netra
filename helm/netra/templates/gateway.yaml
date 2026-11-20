@@ -1,0 +1,88 @@
+{{- if .Values.gateway.enabled }}
+{{- if not .Values.gateway.parentRefs }}
+{{- fail "gateway.enabled needs gateway.parentRefs (the Envoy Gateway / Gateway API Gateway to attach to)" }}
+{{- end }}
+{{- $bt := .Values.gateway.backendTLS | default dict }}
+{{- $needBackendTLS := and .Values.tls.enabled $bt.enabled }}
+{{- if and .Values.tls.enabled (not $bt.enabled) }}
+{{- fail "tls.enabled=true serves HTTPS from the pod; set gateway.backendTLS.enabled=true (with a CA) or tls.enabled=false behind a trusted gateway" }}
+{{- end }}
+{{- if and $needBackendTLS (not $bt.caCertificateRefs) (not $bt.wellKnownCACertificates) }}
+{{- fail "gateway.backendTLS needs gateway.backendTLS.caCertificateRefs or wellKnownCACertificates so Envoy can verify the pod certificate (use tls.existingSecret for a stable cert)" }}
+{{- end }}
+# Envoy (via Gateway API) in front of the Netra API/UI. Optional: Netra's own
+# auth (API key / agent key) is unchanged; the gateway adds TLS termination,
+# routing and edge policy. Agents keep talking to the Service directly.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: netra
+  labels:
+    {{- include "netra.labels" . | nindent 4 }}
+  {{- with .Values.gateway.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- toYaml .Values.gateway.parentRefs | nindent 4 }}
+  {{- with .Values.gateway.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: {{ .Values.gateway.path | quote }}
+    # Live SSE / metric streams are long-lived; "0s" disables the per-request
+    # timeout so Envoy does not cut them.
+    timeouts:
+      request: {{ .Values.gateway.requestTimeout | default "0s" | quote }}
+    backendRefs:
+    - name: netra
+      port: {{ .Values.service.port }}
+{{- if $needBackendTLS }}
+---
+apiVersion: {{ default "gateway.networking.k8s.io/v1alpha3" $bt.apiVersion }}
+kind: BackendTLSPolicy
+metadata:
+  name: netra
+  labels:
+    {{- include "netra.labels" . | nindent 4 }}
+spec:
+  targetRefs:
+  - group: ""
+    kind: Service
+    name: netra
+  validation:
+    hostname: {{ default (printf "netra.%s.svc" .Release.Namespace) $bt.hostname | quote }}
+    {{- with $bt.caCertificateRefs }}
+    caCertificateRefs:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with $bt.wellKnownCACertificates }}
+    wellKnownCACertificates: {{ . | quote }}
+    {{- end }}
+{{- end }}
+{{- with .Values.gateway.backendTrafficPolicy }}
+{{- if .enabled }}
+---
+# Envoy Gateway extension (needs its CRDs). With backend TLS Envoy negotiates
+# HTTP/2 to the pod, which cannot carry a WebSocket upgrade; useClientProtocol
+# keeps the upstream hop on the client's HTTP version so streams upgrade.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: netra
+  labels:
+    {{- include "netra.labels" $ | nindent 4 }}
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: netra
+  useClientProtocol: {{ if hasKey . "useClientProtocol" }}{{ .useClientProtocol }}{{ else }}true{{ end }}
+{{- end }}
+{{- end }}
+{{- end }}
