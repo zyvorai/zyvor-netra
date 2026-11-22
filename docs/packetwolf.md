@@ -12,7 +12,7 @@ Official framing ([zyvor.dev/docs/netra](https://zyvor.dev/docs/netra), [Introdu
 
 | | **Netra** | **PacketWolf** |
 |---|---|---|
-| License / place | Zyvor Production License v1.0 | Suite flagship |
+| License / place | Zyvor Production Licence v2.0 | Suite flagship |
 | CNI assumption | Any CNI / none | Cilium required |
 | Datapath | Own maps under `/sys/fs/bpf/netra` (never touches Cilium maps); inspect desired contents with `netractl ebpf maps` | Hubble + Cilium maps + custom eBPF |
 | Core job | Observe + Path/Drop/Congestion diagnostics + leased emergency deny | Observe + AutoPolicy + healer + root-cause + containment |

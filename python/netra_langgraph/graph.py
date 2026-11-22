@@ -1,5 +1,5 @@
 # Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 """LangGraph StateGraph for Netra natural-language triage.
 
 Topology (acyclic, bounded — no open ReAct loop against mutating tools):

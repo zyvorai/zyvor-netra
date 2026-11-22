@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package lokipush pushes Netra's audit events and block/deny events to Grafana
 // Loki over its HTTP push API. It follows the same optional, best-effort,

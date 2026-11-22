@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 #
 # Example local metric alert rules. Copy into the directory named by
 # NETRA_METRICALERT_DIR (default /etc/netra/metricalert.d) or pass through

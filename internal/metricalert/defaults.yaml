@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 #
 # Built-in metric alert rules. Override any rule by name from
 # NETRA_METRICALERT_DIR (enabled: false turns it off). Reference:

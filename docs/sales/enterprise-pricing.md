@@ -3,7 +3,7 @@
 Packaging, feature boundary, and recommended pricing. September 2026.
 Orange, white, and black sheets for GitHub — source-available dataplane, enterprise operations.
 
-Production use requires a commercial license under the Zyvor Production License. Enterprise subscriptions are by nodes and clusters, not by user, packet, flow, or seat.
+Production use requires a commercial license under the Zyvor Production Licence v2.0. Enterprise subscriptions are by nodes and clusters, not by user, packet, flow, or seat.
 
 [Download the PDF](./Zyvor-Netra-Enterprise-Pricing.pdf).
 

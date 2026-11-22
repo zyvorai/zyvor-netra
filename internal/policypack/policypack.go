@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package policypack builds review-only CiliumNetworkPolicy manifests that
 // allow egress to operator-sanctioned hostname suffixes. Netra never applies

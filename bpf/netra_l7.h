@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 // Best-effort L7/DNS byte-level parsers shared by the Netra eBPF datapath
 // and its host-side parser tests. They never reassemble TCP streams and
 // only report what's visible in a single skb.

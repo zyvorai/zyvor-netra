@@ -8,7 +8,7 @@ Netra and **PacketWolf** are Zyvor suite counterparts covering the same eBPF ter
 
 | | **Netra** | **PacketWolf** |
 |---|---|---|
-| License | Zyvor Production License v1.0 | Suite flagship |
+| License | Zyvor Production Licence v2.0 | Suite flagship |
 | CNI | Any / none (cgroup v2) | Cilium required |
 | Datapath | `/sys/fs/bpf/netra` only | Hubble + Cilium maps + custom eBPF |
 | Enforce | Time-leased, fails open to observe | Platform containment + AutoPolicy |

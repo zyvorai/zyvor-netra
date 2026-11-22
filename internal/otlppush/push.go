@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package otlppush pushes Netra telemetry to an OpenTelemetry collector over
 // OTLP/HTTP JSON: metrics (derived from the same text /metrics serves),

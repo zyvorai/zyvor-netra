@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package dropreason gives a best-effort human-readable name to the raw
 // SKB_DROP_REASON_* enum values netra_kfree_skb (bpf/netra_tc.c) captures

@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package dropinfo loads and reads bpf/netra_dropinfo.c: per-connection
 // attribution of kernel packet drops (5-tuple, reason, and the kernel code that

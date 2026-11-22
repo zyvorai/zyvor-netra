@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 export type ICMPError = {
   interfaceName?: string; interfaceIndex: number; family: string; type: number; code: number;
   direction: string; hook: string; packets: number; advertisedMtu?: number;

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 // Copies the curated list of ../docs pages (docs-manifest.json) into
 // website/docs, so the site never drifts from the repo docs. Run by
 // `prebuild`/`prestart`; the generated files are committed and CI checks that

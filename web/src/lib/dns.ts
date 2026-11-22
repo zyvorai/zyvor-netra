@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 export type DNSResponseEvent = {
   type?: string; action: string; protocol?: string; hook?: string; direction?: string;
   sourcePort?: number; sourceIp?: string; dnsQuery?: string; dnsRcode?: number;

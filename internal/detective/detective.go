@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package detective correlates Netra policy-drop counters with deny configuration
 // into exact vs probable findings (FluxVM Drop Detective pattern, standalone).

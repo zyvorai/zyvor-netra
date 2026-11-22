@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 //
 // TLS plaintext sampler — uprobes on OpenSSL's SSL_write / SSL_read (and the
 // _ex variants), so application protocol metadata is visible for TLS traffic

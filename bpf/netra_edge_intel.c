@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 //
 // Edge TCP intelligence — a standalone, passive, fail-open TCX observer.
 // It never touches a packet's verdict (always returns TC_ACT_UNSPEC) and

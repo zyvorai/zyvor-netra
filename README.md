@@ -46,7 +46,7 @@ From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.32.0):
 | **Netlink findings and alerts** | Default route removed, gateway unreachable, uplink down, MTU changed, derived from the recorded changes. |
 | **Who made the change** | An `fentry` on `rtnetlink_rcv_msg` attributes each modifying netlink request to the process that sent it. |
 | **BPF attachment inventory** | Netra notices when its own hooks have silently gone, for example after a NIC or bond is recreated. [Docs →](docs/bpf-attachments.md) |
-| **macOS app** | [Netra for macOS 0.4.1](https://github.com/zyvorai/zyvor-netra/releases/tag/macos-v0.4.1): a native client for a Netra controller. Notarized, macOS 15 or later, with a free 30-day trial key from sales@zyvor.dev. See [Mac app](#mac-app). Its source is in a private repository. |
+| **macOS app** | [Netra for macOS 0.4.1](https://github.com/zyvorai/zyvor-netra/releases/tag/macos-v0.4.1): a native client for a Netra controller. Notarized, macOS 15 or later, with a 30-day trial key from sales@zyvor.dev. See [Mac app](#mac-app). Its source is in a private repository. |
 | **One UX contract** | Dashboard and docs site follow one design contract; Apple light by default, dark one click away. |
 | **Stable controller certificate** | `tls.existingSecret` serves a `kubernetes.io/tls` Secret so clients can pin the controller certificate. |
 
@@ -174,7 +174,7 @@ A native Mac client for a running Netra controller, for operators who want the d
 | | |
 |---|---|
 | **Get it** | [Netra 0.4.1](https://github.com/zyvorai/zyvor-netra/releases/tag/macos-v0.4.1): `Netra-0.4.1.dmg` (SHA-256 `033624d44c07ea6b5cc9f0364343cd08a1a67c369cdb73d809947605f2328a95`, also in the release notes and in `Netra-0.4.1.dmg.sha256`) |
-| **Trial key** | The app runs without a key. For a free 30-day trial key, email **sales@zyvor.dev**. The app checks the signed key (`ZYV1.`) offline. The 30-day trial applies to the paid production licence and support, not to the free software; no data is lost when it ends. |
+| **Trial key** | The app runs without a key. For a 30-day trial key, email **sales@zyvor.dev**. The app checks the signed key (`ZYV1.`) offline. The 30-day trial applies to the paid production licence and support; no data is lost when it ends. |
 | **Requirements** | macOS 15 or later, Apple silicon or Intel |
 | **Notarized** | Developer ID signed and notarized by Apple |
 
@@ -329,9 +329,9 @@ Netra's latest release is **0.32.0** ([CHANGELOG.md](CHANGELOG.md)). Shipped obs
 
 ## License
 
-Netra is source-available under the **[Zyvor Production License v1.0](LICENSE)** (SPDX `LicenseRef-Zyvor-Production-1.0`, also in [LICENSES/](LICENSES/LicenseRef-Zyvor-Production-1.0.txt)).
+Netra is source-available under the **[Zyvor Production Licence v2.0](LICENSE)** (SPDX `LicenseRef-Zyvor-Production-2.0`, also in [LICENSES/](LICENSES/LicenseRef-Zyvor-Production-2.0.txt)).
 
-- Evaluation (evaluation, development, testing, research, education) is free for 30 days per organization. **Production use of Netra** requires an annual enterprise subscription. Plans, support levels and terms: [docs/SUBSCRIPTION-MODEL.md](docs/SUBSCRIPTION-MODEL.md) · [Enterprise pricing](docs/sales/enterprise-pricing.md) · [Pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=netra&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev).
+- A 30-day trial is available on request from sales@zyvor.dev (a paid evaluation Order at no charge); production and any other use needs a paid Order under the Zyvor Production Licence v2.0. **Production use of Netra** requires an annual enterprise subscription. Plans, support levels and terms: [docs/SUBSCRIPTION-MODEL.md](docs/SUBSCRIPTION-MODEL.md) · [Enterprise pricing](docs/sales/enterprise-pricing.md) · [Pricing](https://zyvor.dev/pricing?utm_source=github&utm_medium=netra&utm_campaign=readme_license) · [sales@zyvor.dev](mailto:sales@zyvor.dev).
 
 **Pricing (annual, production use).**
 
@@ -342,7 +342,7 @@ Netra is source-available under the **[Zyvor Production License v1.0](LICENSE)**
 | Scale | 1,000 nodes · 25 clusters · 10 sites | USD 72,000 | INR 7,136,640 |
 | Single node | 1 node | USD 257 per node per year | INR 25,499 per node per year |
 
-Founding offer: USD 29,000 (INR 2,874,480 in India) for the first three reference customers, with two-year price protection. Paid production pilot: USD 6,000 to 12,000 (INR 594,720 to 1,189,440 in India) for 90 days, credited to year one. A 30-day trial key is available for the Mac app and production evaluation; Netra's free non-production use stays free. Prices: INR incl. 18% GST in India; US dollars excl. tax elsewhere (VAT, GST or sales tax added where applicable). Pay online by UPI, card or netbanking where a buy page exists; international cards work (charged in rupees). Orders of USD 5,000 or more and quotes are invoiced in USD through Skydo. Custom pricing: contact [sales@zyvor.dev](mailto:sales@zyvor.dev). Buy or get a quote: [zyvor.dev/buy](https://zyvor.dev/buy#netra).
+Founding offer: USD 29,000 (INR 2,874,480 in India) for the first three reference customers, with two-year price protection. Paid production pilot: USD 6,000 to 12,000 (INR 594,720 to 1,189,440 in India) for 90 days, credited to year one. A 30-day trial key is available for the Mac app and production evaluation. Prices: INR incl. 18% GST in India; US dollars excl. tax elsewhere (VAT, GST or sales tax added where applicable). Pay online by UPI, card or netbanking where a buy page exists; international cards work (charged in rupees). Orders of USD 5,000 or more and quotes are invoiced in USD through Skydo. Custom pricing: contact [sales@zyvor.dev](mailto:sales@zyvor.dev). Buy or get a quote: [zyvor.dev/buy](https://zyvor.dev/buy#netra).
 
 Contributions: [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately per [SECURITY.md](SECURITY.md).
 

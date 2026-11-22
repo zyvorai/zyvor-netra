@@ -54,7 +54,7 @@
     </div>
     <p class="sub">Netra-0.4.1.dmg · 12 MB · <a href="https://zyvor.dev/pricing" rel="noopener">See current prices</a></p>
     <p class="trust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><span><strong>Verified by Apple:</strong> Developer ID signed and notarized. This covers the Mac download, Netra-0.4.1.dmg, which is signed, notarized by Apple and stapled. The Linux controller, agent and Helm install are not part of this notarization.</span></p>
-    <ul class="reqs"><li>Mac app for macOS 15 or later, Apple silicon and Intel. Free for evaluation and non-production use under the Zyvor Production License; production use needs a commercial license.</li><li>This download is the Netra Mac app, a client of a Netra controller. Netra itself runs on Linux and Kubernetes: <a href="#start">install steps below</a>.</li></ul>
+    <ul class="reqs"><li>Mac app for macOS 15 or later, Apple silicon and Intel. Licensed under the Zyvor Production Licence v2.0. A 30-day trial is available on request from sales@zyvor.dev; production and any other use needs a paid Order.</li><li>This download is the Netra Mac app, a client of a Netra controller. Netra itself runs on Linux and Kubernetes: <a href="#start">install steps below</a>.</li></ul>
   </div>
   <figure class="shot hero-shot"><picture><img src="assets/img/hero-img-light-1200.webp" srcset="assets/img/hero-img-light-1200.webp 1200w" sizes="(min-width:1080px) 1040px, 100vw" width="1568" height="696" alt="The Netra dashboard Overview: the headline &#x27;See the network. Diagnose it. Contain it.&#x27; above an Ask Netra panel with a read-only brief built from live aggregates." fetchpriority="high" decoding="async"></picture><figcaption>Web dashboard, Overview. Demo data from a lab deployment.</figcaption></figure>
 </section>
@@ -91,13 +91,13 @@
 
 <section class="specs" id="specs" aria-labelledby="specs-h">
   <h2 id="specs-h">Specs and requirements.</h2>
-  <dl class="specs-grid"><div class="spec"><dt>Runs on</dt><dd>Linux with cgroup v2 and bpffs<small>Practical baseline Linux 5.8+ (TCX needs 6.6+). Run netra-doctor first.</small></dd></div><div class="spec"><dt>Install</dt><dd>Helm, via netractl<small>A controller and a node agent DaemonSet. No CNI change.</small></dd></div><div class="spec"><dt>CNI</dt><dd>Any<small>The Cilium and Hubble integration is opt-in.</small></dd></div><div class="spec"><dt>Version</dt><dd>0.32.0<small>Controller, agent and netractl.</small></dd></div><div class="spec"><dt>Mac app</dt><dd>macOS 15 or later<small>Apple silicon and Intel. Developer ID signed and notarized. The app runs without a key. For a free 30-day trial key, email sales@zyvor.dev.</small></dd></div><div class="spec"><dt>Licence</dt><dd>Source-available<small>Zyvor Production License v1.0. Free for non-production use.</small></dd></div></dl>
+  <dl class="specs-grid"><div class="spec"><dt>Runs on</dt><dd>Linux with cgroup v2 and bpffs<small>Practical baseline Linux 5.8+ (TCX needs 6.6+). Run netra-doctor first.</small></dd></div><div class="spec"><dt>Install</dt><dd>Helm, via netractl<small>A controller and a node agent DaemonSet. No CNI change.</small></dd></div><div class="spec"><dt>CNI</dt><dd>Any<small>The Cilium and Hubble integration is opt-in.</small></dd></div><div class="spec"><dt>Version</dt><dd>0.32.0<small>Controller, agent and netractl.</small></dd></div><div class="spec"><dt>Mac app</dt><dd>macOS 15 or later<small>Apple silicon and Intel. Developer ID signed and notarized. The app runs without a key. For a 30-day trial key, email sales@zyvor.dev.</small></dd></div><div class="spec"><dt>Licence</dt><dd>Source-available<small>Zyvor Production Licence v2.0. Free for non-production use.</small></dd></div></dl>
   <div class="limit" role="note"><h3>Honest limits</h3><p>The Mac app is a client of a Netra controller: it ships no agent and needs a controller to connect to. TLS SNI, HTTP Host and DNS names need Linux 5.17+ and are dropped on older kernels. Sampled L7 and TLS plaintext sensors are opt-in and off by default. The Mac app's source code is private.</p></div>
 </section>
 
 <section class="steps" id="start" aria-labelledby="steps-h">
   <h2 id="steps-h">Get started in three steps.</h2>
-  <ol><li><h3>Install the controller and agent</h3><p><code>make install</code> puts <code>netractl</code> on your path, and <code>netractl install --namespace netra-system</code> deploys the controller and a node agent DaemonSet with Helm. Run <code>netra-doctor</code> first to check the host.</p></li><li><h3>Open the dashboard</h3><p>Browse to <code>https://&lt;node-ip&gt;:30870</code> and accept the self-signed certificate. There is no default password: sign in as <code>admin</code> with the controller API key.</p></li><li><h3>Or use the Mac app</h3><p>Download <code>Netra-0.4.1.dmg</code> below and connect it to your controller. For the free 30-day trial key, write to <b>sales@zyvor.dev</b>.</p></li></ol>
+  <ol><li><h3>Install the controller and agent</h3><p><code>make install</code> puts <code>netractl</code> on your path, and <code>netractl install --namespace netra-system</code> deploys the controller and a node agent DaemonSet with Helm. Run <code>netra-doctor</code> first to check the host.</p></li><li><h3>Open the dashboard</h3><p>Browse to <code>https://&lt;node-ip&gt;:30870</code> and accept the self-signed certificate. There is no default password: sign in as <code>admin</code> with the controller API key.</p></li><li><h3>Or use the Mac app</h3><p>Download <code>Netra-0.4.1.dmg</code> below and connect it to your controller. For the 30-day trial key, write to <b>sales@zyvor.dev</b>.</p></li></ol>
   <div class="sha"><p>Linux and Kubernetes (Helm)</p><pre><code>make install                              # netractl to /usr/local/bin
 netractl install --namespace netra-system
 netractl status</code></pre></div>
@@ -107,7 +107,7 @@ netractl status</code></pre></div>
 
 <section class="buy-pointer" id="pricing" aria-labelledby="pricing-h">
   <h2 id="pricing-h">Prices and licenses</h2>
-  <p>Current prices, in your currency where available, are on zyvor.dev. The Mac app is free for evaluation and non-production use under the Zyvor Production License. Production use needs a commercial license. You can ask for a 30-day trial before you decide.</p>
+  <p>Current prices, in your currency where available, are on zyvor.dev. A 30-day trial is available on request from sales@zyvor.dev (a paid evaluation Order at no charge); production and any other use needs a paid Order under the Zyvor Production Licence v2.0. You can ask for a 30-day trial before you decide.</p>
   <p class="cta"><a class="btn primary" href="https://zyvor.dev/buy" rel="noopener">Buy a license</a><a class="btn ghost" href="https://zyvor.dev/contact?intent=trial&amp;product=netra" rel="noopener">Ask for a 30-day trial</a><a class="textlink" href="https://zyvor.dev/pricing" rel="noopener">See current prices</a></p>
 </section>
 
@@ -116,17 +116,17 @@ netractl status</code></pre></div>
   <details><summary>Does Netra need Cilium?</summary><p>No. The node agent owns its own programs and maps below /sys/fs/bpf/netra and works on any CNI. If Cilium and Hubble exist, Netra can manage CiliumNetworkPolicy and show Hubble flows, but both integrations are opt-in.</p></details>
 <details><summary>Does it collect packet payloads?</summary><p>No application payloads, no argv or cmdline and no Secret contents are collected. Opt-in sampled sensors keep counts only.</p></details>
 <details><summary>What happens to a deny rule if the controller goes away?</summary><p>Enforcement is leased. It returns to observe when the lease expires, the agent cannot refresh controller state, the controller restarts or HA leadership changes.</p></details>
-<details><summary>Is there a free trial of the Mac app?</summary><p>Yes: a free 30-day trial key from sales@zyvor.dev.</p></details>
+<details><summary>Is there a trial of the Mac app?</summary><p>Yes: a 30-day trial key from sales@zyvor.dev.</p></details>
 <details><summary>Which macOS versions does the Mac app need?</summary><p>macOS 15 or later, on Apple silicon or Intel. It is a client of a running Netra controller.</p></details>
 <details><summary>Will macOS warn me when I open it?</summary><p>The download is signed with our Developer ID. Notarized by Apple; macOS shows its standard first-open confirmation for apps downloaded from the internet. The SHA-256 is on this page and in the release notes.</p></details>
-<details><summary>How is Netra licensed?</summary><p>Source-available under the Zyvor Production License v1.0; non-production use is free and production use requires a commercial licence. See Licence and pricing above.</p></details>
+<details><summary>How is Netra licensed?</summary><p>Source-available under the Zyvor Production Licence v2.0; a 30-day trial is available on request from sales@zyvor.dev, and production and any other use needs a paid Order. See Licence and pricing above.</p></details>
 <details><summary>Are the screenshots production traffic?</summary><p>No. They are captures of the web dashboard on a lab deployment.</p></details>
 </section>
 </main>
 <footer class="footer">
   <p><strong>Netra</strong> · The Netra server, agent and docs are source-available; the Mac app's source is private.</p>
   <p class="links"><a href="docs/getting-started/quickstart">Docs</a><a href="https://github.com/zyvorai/zyvor-netra/blob/main/docs/Netra-Client-Overview.pdf">Client overview (PDF)</a><a href="https://github.com/zyvorai/zyvor-netra/blob/main/CHANGELOG.md">Changelog</a><a href="https://github.com/zyvorai/zyvor-netra/releases">Releases</a><a href="https://github.com/zyvorai/zyvor-netra">GitHub</a><a href="https://github.com/zyvorai/zyvor-netra/blob/main/LICENSE">LICENSE</a><a href="https://github.com/zyvorai/zyvor-netra/blob/main/SECURITY.md">SECURITY</a><a href="https://zyvor.dev/pricing">Prices</a><a href="mailto:sales@zyvor.dev">Support: sales@zyvor.dev</a></p>
-  <p>© 2026 Zyvor AI Labs Private Limited · <a href="https://zyvor.dev">zyvor.dev</a> · Zyvor Production License v1.0</p>
+  <p>© 2026 Zyvor AI Labs Private Limited · <a href="https://zyvor.dev">zyvor.dev</a> · Zyvor Production Licence v2.0</p>
 </footer>
 </body>
 </html>

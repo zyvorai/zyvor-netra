@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package tsdb is Netra's per-second metrics store: a compressed 1s tier in
 // memory, plus per-minute and per-hour rollup tiers kept on disk. It is

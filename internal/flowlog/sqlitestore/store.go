@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package sqlitestore is an optional indexed backend for flowlog deltas.
 // It uses modernc.org/sqlite (pure Go, no CGO). Observe-only: no payloads.

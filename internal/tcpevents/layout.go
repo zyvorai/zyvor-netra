@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package tcpevents loads and reads bpf/netra_tcpevents.c: TCP retransmit, RST
 // and state-transition counters taken from four kernel tracepoints. The kernel
