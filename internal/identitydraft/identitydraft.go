@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package identitydraft joins ServiceAccount + label identity with observed
 // egress to produce review-only Zero Trust / CNP drafts. Never auto-applied.

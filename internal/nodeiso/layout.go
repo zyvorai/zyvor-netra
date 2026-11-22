@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package nodeiso loads bpf/netra_nodeiso.c, the node-scoped allow-only
 // egress filter, and reconciles a models.NodeIsolationSpec into its maps.

@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package anomaly is unsupervised per-metric anomaly detection in the style
 // of Netdata's ML: every dimension gets its own k-means model (k=2) trained

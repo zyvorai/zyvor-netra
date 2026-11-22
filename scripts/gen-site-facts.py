@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 """Generate the MCP tool catalog page and the facts the docs site shows.
 
 Runs the real `netra-mcp` over stdio (initialize + tools/list, with and

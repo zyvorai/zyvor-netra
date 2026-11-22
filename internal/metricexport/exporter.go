@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package metricexport ships the per-second metrics store to external
 // systems: Prometheus remote write (protobuf + in-tree snappy), OTLP/HTTP

@@ -301,7 +301,7 @@ export function Receipts(): ReactNode {
       </div>
       <div className={s.badges}>
         <img src="https://github.com/zyvorai/zyvor-netra/actions/workflows/ci.yml/badge.svg" alt="CI status" />
-        <img src="https://img.shields.io/badge/License-Zyvor%20Production%20v1.0-blue.svg" alt="Zyvor Production License v1.0" />
+        <img src="https://img.shields.io/badge/License-Zyvor%20Production%20v1.0-blue.svg" alt="Zyvor Production Licence v2.0" />
         <Link to="/docs/security">Read the security model →</Link>
       </div>
     </Section>

@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package dnsintel ranks DNS / SNI / Host names against the threat-intel
 // feed with suffix matching and light C2-style heuristics (high NXDOMAIN /

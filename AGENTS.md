@@ -49,7 +49,7 @@ PacketWolf. Co-existence rules: `docs/packetwolf.md`.
  correlates, never deletes a rule, applies a deny or quarantines. Threat-feed
  updates, rollback and HTTPS refresh never apply deny entries; applying a feed
  stays leased with `X-Netra-Confirm-Risk: high`. Details: `docs/security-review.md`.
-- New source files need the `LicenseRef-Zyvor-Production-1.0` SPDX header used everywhere else.
+- New source files need the `LicenseRef-Zyvor-Production-2.0` SPDX header used everywhere else.
 - P0–P5 observe surfaces catalog: `docs/p0-p5-surfaces.md`. Buyer narrative:
   `docs/sales/buyers-guide.md`.
 

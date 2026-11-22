@@ -170,7 +170,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Zyvor. Zyvor Production License v1.0.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Zyvor. Zyvor Production Licence v2.0.`,
     },
     prism: {
       theme: prismThemes.github,

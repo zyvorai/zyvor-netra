@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 //
 // Package intel parses an operator-supplied threat-intel or allow/deny
 // list into the same entry shape POST /api/v1/ebpf/deny/import already

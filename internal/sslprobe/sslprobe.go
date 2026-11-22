@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package sslprobe observes application-protocol metadata for TLS traffic by
 // attaching uprobes to OpenSSL's SSL_write and SSL_read (bpf/netra_ssl.c).

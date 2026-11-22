@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 //
 // Sampled plaintext application-protocol observer (Redis, PostgreSQL, MySQL,
 // Kafka, HTTP/2 + gRPC). A standalone cgroup_skb object with its own verifier

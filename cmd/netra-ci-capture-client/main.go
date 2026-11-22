@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Command netra-ci-capture-client is the browser's side of a packet capture: it
 // connects to the controller's capture WebSocket for one node, decodes the frames

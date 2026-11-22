@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Optional LangGraph natural-language companion for the Netra controller"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Zyvor Production License v1.0" }
+license = { text = "Zyvor Production Licence v2.0" }
 authors = [{ name = "Zyvor AI Labs" }]
 dependencies = []
 

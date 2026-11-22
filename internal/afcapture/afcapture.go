@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package afcapture is the AF_PACKET-based packet-capture backend: a
 // userspace raw-socket alternative to bpf/netra_capture.c's in-kernel TCX

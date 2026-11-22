@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package oidcauth verifies OIDC/JWT bearer tokens for the Netra API and maps
 // a token's claims to one of three roles. It is verification only: it never

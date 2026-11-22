@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package bpfattach takes a read-only inventory of the BPF programs attached to
 // a node's interfaces: XDP (from the link's netlink attributes), TCX (the

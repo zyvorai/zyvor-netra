@@ -1,5 +1,5 @@
 # Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-# SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+# SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 """Prompts used when an OpenAI-compatible key is configured.
 
 The controller already rewrites briefs when NETRA_AI_API_KEY is set on

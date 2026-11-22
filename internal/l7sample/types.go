@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Package l7sample recognises application-protocol operations in the first bytes
 // of sampled TCP payloads: Redis, PostgreSQL, MySQL, Kafka, HTTP/2 and gRPC, and

@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 
 // Command netra-ci-idp is a throwaway OpenID Connect provider for CI. It
 // serves discovery and a JWKS and mints signed tokens on request, so

@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0 -->
+<!-- SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0 -->
 # Security intelligence and review
 
 Netra now offers native DNS QTYPE telemetry, managed threat-feed history,

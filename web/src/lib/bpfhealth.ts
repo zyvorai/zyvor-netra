@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 export type NamedCount = { name: string; count: number };
 
 // Keep classification and scope boundaries aligned with cmd/netractl/bpfhealth.go.

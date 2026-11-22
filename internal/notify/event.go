@@ -1,5 +1,5 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
-// SPDX-License-Identifier: LicenseRef-Zyvor-Production-1.0
+// SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 //
 // Package notify delivers alert events to one or more notification channels
 // (webhook, email, Slack, Teams, Twilio SMS/WhatsApp, HTTP bridge). A
