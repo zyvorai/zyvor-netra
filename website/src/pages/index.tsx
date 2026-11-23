@@ -60,7 +60,7 @@ export default function Home(): ReactNode {
         <HonestyBand
           items={[
             <>Netra is not a CNI and not a standing policy engine; it is an emergency layer.</>,
-            <>Envoy support is a front door through the Gateway API, not a data-plane integration.</>,
+            <>Setura Gateway support is a front door through the Gateway API, not a data-plane integration.</>,
             <>Production use needs a commercial license; evaluation and lab use are free.</>,
             <>Some probes need newer kernels (TCX needs 6.6); the dashboard reports what is unavailable and why.</>,
           ]}
