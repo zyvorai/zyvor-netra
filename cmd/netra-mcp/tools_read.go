@@ -861,6 +861,17 @@ func registerReadTools(srv *mcpserver.Server, c *client) error {
 			queryParams: []string{"since", "lead", "node"},
 		},
 		{
+			name: "netra_incident_bundle", method: "GET", path: "/api/v1/incident/bundle",
+			description: "Incident flight recorder: one versioned, redacted, hash-chained JSON document (netra-incident-bundle/1) of what the node's network looked like in the last N minutes, built from stores Netra already keeps (metric series, aggregated flows and talkers, netlink changes, DNS/TLS/HTTP metadata counters, BPF attachments, deny and lease state with history, audit entries, alerts and anomaly buckets) plus a time-sorted what-changed timeline. Allow-listed fields only: no payload, command lines, Secret contents or URL query strings. Hard bounds: window up to 24h, bounded rows per section with truncation counts, 8 MiB total. Read-only. Responses can be large: prefer a short window, a node, and exclude to drop sections you do not need.",
+			schema: objSchema(map[string]any{
+				"minutes":  intProp("Window in minutes, 1-1440. Default 15."),
+				"node":     strProp("Limit the bundle to one node (cluster-wide audit and lease entries are kept)."),
+				"exclude":  strProp("Comma-separated sections to leave out: nodes, metrics, flows, network_changes, metadata, ebpf, audit, insights, timeline."),
+				"mask_ips": strProp("Pseudonymise IP addresses: ips (stable per-bundle pseudonyms) or prefix (prefix-preserving). Omit to keep addresses as the product exposes them."),
+			}),
+			queryParams: []string{"minutes", "node", "exclude", "mask_ips"},
+		},
+		{
 			name: "netra_capacity_forecast", method: "GET", path: "/api/v1/capacity/forecast",
 			description: "Per-node time-to-exhaustion forecast for the conntrack table and the ephemeral port range, from the stored per-second utilization series (linear fit plus a check of the most recent samples; silent when the trend is flat, noisy or reversing). Ephemeral-port utilization is the host's own sockets toward the busiest single destination; SNAT ports are not visible. Needs the metrics platform. Read-only: changes no sysctl.",
 			schema: objSchema(map[string]any{
