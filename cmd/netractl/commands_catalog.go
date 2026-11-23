@@ -168,6 +168,11 @@ func ebpfReadCommands() []cliCommand {
 		cliCommand{Name: "ebpf-explain", Args: []string{"ebpf", "explain"}, Optional: true},
 		cliCommand{Name: "ebpf-scope-show", Args: []string{"ebpf", "scope", "show"}},
 		cliCommand{Name: "ebpf-rules-list", Args: []string{"ebpf", "rules", "list"}},
+		cliCommand{Name: "denyset-validate", Args: []string{"denyset", "validate", "$FILE"}, FileKind: "denyset", Local: true},
+		cliCommand{Name: "denyset-plan", Args: []string{"denyset", "plan", "$FILE"}, FileKind: "denyset"},
+		cliCommand{Name: "denyset-leases", Args: []string{"denyset", "leases", "--expiring"}},
+		cliCommand{Name: "denyset-history", Args: []string{"denyset", "history", "--limit", "5"}},
+		cliCommand{Name: "denyset-rails", Args: []string{"denyset", "rails"}},
 		cliCommand{Name: "ebpf-deny-preview", Args: []string{"ebpf", "deny-preview", "ip", "203.0.113.50", "egress"}},
 	)
 	for i := range out {

@@ -152,6 +152,8 @@ func run(args []string) error {
 	defer func() { os.Args = oldArgs }()
 
 	switch args[0] {
+	case "denyset":
+		return denysetCmd(args[1:])
 	case "explain":
 		return explainCmd(args[1:], os.Stdout)
 	case "investigate":

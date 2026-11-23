@@ -100,6 +100,8 @@ func writeCLIFixture(t *testing.T, kind string) string {
 	case "out":
 		body = nil // export destination; create empty file path only
 		path = filepath.Join(dir, "archive-out.json")
+	case "denyset":
+		body = []byte("netra-denyset/1\nname: ci\nlease: 10m\ndeny cidr 203.0.113.0/24 egress\n")
 	case "scope":
 		body = []byte(`{"mode":"selected","scopes":[{"namespace":"default"}]}`)
 	default:
@@ -129,6 +131,8 @@ func mockNetraAPI(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{"active":false,"mode":"observe"}`))
 	case path == "/api/v1/policies/plan":
 		_, _ = w.Write([]byte(`{"plan":{"risk":"low"},"dryRun":{"passed":true},"receipt":{"token":"ci-receipt"}}`))
+	case path == "/api/v1/ebpf/denysets/plan":
+		_, _ = w.Write([]byte(`{"name":"ci","planHash":"ci-hash","risk":"high","summary":{"add":1},"items":[{"action":"add","summary":"egress · 203.0.113.0/24","leaseSeconds":600}],"rails":{"trips":[]},"applicable":true,"receipt":{"token":"ci-receipt"},"caveat":"ci"}`))
 	case path == "/api/v1/policies/history/export":
 		_, _ = w.Write([]byte(`{"schemaVersion":1,"exportedAt":"2026-09-18T00:00:00Z","revisions":[]}`))
 	case strings.HasPrefix(path, "/api/v1/ai/"):

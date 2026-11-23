@@ -77,6 +77,8 @@ func helpSections() []helpSection {
 				{"ebpf shield … | netpol … | quarantine …", "Shield, NetPol, quarantine"},
 				{"ebpf rules list|get|patch|delete|…", "Durable rule history"},
 				{"ebpf scope show|all|selected|set", "Workload enforce scope"},
+				{"denyset validate|plan|apply FILE", "Declarative leased-deny file: diff, lockout check, plan hash, guarded apply"},
+				{"denyset leases|history|rails", "Lease expiry view, lease timeline, safety rails"},
 			},
 		},
 		{
