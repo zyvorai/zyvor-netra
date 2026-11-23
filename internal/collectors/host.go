@@ -46,6 +46,7 @@ func Host(cfg Config) []Collector {
 		&Netstat{fs: f},
 		&Sockstat{fs: f},
 		&Conntrack{fs: f},
+		&EphemeralPorts{fs: f},
 		&Softnet{fs: f},
 	}
 }

@@ -352,6 +352,16 @@ alerts:
     delay_down: 10m
     class: Errors
     info: conntrack inserts failed or entries dropped
+  - alarm: ephemeral_ports_exhaustion
+    on: net.ephemeral_utilization
+    lookup: max -1m
+    units: "%"
+    every: 10s
+    warn: '$this > (($status >= $WARNING) ? 70 : 80)'
+    crit: '$this > (($status == $CRITICAL) ? 85 : 90)'
+    delay_down: 5m
+    class: Utilization
+    info: ephemeral ports held toward the busiest single destination, as a share of net.ipv4.ip_local_port_range (see docs/capacity-forecast.md)
 
   # --- System ------------------------------------------------------------
   - alarm: file_descriptors_high

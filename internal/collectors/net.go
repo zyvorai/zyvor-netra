@@ -126,6 +126,10 @@ func (s *SNMP) Collect(_ time.Time, e *Emitter) error {
 	e.Incremental(ie, "InAddrErrors", ip["InAddrErrors"], 1)
 	e.Incremental(ie, "InUnknownProtos", ip["InUnknownProtos"], 1)
 
+	fr := Chart{Context: "ipv4.fragments", Family: "ipv4", Units: "fragments/s", Title: "IPv4 fragments needing reassembly"}
+	e.Incremental(fr, "reasm_reqds", ip["ReasmReqds"], 1)
+	e.Incremental(fr, "reasm_fails", ip["ReasmFails"], 1)
+
 	ic := m["Icmp"]
 	icp := Chart{Context: "ipv4.icmp", Family: "icmp", Units: "packets/s", Title: "IPv4 ICMP packets"}
 	e.Incremental(icp, "received", ic["InMsgs"], 1)
