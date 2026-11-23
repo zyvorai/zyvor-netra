@@ -456,6 +456,9 @@ func registerMutateTools(srv *mcpserver.Server, c *client) error {
 	if err := registerNetPolDefaultDenySet(srv, c); err != nil {
 		return err
 	}
+	if err := registerDenysetMutateTools(srv, c); err != nil {
+		return err
+	}
 	if err := registerIntelFeedPut(srv, c); err != nil {
 		return err
 	}
