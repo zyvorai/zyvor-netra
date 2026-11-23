@@ -20,6 +20,7 @@ import (
 	"github.com/zyvorai/netra/internal/automitigate"
 	"github.com/zyvorai/netra/internal/capture"
 	"github.com/zyvorai/netra/internal/dnsdetect"
+	"github.com/zyvorai/netra/internal/flooddetect"
 	"github.com/zyvorai/netra/internal/gitops"
 	"github.com/zyvorai/netra/internal/ha"
 	"github.com/zyvorai/netra/internal/hubble"
@@ -106,11 +107,12 @@ func main() {
 	}
 	dnsDet, dnsInterval, dnsEnabled := buildDNSDetect()
 	scanDet, scanInterval, scanEnabled := buildScanDetect()
+	floodTr, floodInterval := buildFloodTracker()
 	warmStartDetectors(log, stateFile, dnsDet, dnsEnabled, scanDet, scanEnabled)
 	autoEng, autoEnabled := buildAutoMitigate(log, st, scanDet)
 	wobs := buildWorkloadObs(log)
 	metrics := buildMetrics(log, stateFile, dispatcher)
-	apiServer := api.New(log, k, h, st).WithOIDC(buildOIDC(log)).WithWorkloadObs(wobs).WithGitOps(gr).WithDNSDetect(dnsDet).WithScanDetect(scanDet).WithAutoMitigate(autoEng).WithArtifacts(artifacts).WithMetrics(metrics.hubOrNil()).WithMetricAlerts(metrics.alertsOrNil()).WithMetricExporters(metrics.exporterStatus)
+	apiServer := api.New(log, k, h, st).WithOIDC(buildOIDC(log)).WithWorkloadObs(wobs).WithGitOps(gr).WithDNSDetect(dnsDet).WithScanDetect(scanDet).WithFloodTracker(floodTr).WithAutoMitigate(autoEng).WithArtifacts(artifacts).WithMetrics(metrics.hubOrNil()).WithMetricAlerts(metrics.alertsOrNil()).WithMetricExporters(metrics.exporterStatus)
 	handler := apiServer.Handler()
 	refreshCtx, refreshCancel := context.WithCancel(ctx)
 	var refreshWG sync.WaitGroup
@@ -188,6 +190,17 @@ func main() {
 			dnsDet.Run(dctx, dnsInterval, func() []models.AgentStatus { return st.AgentStatuses(time.Now(), staleAfter) })
 		}()
 		defer dnsWG.Wait()
+	}
+	if floodTr != nil {
+		var floodWG sync.WaitGroup
+		fctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		floodWG.Add(1)
+		go func() {
+			defer floodWG.Done()
+			floodTr.Run(fctx, floodInterval, func() []models.AgentStatus { return st.AgentStatuses(time.Now(), staleAfter) })
+		}()
+		defer floodWG.Wait()
 	}
 	if scanEnabled {
 		var scanWG sync.WaitGroup
@@ -751,6 +764,16 @@ func buildScanDetect() (*scandetect.Detector, time.Duration, bool) {
 	return scandetect.New(cfg), interval, true
 }
 
+// buildFloodTracker returns the per-source flood rate tracker behind
+// GET /api/v1/security/floods. It is observe-only and on by default; set
+// NETRA_FLOODDETECT_ENABLED=false to turn it off.
+func buildFloodTracker() (*flooddetect.Tracker, time.Duration) {
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("NETRA_FLOODDETECT_ENABLED")), "false") {
+		return nil, 0
+	}
+	return flooddetect.NewTracker(), envDuration("NETRA_FLOODDETECT_INTERVAL", 15*time.Second)
+}
+
 // buildAutoMitigate wires optional lease-bounded volumetric mitigation.
 func buildAutoMitigate(log *slog.Logger, st *store.Store, scan *scandetect.Detector) (*automitigate.Engine, bool) {
 	if !strings.EqualFold(strings.TrimSpace(os.Getenv("NETRA_AUTOMITIGATE_ENABLED")), "true") {
@@ -862,6 +885,8 @@ func electionLoop(
 	var dnsDetectWG sync.WaitGroup
 	var scanDetectCancel func()
 	var scanDetectWG sync.WaitGroup
+	var floodCancel func()
+	var floodWG sync.WaitGroup
 	var autoMitigateCancel func()
 	var autoMitigateWG sync.WaitGroup
 	var intelRefreshCancel func()
@@ -929,6 +954,11 @@ func electionLoop(
 			dnsDetectWG.Wait()
 			dnsDetectCancel = nil
 		}
+		if floodCancel != nil {
+			floodCancel()
+			floodWG.Wait()
+			floodCancel = nil
+		}
 		if scanDetectCancel != nil {
 			scanDetectCancel()
 			scanDetectWG.Wait()
@@ -991,11 +1021,12 @@ func electionLoop(
 		}
 		dnsDet, dnsInterval, dnsEnabled := buildDNSDetect()
 		scanDet, scanInterval, scanEnabled := buildScanDetect()
+		floodTr, floodInterval := buildFloodTracker()
 		warmStartDetectors(log, stateFile, dnsDet, dnsEnabled, scanDet, scanEnabled)
 		autoEng, autoEnabled := buildAutoMitigate(log, st, scanDet)
 		wobs := buildWorkloadObs(log)
 		metrics := buildMetrics(log, stateFile, dispatcher)
-		apiServer := api.New(log, k, h, st).WithOIDC(buildOIDC(log)).WithWorkloadObs(wobs).WithGitOps(gr).WithDNSDetect(dnsDet).WithScanDetect(scanDet).WithAutoMitigate(autoEng).WithArtifacts(artifacts).WithMetrics(metrics.hubOrNil()).WithMetricAlerts(metrics.alertsOrNil()).WithMetricExporters(metrics.exporterStatus)
+		apiServer := api.New(log, k, h, st).WithOIDC(buildOIDC(log)).WithWorkloadObs(wobs).WithGitOps(gr).WithDNSDetect(dnsDet).WithScanDetect(scanDet).WithFloodTracker(floodTr).WithAutoMitigate(autoEng).WithArtifacts(artifacts).WithMetrics(metrics.hubOrNil()).WithMetricAlerts(metrics.alertsOrNil()).WithMetricExporters(metrics.exporterStatus)
 		apiHandler := apiServer.Handler()
 		if stop := metrics.start(ctx, &metricsWG); stop != nil {
 			metricsCancel = stop
@@ -1056,6 +1087,15 @@ func electionLoop(
 			go func() {
 				defer dnsDetectWG.Done()
 				dnsDet.Run(dctx, dnsInterval, func() []models.AgentStatus { return leaderSt.AgentStatuses(time.Now(), staleAfter) })
+			}()
+		}
+		if floodTr != nil {
+			fctx, fcancel := context.WithCancel(ctx)
+			floodCancel = fcancel
+			floodWG.Add(1)
+			go func() {
+				defer floodWG.Done()
+				floodTr.Run(fctx, floodInterval, func() []models.AgentStatus { return leaderSt.AgentStatuses(time.Now(), staleAfter) })
 			}()
 		}
 		if scanEnabled {

@@ -112,7 +112,7 @@ The embedded pack (`internal/metricalert/defaults.yaml`) covers:
 | Disk | `disk_space_usage`, `disk_inode_usage`, `disk_util_high`, `disk_await_high`, `io_pressure_full` |
 | Interfaces | `interface_inbound_drops`, `interface_outbound_drops`, `interface_errors`, `interface_fifo_errors`, `interface_down`, `interface_carrier_changes`, `softnet_dropped`, `softnet_squeezed` |
 | TCP and UDP | `tcp_listen_overflows`, `tcp_syn_queue_drops`, `tcp_syncookies_sent`, `tcp_backlog_drops`, `tcp_retransmit_timeouts`, `tcp_memory_pressure`, `udp_receive_buffer_errors`, `udp_send_buffer_errors` |
-| Conntrack and system | `conntrack_table_full`, `conntrack_insert_failed`, `file_descriptors_high`, `processes_blocked` |
+| Conntrack and system | `conntrack_table_full`, `conntrack_insert_failed`, `ephemeral_ports_exhaustion`, `file_descriptors_high`, `processes_blocked` |
 | Workloads (cgroups) | `workload_cpu_throttling`, `workload_memory_near_limit`, `workload_oom_kill` |
 | Workload network RED | `workload_tcp_retransmits`, `workload_http_5xx_ratio` (only once a workload has at least 20 responses in 5 minutes), `workload_srtt_high` |
 | Netra datapath | `kernel_drops_high`, `policy_drops_high`, `tcp_resets_high` |

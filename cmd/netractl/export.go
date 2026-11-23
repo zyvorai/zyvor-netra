@@ -12,12 +12,13 @@ import (
 
 func exportCmd(args []string) error {
 	if len(args) < 1 {
-		return fmt.Errorf("export audit|events|flows|blocks|status [--format json|jsonl|cef|syslog|otlp|otlp-trace] [--limit N] [--include LIST]")
+		return fmt.Errorf("export audit|events|flows|flow-summary|blocks|status [--format json|jsonl|cef|syslog|otlp|otlp-trace|csv] [--limit N] [--include LIST] [--since DUR] [--namespace NS]")
 	}
 	kind := args[0]
 	format := "json"
 	limit := "100"
 	include := ""
+	since, namespace := "", ""
 	for i := 1; i < len(args); i++ {
 		switch args[i] {
 		case "--format":
@@ -38,6 +39,18 @@ func exportCmd(args []string) error {
 				return fmt.Errorf("--include needs a value")
 			}
 			include = args[i]
+		case "--since":
+			i++
+			if i >= len(args) {
+				return fmt.Errorf("--since needs a value")
+			}
+			since = args[i]
+		case "--namespace":
+			i++
+			if i >= len(args) {
+				return fmt.Errorf("--namespace needs a value")
+			}
+			namespace = args[i]
 		default:
 			return fmt.Errorf("unknown flag %s", args[i])
 		}
@@ -56,12 +69,21 @@ func exportCmd(args []string) error {
 		path = "/api/v1/export/events?" + q.Encode()
 	case "flows":
 		path = "/api/v1/export/flows?" + q.Encode()
+	case "flow-summary":
+		// IPFIX-named flow summary records (json, jsonl or csv); --since and --namespace narrow them.
+		if since != "" {
+			q.Set("since", since)
+		}
+		if namespace != "" {
+			q.Set("namespace", namespace)
+		}
+		path = "/api/v1/export/flow-summary?" + q.Encode()
 	case "blocks":
 		path = "/api/v1/export/blocks?" + q.Encode()
 	case "status":
 		path = "/api/v1/export/status"
 	default:
-		return fmt.Errorf("export audit|events|flows|blocks|status")
+		return fmt.Errorf("export audit|events|flows|flow-summary|blocks|status")
 	}
 	return request("GET", path, nil)
 }

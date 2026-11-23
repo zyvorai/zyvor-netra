@@ -49,6 +49,7 @@ PacketWolf. Co-existence rules: `docs/packetwolf.md`.
  correlates, never deletes a rule, applies a deny or quarantines. Threat-feed
  updates, rollback and HTTPS refresh never apply deny entries; applying a feed
  stays leased with `X-Netra-Confirm-Risk: high`. Details: `docs/security-review.md`.
+- Network-risk surfaces (`internal/flooddetect`, `internal/capacity`, `internal/tlsposture`, `internal/flowexport`, `/api/v1/security/floods`, `/api/v1/capacity/forecast`, `/api/v1/insights/tls-posture`, `/api/v1/export/flow-summary`, MCP `netra_security_floods`, `netra_capacity_forecast`, `netra_insights_tls_posture`, `netra_export_flow_summary`) are read-only. A flood finding only SUGGESTS a deny (text plus a preview request) and withholds it when the lockout check says it would reach a protected path; applying stays leased and fails open. The ephemeral-port collector reads `/proc/net/{tcp,tcp6,udp,udp6}` only and puts no address in a metric. TLS posture reads JA4 metadata only: no decryption. Details: `docs/flood-detection.md`, `docs/capacity-forecast.md`, `docs/tls-posture.md`, `docs/flow-summary-export.md`.
 - New source files need the `LicenseRef-Zyvor-Production-2.0` SPDX header used everywhere else.
 - P0–P5 observe surfaces catalog: `docs/p0-p5-surfaces.md`. Buyer narrative:
   `docs/sales/buyers-guide.md`.

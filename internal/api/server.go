@@ -29,6 +29,7 @@ import (
 	"github.com/zyvorai/netra/internal/dnsdetect"
 	"github.com/zyvorai/netra/internal/dropdiag"
 	"github.com/zyvorai/netra/internal/exehash"
+	"github.com/zyvorai/netra/internal/flooddetect"
 	"github.com/zyvorai/netra/internal/flowstats"
 	"github.com/zyvorai/netra/internal/gitops"
 	"github.com/zyvorai/netra/internal/health"
@@ -86,6 +87,7 @@ type Server struct {
 	artifacts           *capture.ArtifactStore
 	dnsDetector         *dnsdetect.Detector
 	scanDetector        *scandetect.Detector
+	floodTracker        *flooddetect.Tracker
 	intelFeed           *intel.Feed
 	autoMitigate        *automitigate.Engine
 	tlsFP               *tlsfp.Detector
@@ -457,6 +459,10 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/v1/incidents", s.auth(http.HandlerFunc(s.incidents)))
 	mux.Handle("GET /api/v1/incidents/timeline", s.auth(http.HandlerFunc(s.incidentsTimeline)))
 	mux.Handle("GET /api/v1/incidents/changes", s.auth(http.HandlerFunc(s.incidentChanges)))
+	mux.Handle("GET /api/v1/capacity/forecast", s.auth(http.HandlerFunc(s.capacityForecast)))
+	mux.Handle("GET /api/v1/security/floods", s.auth(http.HandlerFunc(s.floodFindings)))
+	mux.Handle("GET /api/v1/insights/tls-posture", s.auth(http.HandlerFunc(s.tlsPosture)))
+	mux.Handle("GET /api/v1/export/flow-summary", s.auth(http.HandlerFunc(s.exportFlowSummary)))
 	mux.Handle("GET /api/v1/ai/status", s.auth(http.HandlerFunc(s.aiStatus)))
 	mux.Handle("GET /api/v1/ai/brief", s.auth(http.HandlerFunc(s.aiBrief)))
 	mux.Handle("GET /api/v1/ai/congestion-brief", s.auth(http.HandlerFunc(s.aiCongestionBrief)))

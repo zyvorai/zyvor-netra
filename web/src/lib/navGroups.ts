@@ -67,6 +67,7 @@ export const navGroups: NavGroup[] = [
       { page: 'security-review', label: 'Security Review', blurb: 'Threat feed lifecycle, deny predicate review, and exact-workload security evidence.' },
       { page: 'incidents', label: 'Incidents', blurb: 'Health, drift, exposure, drops, and audit signals joined by shared source.' },
       { page: 'what-changed', label: 'What Changed', blurb: 'Changes then breaks in one order, with suspects and gaps. Read-only.' },
+      { page: 'network-risk', label: 'Network Risk', blurb: 'Floods with a suggested deny, conntrack and port exhaustion forecasts, TLS posture. Read-only.' },
       { page: 'incident-timeline', label: 'Incident Timeline', blurb: 'Chronological audit + health-signature narrative. Observe-only.' },
       { page: 'surfaces', label: 'Surfaces', blurb: 'JA3 risk, ECH blindness, DNS intel, exfil/lateral drafts, compliance — observe-only.' },
       { page: 'ebpf', label: 'Firewall', blurb: 'Deny lists, DDoS shield, NetPol, and emergency controls in one place.' },

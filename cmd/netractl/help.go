@@ -60,6 +60,8 @@ func helpSections() []helpSection {
 				{"whoami | slo", "Auth identity and workload SLO status"},
 				{"metrics ack|silence|unsilence", "Acknowledge or silence metric alerts (notifications only)"},
 				{"security optimizer|incidents", "Review deny predicates and exact-workload security correlation"},
+				{"security floods [WINDOW]", "Inbound SYN/UDP/ICMP/fragment floods with a suggested deny (never applied)"},
+				{"capacity forecast [--window 1h]", "Conntrack and ephemeral-port exhaustion forecast per node"},
 				{"intel history|rollback REVISION", "Inspect or restore a retained threat-feed revision"},
 				{"ebpf sysctl-audit | dns-findings | scan-findings", "Hardening + detectors"},
 				{"ebpf coverage | census | maps | capabilities", "Hook coverage + map inventory"},
