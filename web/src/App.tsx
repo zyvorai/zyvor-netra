@@ -31,6 +31,7 @@ import NodeResources from './pages/NodeResources';
 import DenyPreview from './pages/DenyPreview';
 import Netlink from './pages/Netlink';
 import WhatChanged from './pages/WhatChanged';
+import NetworkRisk from './pages/NetworkRisk';
 import BpfAttachments from './pages/BpfAttachments';
 import Detect from './pages/Detect';
 import Workloads from './pages/Workloads';
@@ -113,6 +114,12 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     title: 'What changed, then what broke.',
     lede: 'Audit, netlink, BPF attachment, drop, anomaly and alert signals in one order, with suspects and gaps. Read-only.',
     tint: 'purple',
+  },
+  'network-risk': {
+    eyebrow: 'Network risk',
+    title: 'Floods, capacity and TLS posture.',
+    lede: 'Inbound volumetric floods with a review-only suggested deny, conntrack and ephemeral-port exhaustion forecasts, and the TLS versions clients offer. Read-only.',
+    tint: 'amber',
   },
   'process-integrity': {
     eyebrow: 'Process integrity',
@@ -439,6 +446,7 @@ export default function App() {
     'listen-queues': <ListenQueues />,
     'incident-timeline': <IncidentTimeline />,
     'what-changed': <WhatChanged />,
+    'network-risk': <NetworkRisk />,
     'process-integrity': <ProcessIntegrity />,
   }[page];
 
