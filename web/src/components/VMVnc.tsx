@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { wsURL } from '../api';
 
-// @novnc/novnc ships CJS without types
+// @novnc/novnc ships ESM without types
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RFBInstance = { disconnect: () => void; scaleViewport: boolean; resizeSession: boolean };
 
@@ -30,7 +30,7 @@ export default function VMVnc({ namespace, name }: Props) {
     setErr('');
     if (!screenRef.current) return;
     try {
-      const mod = await import('@novnc/novnc/lib/rfb.js');
+      const mod = await import('@novnc/novnc');
       const RFB = (mod as { default: new (target: HTMLElement, url: string, options?: object) => RFBInstance }).default;
       const url = wsURL(`/api/v1/vms/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}/vnc`);
       const rfb = new RFB(screenRef.current, url);
