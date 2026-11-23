@@ -17,7 +17,7 @@ COPY cmd ./cmd
 COPY internal ./internal
 RUN go mod tidy && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/netrad ./cmd/netrad
 
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian13:nonroot
 COPY --from=go /out/netrad /netrad
 COPY --from=web /src/web/dist /web
 ENV NETRA_WEB_DIR=/web

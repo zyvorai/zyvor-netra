@@ -8,7 +8,7 @@ COPY cmd ./cmd
 COPY internal ./internal
 RUN go mod tidy && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/netra-mcp ./cmd/netra-mcp
 
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian13:nonroot
 # The MCP Registry verifies ownership of an OCI package by this label; it must
 # equal "name" in server.json (scripts/check-version-sync.sh gates that).
 LABEL io.modelcontextprotocol.server.name="io.github.zyvorai/netra"

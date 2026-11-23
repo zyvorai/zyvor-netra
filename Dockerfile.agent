@@ -70,7 +70,7 @@ RUN clang -target bpfel -O2 -g -Wall -Wextra -Werror \
     -I/usr/include/$(uname -m)-linux-gnu \
     -c netra_rtnl.c -o /out-rtnl.o
 
-FROM gcr.io/distroless/static-debian12
+FROM gcr.io/distroless/static-debian13
 COPY --from=go /out/netra-agent /netra-agent
 COPY --from=bpf /out.o /opt/netra/bpf/netra_tc.o
 COPY --from=bpf /out-edge.o /opt/netra/bpf/netra_edge_intel.o
