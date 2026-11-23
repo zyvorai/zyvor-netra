@@ -14,8 +14,8 @@ dependencies = []
 
 [project.optional-dependencies]
 langgraph = [
-  "langgraph>=0.2.0",
-  "langchain-core>=0.3.0",
+  "langgraph>=1.0.0",
+  "langchain-core>=1.0.0",
 ]
 dev = [
   "netra-langgraph[langgraph]",

@@ -18,7 +18,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-node@v7
-      with: {node-version: '22', cache: npm, cache-dependency-path: website/package-lock.json}
+      with: {node-version: "24", cache: npm, cache-dependency-path: website/package-lock.json}
     - run: npm --prefix website ci
     - run: npm --prefix website run build
     # The product landing page (landing/, built from the Zyvor marketing kit) is served at the site root.

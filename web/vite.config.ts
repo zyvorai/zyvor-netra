@@ -16,6 +16,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['@novnc/novnc/lib/rfb.js'],
+    include: ['@novnc/novnc'],
   },
 });

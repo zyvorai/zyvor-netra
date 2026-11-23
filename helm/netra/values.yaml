@@ -229,7 +229,7 @@ tls:
   # an emptyDir; probes and the Service use scheme/port name https.
   # Set enabled=false only when TLS is terminated by a trusted proxy/ingress.
   enabled: true
-  opensslImage: alpine/openssl:3.3.2
+  opensslImage: alpine/openssl:3.5.9
   # kubernetes.io/tls Secret to serve instead of a cert minted per pod start. A
   # stable cert lets API clients (netractl, Duvora) pin it across restarts.
   existingSecret: ""

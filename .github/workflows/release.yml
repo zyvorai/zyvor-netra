@@ -68,7 +68,7 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         sbom: true
         provenance: mode=max
-    - uses: sigstore/cosign-installer@v3
+    - uses: sigstore/cosign-installer@v4
     - name: Sign the image digest (keyless)
       run: cosign sign --yes ghcr.io/zyvorai/${{ matrix.image }}@${{ steps.build.outputs.digest }}
   publish-mcp:

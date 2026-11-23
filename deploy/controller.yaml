@@ -33,7 +33,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       initContainers:
       - name: gen-cert
-        image: alpine/openssl:3.3.2
+        image: alpine/openssl:3.5.9
         command: ["/bin/sh", "-c"]
         args:
         - |
