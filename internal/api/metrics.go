@@ -15,6 +15,7 @@ import (
 	"github.com/zyvorai/netra/internal/insights"
 	"github.com/zyvorai/netra/internal/kerneldiag"
 	"github.com/zyvorai/netra/internal/l7"
+	"github.com/zyvorai/netra/internal/leaserails"
 	"github.com/zyvorai/netra/internal/models"
 	"github.com/zyvorai/netra/internal/observability"
 	"github.com/zyvorai/netra/internal/pathdiag"
@@ -35,6 +36,9 @@ type telemetry struct {
 	preflightRejects   atomic.Uint64
 	agentReports       atomic.Uint64
 	statePersistErrors atomic.Uint64
+	denysetPlans       atomic.Uint64
+	denysetApplies     atomic.Uint64
+	denysetRejects     atomic.Uint64
 }
 
 func (s *Server) metrics(w http.ResponseWriter, _ *http.Request) {
@@ -73,6 +77,24 @@ func (s *Server) metrics(w http.ResponseWriter, _ *http.Request) {
 	metricCounter(w, "netra_preflight_rejects_total", "Policy applies rejected due to a missing, stale or mismatched preflight receipt.", s.metricsData.preflightRejects.Load())
 	metricCounter(w, "netra_agent_reports_total", "Node-agent reports accepted.", s.metricsData.agentReports.Load())
 	metricCounter(w, "netra_state_persist_errors_total", "Durable state writes that failed after startup.", s.metricsData.statePersistErrors.Load())
+	ls := s.store.LeaseStats(leaseSoonWindow)
+	metricCounter(w, "netra_denyset_plans_total", "Denyset plans computed.", s.metricsData.denysetPlans.Load())
+	metricCounter(w, "netra_denyset_applies_total", "Denyset applies that changed leases.", s.metricsData.denysetApplies.Load())
+	metricCounter(w, "netra_denyset_rejects_total", "Denyset applies refused by a lease safety rail.", s.metricsData.denysetRejects.Load())
+	fmt.Fprintf(w, "# HELP netra_lease_rail_trips_total Lease safety rail refusals by code.\n# TYPE netra_lease_rail_trips_total counter\n")
+	for _, code := range leaserails.Codes {
+		fmt.Fprintf(w, "netra_lease_rail_trips_total{code=%q} %d\n", code, ls.RailTrips[code])
+	}
+	fmt.Fprintf(w, "# HELP netra_deny_lease_events_total Denyset lease timeline events by action.\n# TYPE netra_deny_lease_events_total counter\n")
+	for _, a := range []struct {
+		n string
+		v uint64
+	}{{"create", ls.Created}, {"extend", ls.Extended}, {"expire", ls.Expired}, {"revoke", ls.Revoked}, {"reject", ls.Rejected}} {
+		fmt.Fprintf(w, "netra_deny_lease_events_total{action=%q} %d\n", a.n, a.v)
+	}
+	metricGauge(w, "netra_deny_leases_active", "Active denyset leases (each owns one leased deny rule).", float64(ls.Active))
+	metricGauge(w, "netra_deny_leases_expiring_soon", "Active denyset leases ending within 15 minutes. Alert on this to catch an incident rule about to lapse.", float64(ls.ExpiringSoon))
+	metricGauge(w, "netra_lease_rails_enabled", "Whether any lease safety rail is configured.", b2f(s.store.LeaseRails().Enabled()))
 	metricGauge(w, "netra_fastpath_enforce", "Whether Netra standalone eBPF enforcement is active.", float64(enforce))
 	metricGauge(w, "netra_fastpath_blocked_ipv4", "Exact IPv4 destinations in the Netra deny map.", float64(len(cfg.BlockedIPv4)))
 	metricGauge(w, "netra_fastpath_blocked_ipv6", "Exact IPv6 destinations in the Netra deny map.", float64(len(cfg.BlockedIPv6)))
@@ -314,6 +336,13 @@ func metricHistogram(w http.ResponseWriter, name, help string, s histograms.Snap
 	fmt.Fprintf(w, "%s_bucket{le=\"+Inf\"} %d\n", name, inf)
 	fmt.Fprintf(w, "%s_sum %.0f\n", name, s.Sum)
 	fmt.Fprintf(w, "%s_count %d\n", name, s.Count)
+}
+
+func b2f(b bool) float64 {
+	if b {
+		return 1
+	}
+	return 0
 }
 
 func metricCounter(w http.ResponseWriter, name, help string, value uint64) {

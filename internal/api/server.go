@@ -80,6 +80,7 @@ type Server struct {
 	webDir              string
 	agentStaleAfter     time.Duration
 	requirePreflight    bool
+	leaseRailsErr       string
 	ciliumEnabled       bool
 	consoleEnabled      bool
 	metricsData         *telemetry
@@ -112,6 +113,7 @@ func New(log *slog.Logger, k *kube.Client, h *hubble.Client, st *store.Store) *S
 		log.Warn("intel journal unavailable", "error", feedErr)
 	}
 	s := &Server{log: log, kube: k, hubble: h, store: st, apiKey: os.Getenv("NETRA_API_KEY"), agentKey: os.Getenv("NETRA_AGENT_KEY"), webDir: os.Getenv("NETRA_WEB_DIR"), agentStaleAfter: staleAfter, requirePreflight: requirePreflight, ciliumEnabled: ciliumEnabled, consoleEnabled: consoleEnabled, metricsData: &telemetry{}, captureHub: newCaptureHub(), intelFeed: feed, tlsFP: tlsfp.NewDetector(2048), workloadInventory: newWorkloadInventoryCache()}
+	s.initLeaseRails()
 
 	// netrad refuses to start on a bad NETRA_AGENT_MTLS; if this runs anyway, fail
 	// closed rather than quietly turning a security setting off.
@@ -301,6 +303,11 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/v1/ebpf/topology", s.auth(http.HandlerFunc(s.ebpfTopology)))
 	mux.Handle("PUT /api/v1/ebpf/mode", s.auth(http.HandlerFunc(s.ebpfMode)))
 	mux.Handle("POST /api/v1/ebpf/deny", s.auth(http.HandlerFunc(s.ebpfDenyAdd)))
+	mux.Handle("POST /api/v1/ebpf/denysets/plan", s.auth(http.HandlerFunc(s.ebpfDenysetPlan)))
+	mux.Handle("POST /api/v1/ebpf/denysets/apply", s.auth(http.HandlerFunc(s.ebpfDenysetApply)))
+	mux.Handle("GET /api/v1/ebpf/deny-leases", s.auth(http.HandlerFunc(s.ebpfDenyLeases)))
+	mux.Handle("GET /api/v1/ebpf/deny-leases/history", s.auth(http.HandlerFunc(s.ebpfDenyLeaseHistory)))
+	mux.Handle("GET /api/v1/ebpf/deny-leases/rails", s.auth(http.HandlerFunc(s.ebpfLeaseRails)))
 	mux.Handle("POST /api/v1/ebpf/deny/preview", s.auth(http.HandlerFunc(s.ebpfDenyPreview)))
 	mux.Handle("POST /api/v1/ebpf/deny/preview-history", s.auth(http.HandlerFunc(s.ebpfDenyPreviewHistory)))
 	mux.Handle("DELETE /api/v1/ebpf/deny/{ip}", s.auth(http.HandlerFunc(s.ebpfDenyDelete)))
@@ -1354,6 +1361,9 @@ func (s *Server) ebpfMode(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			lease = d
+		}
+		if !s.railsForModeLease(w, lease) {
+			return
 		}
 	}
 	cfg, err := s.store.SetMode(x.Mode, lease, actor(r))
