@@ -17,7 +17,15 @@ type Hit = {
   alreadyBlocked?: number;
 };
 
+type Lockout = {
+  risk?: string;
+  warnings?: { protected?: string; severity?: string; reason?: string }[];
+  checked?: string[];
+  caveat?: string;
+};
+
 type LiveResult = {
+  lockout?: Lockout;
   hitCount?: number;
   workloads?: number;
   agentsSeen?: number;
@@ -30,6 +38,7 @@ type LiveResult = {
 };
 
 type HistoryResult = {
+  lockout?: Lockout;
   since?: string;
   caveat?: string;
   result?: {
@@ -101,6 +110,7 @@ export default function DenyPreview() {
   const denials = history?.result?.denials || [];
   const hitCount = mode === 'live' ? live?.hitCount ?? 0 : denials.length;
   const caveat = live?.caveat || history?.caveat || '';
+  const lockout = (mode === 'live' ? live?.lockout : history?.lockout) || undefined;
 
   return (
     <div className="grid">
@@ -195,6 +205,21 @@ export default function DenyPreview() {
       {err && (
         <section className="card span3">
           <p className="warning">{err}</p>
+        </section>
+      )}
+
+      {lockout && (
+        <section className="card span3">
+          <p className="eyebrow">SELF-LOCKOUT CHECK</p>
+          <h2 className="card-title">
+            {lockout.risk === 'likely' ? 'This deny would likely cut a control path' : lockout.risk === 'possible' ? 'This deny may reach a control path' : 'No control path reached'}
+          </h2>
+          {(lockout.warnings || []).map((w, i) => (
+            <p className={w.severity === 'critical' ? 'warning' : ''} key={i}>
+              <b>{w.protected}</b>: {w.reason}
+            </p>
+          ))}
+          <p className="empty-state">Checked {(lockout.checked || []).length} protected paths. {lockout.caveat}</p>
         </section>
       )}
 

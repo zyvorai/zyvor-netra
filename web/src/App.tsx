@@ -30,6 +30,7 @@ import SysctlAudit from './pages/SysctlAudit';
 import NodeResources from './pages/NodeResources';
 import DenyPreview from './pages/DenyPreview';
 import Netlink from './pages/Netlink';
+import WhatChanged from './pages/WhatChanged';
 import BpfAttachments from './pages/BpfAttachments';
 import Detect from './pages/Detect';
 import Workloads from './pages/Workloads';
@@ -105,6 +106,12 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     eyebrow: 'Incident timeline',
     title: 'What happened, in order.',
     lede: 'Audit actions and cluster-health signature transitions as a chronology. Never acks or applies.',
+    tint: 'purple',
+  },
+  'what-changed': {
+    eyebrow: 'What changed',
+    title: 'What changed, then what broke.',
+    lede: 'Audit, netlink, BPF attachment, drop, anomaly and alert signals in one order, with suspects and gaps. Read-only.',
     tint: 'purple',
   },
   'process-integrity': {
@@ -431,6 +438,7 @@ export default function App() {
     'drop-reasons': <DropReasons />,
     'listen-queues': <ListenQueues />,
     'incident-timeline': <IncidentTimeline />,
+    'what-changed': <WhatChanged />,
     'process-integrity': <ProcessIntegrity />,
   }[page];
 

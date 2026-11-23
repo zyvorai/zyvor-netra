@@ -456,6 +456,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/v1/lease", s.auth(http.HandlerFunc(s.leaseStatus)))
 	mux.Handle("GET /api/v1/incidents", s.auth(http.HandlerFunc(s.incidents)))
 	mux.Handle("GET /api/v1/incidents/timeline", s.auth(http.HandlerFunc(s.incidentsTimeline)))
+	mux.Handle("GET /api/v1/incidents/changes", s.auth(http.HandlerFunc(s.incidentChanges)))
 	mux.Handle("GET /api/v1/ai/status", s.auth(http.HandlerFunc(s.aiStatus)))
 	mux.Handle("GET /api/v1/ai/brief", s.auth(http.HandlerFunc(s.aiBrief)))
 	mux.Handle("GET /api/v1/ai/congestion-brief", s.auth(http.HandlerFunc(s.aiCongestionBrief)))

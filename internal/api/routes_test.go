@@ -57,6 +57,7 @@ func TestRegisteredAPIRoutes(t *testing.T) {
 		{"GET", "/api/v1/insights/remediations"},
 		{"GET", "/api/v1/incidents"},
 		{"GET", "/api/v1/incidents/timeline"},
+		{"GET", "/api/v1/incidents/changes"},
 		{"GET", "/api/v1/export/audit"},
 		{"GET", "/api/v1/export/events"},
 		{"GET", "/api/v1/export/flows"},

@@ -114,6 +114,16 @@ netractl features disable NAME --yes
 netractl features enable NAME --yes --api   # live env patch via API
 ```
 
+## Incidents and SLOs
+
+```bash
+netractl incidents changes --since 1h --lead 10m [--node NODE]   # what changed, then what broke
+netractl slo                                                     # SLO status and burn rates
+netractl slo lint slo.yaml                                       # validate an OpenSLO file offline
+```
+
+See [`incident-changes.md`](incident-changes.md) and [`workload-metrics-slo.md`](workload-metrics-slo.md).
+
 ## Dashboard login
 
 Same bearer as the CLI: sign in as `admin` with the API key as the password. See [`dashboard-login.md`](dashboard-login.md).

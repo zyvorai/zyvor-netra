@@ -97,6 +97,25 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	if err != nil {
 		return c, err
 	}
+	if path := strings.TrimSpace(getenv("NETRA_SLO_FILE")); path != "" {
+		fileDefs, err := LoadOpenSLOFile(path)
+		if err != nil {
+			return c, err
+		}
+		names := map[string]bool{}
+		for _, d := range defs {
+			names[d.Name] = true
+		}
+		for _, d := range fileDefs {
+			if names[d.Name] {
+				return c, fmt.Errorf("NETRA_SLO_FILE: SLO %q is also defined in NETRA_SLO_DEFINITIONS", d.Name)
+			}
+		}
+		defs = append(defs, fileDefs...)
+		if len(defs) > maxSLOs {
+			return c, fmt.Errorf("NETRA_SLO_DEFINITIONS plus NETRA_SLO_FILE define %d SLOs; the limit is %d", len(defs), maxSLOs)
+		}
+	}
 	c.SLOs = defs
 	return c, nil
 }

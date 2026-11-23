@@ -30,6 +30,7 @@ type denyHistoryResponse struct {
 	Result      *counterfactual.Result `json:"result"`
 	Caveat      string                 `json:"caveat"`
 	Limitations []string               `json:"limitations"`
+	Lockout     *denysim.Lockout       `json:"lockout,omitempty"`
 }
 
 func (s *Server) ebpfDenyPreviewHistory(w http.ResponseWriter, r *http.Request) {
@@ -82,6 +83,7 @@ func (s *Server) ebpfDenyPreviewHistory(w http.ResponseWriter, r *http.Request) 
 		Result:      res,
 		Caveat:      historyPreviewCaveat,
 		Limitations: flowlog.Limitations(),
+		Lockout:     s.denyLockout(body.Proposal),
 	})
 }
 
