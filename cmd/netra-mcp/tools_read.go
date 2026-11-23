@@ -861,6 +861,41 @@ func registerReadTools(srv *mcpserver.Server, c *client) error {
 			queryParams: []string{"since", "lead", "node"},
 		},
 		{
+			name: "netra_capacity_forecast", method: "GET", path: "/api/v1/capacity/forecast",
+			description: "Per-node time-to-exhaustion forecast for the conntrack table and the ephemeral port range, from the stored per-second utilization series (linear fit plus a check of the most recent samples; silent when the trend is flat, noisy or reversing). Ephemeral-port utilization is the host's own sockets toward the busiest single destination; SNAT ports are not visible. Needs the metrics platform. Read-only: changes no sysctl.",
+			schema: objSchema(map[string]any{
+				"window": strProp("History to fit, e.g. 1h. Default 1h, 10m to 24h."),
+				"node":   strProp("Comma-separated node names or globs."),
+			}),
+			queryParams: []string{"window", "node"},
+		},
+		{
+			name: "netra_security_floods", method: "GET", path: "/api/v1/security/floods",
+			description: "Inbound volumetric flood findings: per node SYN-queue, passive-open, UDP, ICMP and fragment rates against a robust baseline, plus per-source rates from the XDP shield with a SUGGESTED deny for public sources (review through netra_ebpf_deny_preview; the self-lockout check is attached and a suggestion that would reach a protected path is withheld). Detection and suggestion only: applies nothing, flips no mode. Source addresses of a flood are often spoofed.",
+			schema: objSchema(map[string]any{
+				"window": strProp("Baseline window, e.g. 30m. Default 30m, 10m to 6h."),
+			}),
+			queryParams: []string{"window"},
+		},
+		{
+			name: "netra_insights_tls_posture", method: "GET", path: "/api/v1/insights/tls-posture",
+			description: "TLS client posture inventory from JA4 ClientHello metadata: the highest TLS version each workload and SNI offered (1.3, 1.2, 1.1, SSL 3.0), legacy-maximum clients flagged, TLS 1.3 share. Shows what a client offers, not what was negotiated; no certificates, no cipher list, no decryption. Samples, not connection counts. Read-only.",
+			schema:      objSchema(map[string]any{}),
+		},
+		{
+			name: "netra_export_flow_summary", method: "GET", path: "/api/v1/export/flow-summary",
+			description: "Retained flow deltas aggregated per node, workload, peer, port, protocol and direction as flow summary records named after IANA IPFIX information elements (octetDeltaCount, sourceIPv4Address, ...), as JSON, JSON lines or CSV. Not an IPFIX wire exporter. Bounded; no payloads. Read-only.",
+			schema: objSchema(map[string]any{
+				"format":    enumProp("Output format.", "json", "jsonl", "csv"),
+				"since":     strProp("Duration within flow retention (default 1h) or RFC3339."),
+				"limit":     intProp("Summary records to return, largest by bytes first (default 1000, max 10000)."),
+				"namespace": strProp("Limit to one namespace."),
+				"node":      strProp("Limit to one node."),
+				"protocol":  strProp("Limit to TCP, UDP or ICMP."),
+			}),
+			queryParams: []string{"format", "since", "limit", "namespace", "node", "protocol"},
+		},
+		{
 			name: "netra_insights_policy_review", method: "GET", path: "/api/v1/insights/policy-review",
 			description: "Full review for one policy recommendation (from netra_insights_recommendations): which live CiliumNetworkPolicy actually governs the workload (best-effort label match, may be ambiguous), a semantic diff against it, a traffic-aware blast-radius check for each destination the diff would remove (CIDR destinations checked against live traffic; FQDN/entity destinations honestly marked \"could not correlate\", never a false negative), and recent policy revision history. Read-only — never applies anything.",
 			schema: objSchema(map[string]any{

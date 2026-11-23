@@ -36,6 +36,9 @@ func allCLICommands() []cliCommand {
 
 		{Name: "security-optimizer", Args: []string{"security", "optimizer"}},
 		{Name: "security-incidents", Args: []string{"security", "incidents"}},
+		{Name: "security-floods", Args: []string{"security", "floods"}},
+		{Name: "security-floods-window", Args: []string{"security", "floods", "30m"}},
+		{Name: "capacity-forecast", Args: []string{"capacity", "forecast", "--window", "1h"}, Optional: true},
 		{Name: "intel-history", Args: []string{"intel", "history"}},
 		{Name: "intel-rollback", Args: []string{"intel", "rollback", "1"}, Mutating: true},
 		{Name: "audit", Args: []string{"audit"}},
@@ -44,6 +47,7 @@ func allCLICommands() []cliCommand {
 		{Name: "export-audit", Args: []string{"export", "audit", "--limit", "5"}},
 		{Name: "export-events", Args: []string{"export", "events", "--limit", "5"}},
 		{Name: "export-flows", Args: []string{"export", "flows", "--limit", "5"}},
+		{Name: "export-flow-summary", Args: []string{"export", "flow-summary", "--format", "csv", "--limit", "5", "--since", "15m"}},
 		{Name: "export-blocks", Args: []string{"export", "blocks", "--limit", "5"}},
 		{Name: "export-status", Args: []string{"export", "status"}},
 
@@ -183,7 +187,7 @@ func insightsReadCommands() []cliCommand {
 		"recommendations", "zero-trust", "microseg", "shadow-saas", "experience",
 		"red", "traces", "profiles", "workload-events", "kernel-notes",
 		"destination-risk", "policy-packs", "identity-drafts", "ech-blind",
-		"exfil", "lateral", "category-deny",
+		"exfil", "lateral", "category-deny", "tls-posture",
 	}
 	out := make([]cliCommand, 0, len(names)+6)
 	for _, n := range names {

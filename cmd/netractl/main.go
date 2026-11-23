@@ -190,10 +190,16 @@ func run(args []string) error {
 	case "playbooks", "playbook":
 		return playbooksCmd(args[1:])
 	case "security":
-		if len(args) != 2 || (args[1] != "optimizer" && args[1] != "incidents") {
-			return fmt.Errorf("security optimizer|incidents")
+		if len(args) == 3 && args[1] == "floods" {
+			// security floods [WINDOW]: inbound volumetric flood findings (detection and suggestion only)
+			return request("GET", "/api/v1/security/floods?window="+url.QueryEscape(args[2]), nil)
+		}
+		if len(args) != 2 || (args[1] != "optimizer" && args[1] != "incidents" && args[1] != "floods") {
+			return fmt.Errorf("security optimizer|incidents|floods [WINDOW]")
 		}
 		return request("GET", "/api/v1/security/"+args[1], nil)
+	case "capacity":
+		return capacityCmd(args[1:])
 	case "intel":
 		return intelCmd(args[1:])
 	case "watchlist":
@@ -1694,6 +1700,8 @@ func insightCmd() error {
 		return request("GET", p, nil)
 	case "protocol-downgrades":
 		return request("GET", "/api/v1/insights/protocol-downgrades", nil)
+	case "tls-posture":
+		return request("GET", "/api/v1/insights/tls-posture", nil)
 	case "policy-review":
 		if len(os.Args) < 4 {
 			return fmt.Errorf("policy-review requires a recommendation ID (see insights recommendations for ids)")
@@ -2047,4 +2055,26 @@ func sloLint(path string, out io.Writer) error {
 	enc := json.NewEncoder(out)
 	enc.SetIndent("", "  ")
 	return enc.Encode(map[string]any{"ok": true, "count": len(vs), "slos": vs})
+}
+
+// capacityCmd: capacity forecast [--window 1h] [--node GLOB]. Read-only.
+func capacityCmd(args []string) error {
+	if len(args) < 1 || args[0] != "forecast" {
+		return fmt.Errorf("usage: netractl capacity forecast [--window 1h] [--node NODE]")
+	}
+	q := url.Values{}
+	for i := 1; i < len(args); i += 2 {
+		if args[i] != "--window" && args[i] != "--node" {
+			return fmt.Errorf("unknown capacity forecast flag %s (use --window, --node)", args[i])
+		}
+		if i+1 >= len(args) {
+			return fmt.Errorf("%s requires a value", args[i])
+		}
+		q.Set(strings.TrimPrefix(args[i], "--"), args[i+1])
+	}
+	p := "/api/v1/capacity/forecast"
+	if len(q) > 0 {
+		p += "?" + q.Encode()
+	}
+	return request("GET", p, nil)
 }
