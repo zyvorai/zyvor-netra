@@ -1074,6 +1074,7 @@ func registerReadTools(srv *mcpserver.Server, c *client) error {
 		},
 	}
 
+	tools = append(tools, denysetReadTools()...)
 	for _, t := range tools {
 		if err := registerEndpointTool(srv, c, t); err != nil {
 			return err

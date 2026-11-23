@@ -135,6 +135,19 @@ netractl export flow-summary --format csv --since 1h --limit 1000 [--namespace N
 
 See [`flood-detection.md`](flood-detection.md), [`capacity-forecast.md`](capacity-forecast.md), [`tls-posture.md`](tls-posture.md) and [`flow-summary-export.md`](flow-summary-export.md).
 
+## Leased deny files and lease visibility
+
+```bash
+netractl denyset validate incident.denyset
+netractl denyset plan incident.denyset
+netractl denyset apply incident.denyset --plan-hash HASH --confirm-risk high
+netractl denyset leases --expiring        # leases ending within 15m
+netractl denyset history --owner incident-4711
+netractl denyset rails
+```
+
+File format, plan hash, ownership and rails: `docs/denyset.md`, `docs/lease-rails.md`.
+
 ## Dashboard login
 
 Same bearer as the CLI: sign in as `admin` with the API key as the password. See [`dashboard-login.md`](dashboard-login.md).

@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/zyvorai/netra/internal/flowlog"
+	"github.com/zyvorai/netra/internal/leaserails"
 	"github.com/zyvorai/netra/internal/models"
 )
 
@@ -98,6 +99,15 @@ type Store struct {
 	// flowPath (state file + ".flows"), not inside the state JSON.
 	flowLog  *flowlog.Log
 	flowPath string
+	// Denyset leases (denylease.go): bounded deny rules owned by a declarative
+	// denyset, with their timeline and the operator rail configuration.
+	denyLeases  map[string]models.DenyLease // key: rule index type|key
+	leaseEvents []models.LeaseEvent
+	leaseCounts map[string]uint64
+	railTrips   map[string]uint64
+	leaseRev    uint64
+	rails       leaserails.Config
+	actorOps    map[string][]time.Time
 }
 
 func New() *Store {
@@ -225,6 +235,7 @@ func (s *Store) normalizeLocked(now time.Time) {
 			delete(s.preflights, token)
 		}
 	}
+	s.expireDenyLeasesLocked(now)
 	if len(s.config.NetPolDefaultDenies) > 0 {
 		out := make([]models.NetPolDefaultDeny, 0, len(s.config.NetPolDefaultDenies))
 		expired := false

@@ -50,6 +50,8 @@ type diskState struct {
 	CaptureHistory        []models.CaptureHistoryEntry  `json:"captureHistory,omitempty"`
 	NodeIsolation         []models.NodeIsolationSpec    `json:"nodeIsolation,omitempty"`
 	NodeIsolationRevision uint64                        `json:"nodeIsolationRevision,omitempty"`
+	DenyLeases            []models.DenyLease            `json:"denyLeases,omitempty"`
+	LeaseEvents           []models.LeaseEvent           `json:"leaseEvents,omitempty"`
 }
 
 // Open returns a store backed by an atomically replaced JSON state file. The
@@ -190,6 +192,17 @@ func (s *Store) load() error {
 			s.nextRuleSeq[typ] = n
 		}
 	}
+	s.denyLeases = map[string]models.DenyLease{}
+	for i, l := range d.DenyLeases {
+		if i >= maxDenyLeases || l.Owner == "" || (l.Type != "cidr" && l.Type != "port") {
+			continue
+		}
+		s.denyLeases[l.Type+"|"+l.Key] = l
+	}
+	if len(d.LeaseEvents) > maxLeaseEvents {
+		d.LeaseEvents = d.LeaseEvents[len(d.LeaseEvents)-maxLeaseEvents:]
+	}
+	s.leaseEvents = append([]models.LeaseEvent(nil), d.LeaseEvents...)
 	s.firewallRuleRevisions = append([]models.FirewallRuleRevision(nil), tailFirewallRevisions(d.FirewallRuleRevisions, 1000)...)
 	s.nextFirewallRevID = d.NextFirewallRevID
 	for _, r := range s.firewallRuleRevisions {
@@ -321,7 +334,14 @@ func (s *Store) persistLocked() error {
 		NextFirewallRevID:     s.nextFirewallRevID,
 		CaptureHistory:        append([]models.CaptureHistoryEntry(nil), s.captureHistory...),
 		NodeIsolationRevision: s.nodeIsolationRev,
+		LeaseEvents:           append([]models.LeaseEvent(nil), s.leaseEvents...),
 	}
+	for _, l := range s.denyLeases {
+		d.DenyLeases = append(d.DenyLeases, l)
+	}
+	sort.Slice(d.DenyLeases, func(i, j int) bool {
+		return d.DenyLeases[i].Type+d.DenyLeases[i].Key < d.DenyLeases[j].Type+d.DenyLeases[j].Key
+	})
 	for _, spec := range s.nodeIsolation {
 		d.NodeIsolation = append(d.NodeIsolation, cloneNodeIsolation(spec))
 	}
