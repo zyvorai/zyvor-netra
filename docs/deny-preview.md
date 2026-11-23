@@ -72,6 +72,10 @@ Both previews return a `lockout` object:
 
 This is the controller's own view. It cannot see node-local resolvers, cloud metadata or paths it does not know about, so `none-detected` is not a guarantee, and nothing blocks an apply: enforce stays leased, risk-confirmed and fail-open. List what you cannot lose in `NETRA_PROTECTED_DESTINATIONS`.
 
+## From preview to a leased apply
+
+`netractl denyset plan FILE` runs this preview and the lockout check for every rule of a declarative denyset and returns a plan hash; see [`denyset.md`](denyset.md). Operators can bound lease creation with [`lease-rails.md`](lease-rails.md).
+
 ## Evidence boundaries
 
 - Live hits are **cumulative counters from the current agent snapshot**.
