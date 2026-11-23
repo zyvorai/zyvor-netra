@@ -118,11 +118,15 @@ netractl features enable NAME --yes --api   # live env patch via API
 
 ```bash
 netractl incidents changes --since 1h --lead 10m [--node NODE]   # what changed, then what broke
+netractl incident bundle --minutes 15 --out incident.json        # flight recorder: one redacted, hash-chained bundle
+netractl incident bundle --minutes 15 --mask-ips=prefix --exclude audit --out incident.tar.gz
+netractl incident verify incident.json                           # offline, fails closed
+netractl incident diff before.json after.json                    # what differs between two bundles
 netractl slo                                                     # SLO status and burn rates
 netractl slo lint slo.yaml                                       # validate an OpenSLO file offline
 ```
 
-See [`incident-changes.md`](incident-changes.md) and [`workload-metrics-slo.md`](workload-metrics-slo.md).
+See [`incident-bundle.md`](incident-bundle.md), [`incident-changes.md`](incident-changes.md) and [`workload-metrics-slo.md`](workload-metrics-slo.md).
 
 ## Floods, capacity, TLS posture and flow export
 

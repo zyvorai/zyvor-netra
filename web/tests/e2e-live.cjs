@@ -32,7 +32,7 @@ const PAGES = [
   'overview', 'connections', 'workloads', 'explain', 'pods', 'vms', 'investigate', 'flow-observe',
   'health', 'path', 'drops', 'congestion', 'sysctl-audit', 'node-resources', 'l7', 'deny-preview', 'deny-leases',
   'netlink', 'bpf-attachments', 'ebpf-maps', 'detect', 'surfaces', 'tls-fingerprints', 'features',
-  'insights', 'topology', 'incidents', 'incident-timeline', 'what-changed', 'network-risk', 'security-review', 'policies', 'flows',
+  'insights', 'topology', 'incidents', 'incident-timeline', 'what-changed', 'incident-bundle', 'network-risk', 'security-review', 'policies', 'flows',
   'ebpf', 'audit', 'report', 'scorecard', 'talkers', 'fleet', 'traffic', 'capture', 'metrics',
   'metric-anomalies', 'metric-alerts', 'ai', 'handoff', 'slo', 'drop-reasons', 'listen-queues',
   'process-integrity',

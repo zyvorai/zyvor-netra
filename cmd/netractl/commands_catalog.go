@@ -133,6 +133,11 @@ func allCLICommands() []cliCommand {
 		{Name: "incidents", Args: []string{"incidents"}},
 		{Name: "incidents-timeline", Args: []string{"incidents", "timeline"}},
 		{Name: "incidents-changes", Args: []string{"incidents", "changes", "--since", "1h"}},
+		{Name: "incident-bundle", Args: []string{"incident", "bundle", "--minutes", "5", "--out", "$FILE"}, FileKind: "out"},
+		{Name: "incident-bundle-masked", Args: []string{"incident", "bundle", "--minutes", "5", "--mask-ips=prefix", "--exclude", "audit,flows", "--out", "$FILE"}, FileKind: "out"},
+		{Name: "incident-bundle-tgz", Args: []string{"incident", "bundle", "--minutes", "5", "--format", "tgz", "--out", "$FILE"}, FileKind: "out"},
+		{Name: "incident-verify", Args: []string{"incident", "verify", "$FILE"}, FileKind: "bundle", Local: true},
+		{Name: "incident-diff", Args: []string{"incident", "diff", "$FILE", "$FILE"}, FileKind: "bundle", Local: true},
 
 		// Explain with fixture input
 		{Name: "explain-all", Args: []string{"explain", "--all", "--input", "$FILE", "--format", "json"}, FileKind: "explain"},

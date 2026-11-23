@@ -12,6 +12,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/zyvorai/netra/internal/incidentbundle"
 )
 
 func TestAllCLICommandsAgainstMock(t *testing.T) {
@@ -100,6 +103,12 @@ func writeCLIFixture(t *testing.T, kind string) string {
 	case "out":
 		body = nil // export destination; create empty file path only
 		path = filepath.Join(dir, "archive-out.json")
+	case "bundle":
+		raw, _, err := incidentbundle.Build(incidentbundle.Inputs{Now: time.Now(), Window: 5 * time.Minute, Version: "ci", Mode: "observe"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		body = raw
 	case "denyset":
 		body = []byte("netra-denyset/1\nname: ci\nlease: 10m\ndeny cidr 203.0.113.0/24 egress\n")
 	case "scope":
@@ -139,6 +148,13 @@ func mockNetraAPI(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{"ok":true,"brief":"ci","answer":"ci","status":"ready"}`))
 	case path == "/api/v1/agents":
 		_, _ = io.WriteString(w, `{"items":[]}`)
+	case path == "/api/v1/incident/bundle":
+		raw, _, err := incidentbundle.Build(incidentbundle.Inputs{Now: time.Now(), Window: 5 * time.Minute, Version: "ci", Mode: "observe"})
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		_, _ = w.Write(raw)
 	default:
 		// Most list endpoints accept an empty object or array.
 		if r.Method == http.MethodGet && (strings.Contains(path, "/export/") || strings.HasSuffix(path, "/report") || strings.Contains(path, "playbooks") || strings.Contains(path, "handoff")) {

@@ -47,6 +47,7 @@ each "helm Chart version"          helm/netra/Chart.yaml       's/^version: "\{0
 each "helm Chart appVersion"       helm/netra/Chart.yaml       's/^appVersion: "\{0,1\}\([^"]*\)"\{0,1\}$/\1/p'
 each "helm values tag"             helm/netra/values.yaml      's/^ *tag: "\{0,1\}\([^"]*\)"\{0,1\}$/\1/p'
 each "internal/api/server.go"      internal/api/server.go      's/.*"version": "\([0-9][0-9.]*\)".*/\1/p'
+each "internal/api/incident_bundle.go" internal/api/incident_bundle.go 's/^const controllerVersion = "\(.*\)"$/\1/p'
 each "deploy image tags"           deploy/controller.yaml      's#.*image: ghcr.io/zyvorai/netra:\(.*\)$#\1#p'
 each "deploy agent image tag"      deploy/agent.yaml           's#.*image: ghcr.io/zyvorai/netra-agent:\(.*\)$#\1#p'
 
