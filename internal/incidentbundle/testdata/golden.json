@@ -1,0 +1,793 @@
+{
+  "schema": "netra-incident-bundle/1",
+  "generatedAt": "2026-11-20T12:00:00Z",
+  "window": {
+    "start": "2026-11-20T11:30:00Z",
+    "end": "2026-11-20T12:00:00Z",
+    "minutes": 30
+  },
+  "identity": {
+    "product": "netra",
+    "component": "netrad",
+    "version": "0.32.0",
+    "scope": "cluster",
+    "mode": "observe",
+    "nodes": 2,
+    "staleNodes": 0
+  },
+  "redaction": {
+    "approach": "allow-list: every section is a typed struct of permitted fields; all strings pass one scrubber; verify refuses unknown fields",
+    "maskIps": "none",
+    "excludedSections": [],
+    "neverIncluded": [
+      {
+        "section": "flows",
+        "fields": [
+          "payload or packet bytes",
+          "local address",
+          "pid",
+          "comm",
+          "dnsName",
+          "tlsSni"
+        ],
+        "reason": "flows are per-peer aggregates of retained deltas; only the allow-listed columns exist"
+      },
+      {
+        "section": "network_changes",
+        "fields": [
+          "mac address",
+          "argv",
+          "environment",
+          "message bytes beyond the typed fields"
+        ],
+        "reason": "requester attribution is comm, pid and confidence only"
+      },
+      {
+        "section": "metadata",
+        "fields": [
+          "queried subdomain labels",
+          "example query names",
+          "URL path",
+          "query string",
+          "header",
+          "cookie",
+          "body",
+          "JA3 or JA4 hashes"
+        ],
+        "reason": "DNS findings keep the registered domain and signal names; HTTP keeps method and host; TLS keeps SNI and counts"
+      },
+      {
+        "section": "ebpf",
+        "fields": [
+          "rule values",
+          "bytecode",
+          "map contents",
+          "workload inventory"
+        ],
+        "reason": "deny state is counts plus live leases; attachments are ids, names and owner classes"
+      },
+      {
+        "section": "audit",
+        "fields": [
+          "request bodies",
+          "details keys outside the allow-list",
+          "non-scalar details"
+        ],
+        "reason": "audit details are reduced to a fixed key allow-list of scalar values"
+      },
+      {
+        "section": "metrics",
+        "fields": [
+          "label values",
+          "process names",
+          "cgroup paths"
+        ],
+        "reason": "series are key signals only, by context and dimension"
+      },
+      {
+        "section": "insights",
+        "fields": [
+          "process command lines",
+          "comm",
+          "pid",
+          "uid"
+        ],
+        "reason": "alerts, transitions, anomaly buckets and drop attribution without process identity"
+      },
+      {
+        "section": "timeline",
+        "fields": [
+          "anything not already in another section"
+        ],
+        "reason": "the timeline only points into the sections above"
+      }
+    ],
+    "applied": [
+      {
+        "rule": "aws-access-key",
+        "count": 1
+      },
+      {
+        "rule": "bearer-token",
+        "count": 1
+      },
+      {
+        "rule": "credential-assignment",
+        "count": 7
+      },
+      {
+        "rule": "invalid-hostname",
+        "count": 4
+      },
+      {
+        "rule": "jwt",
+        "count": 1
+      },
+      {
+        "rule": "url-credentials",
+        "count": 1
+      },
+      {
+        "rule": "url-query",
+        "count": 1
+      }
+    ]
+  },
+  "bounds": {
+    "maxWindowMinutes": 1440,
+    "maxTotalBytes": 8388608,
+    "maxSeries": 60,
+    "maxPointsPerSeries": 120,
+    "maxRowsPerList": 4096,
+    "bytes": 8417
+  },
+  "sections": {
+    "audit": {
+      "available": true,
+      "entries": [
+        {
+          "action": "ebpf.mode",
+          "actor": "alice",
+          "at": "2026-11-20T11:52:00Z",
+          "details": {
+            "lease": "300",
+            "mode": "enforce",
+            "reason": "[redacted] see https://h.example/x"
+          },
+          "target": "cluster"
+        }
+      ],
+      "truncated": []
+    },
+    "ebpf": {
+      "attachments": [
+        {
+          "available": true,
+          "hash": "abc123",
+          "interfaces": [
+            {
+              "name": "eth0",
+              "programs": [
+                {
+                  "hook": "xdp",
+                  "id": 12,
+                  "mode": "native",
+                  "name": "netra_xdp",
+                  "owner": "netra"
+                },
+                {
+                  "hook": "tcx-ingress",
+                  "id": 11,
+                  "name": "netra_tc_in",
+                  "owner": "netra"
+                }
+              ],
+              "state": "up",
+              "type": "ether"
+            }
+          ],
+          "node": "node-a",
+          "observedAt": "2026-11-20T11:59:00Z",
+          "total": 1
+        },
+        {
+          "available": true,
+          "hash": "abc123",
+          "interfaces": [
+            {
+              "name": "eth0",
+              "programs": [
+                {
+                  "hook": "xdp",
+                  "id": 12,
+                  "mode": "native",
+                  "name": "netra_xdp",
+                  "owner": "netra"
+                },
+                {
+                  "hook": "tcx-ingress",
+                  "id": 11,
+                  "name": "netra_tc_in",
+                  "owner": "netra"
+                }
+              ],
+              "state": "up",
+              "type": "ether"
+            }
+          ],
+          "node": "node-b",
+          "observedAt": "2026-11-20T11:59:00Z",
+          "total": 1
+        }
+      ],
+      "available": true,
+      "deny": {
+        "counts": {
+          "allowedCidrs": 0,
+          "allowedIPv4": 0,
+          "allowedIPv6": 0,
+          "allowedPorts": 0,
+          "allowedProcesses": 0,
+          "allowedUids": 0,
+          "blockedCidrs": 0,
+          "blockedDns": 1,
+          "blockedIPv4": 1,
+          "blockedIPv6": 0,
+          "blockedIngressIPv4": 0,
+          "blockedIngressIPv6": 0,
+          "blockedPorts": 0,
+          "blockedProcesses": 0,
+          "blockedSni": 0,
+          "blockedUids": 0,
+          "connRateLimits": 0,
+          "netPolDenies": 0,
+          "netPolRules": 0,
+          "rateLimits": 0,
+          "workloadScopes": 0
+        },
+        "mode": "observe",
+        "revision": 7
+      },
+      "findings": [
+        {
+          "interfaces": [
+            "eth0"
+          ],
+          "kind": "hook-drift",
+          "message": "program replaced [redacted]",
+          "node": "node-a",
+          "severity": "warning",
+          "subject": "eth0"
+        }
+      ],
+      "leaseChanges": [
+        {
+          "action": "create",
+          "actor": "alice",
+          "at": "2026-11-20T11:53:00Z",
+          "leaseSeconds": 600,
+          "owner": "ds1",
+          "rule": "egress|203.0.113.0/24"
+        },
+        {
+          "action": "reject",
+          "actor": "bob",
+          "at": "2026-11-20T11:54:00Z",
+          "owner": "ds2",
+          "rails": [
+            "catch-all"
+          ],
+          "reason": "[redacted]"
+        }
+      ],
+      "leases": [
+        {
+          "createdAt": "2026-11-20T11:53:00Z",
+          "createdBy": "alice",
+          "expiresAt": "2026-11-20T12:03:00Z",
+          "key": "egress|203.0.113.0/24",
+          "leaseSeconds": 600,
+          "owner": "ds1",
+          "summary": "deny egress 203.0.113.0/24",
+          "type": "cidr"
+        }
+      ],
+      "truncated": []
+    },
+    "flows": {
+      "aggregated": 1,
+      "available": true,
+      "flows": [
+        {
+          "bytes": 6000,
+          "direction": "egress",
+          "firstSeen": "2026-11-20T11:55:00Z",
+          "lastSeen": "2026-11-20T11:56:00Z",
+          "namespace": "prod",
+          "node": "node-a",
+          "packets": 15,
+          "peer": "203.0.113.9",
+          "port": 443,
+          "protocol": "TCP",
+          "workload": "web"
+        }
+      ],
+      "observedDeltas": 2,
+      "talkers": [
+        {
+          "blocked": 4,
+          "bytes": 18000,
+          "destination": "203.0.113.9",
+          "nodes": 2,
+          "packets": 200
+        }
+      ],
+      "truncated": []
+    },
+    "insights": {
+      "alerts": [
+        {
+          "chart": "ebpf.conntrack_entries",
+          "context": "ebpf.conntrack_entries",
+          "info": "[redacted]",
+          "node": "node-a",
+          "rule": "conntrack-high",
+          "since": "2026-11-20T11:48:00Z",
+          "status": "critical",
+          "units": "entries",
+          "value": 91
+        }
+      ],
+      "anomalies": [
+        {
+          "at": "2026-11-20T11:49:00Z",
+          "node": "node-a",
+          "ratePercent": 55
+        }
+      ],
+      "available": true,
+      "drops": [
+        {
+          "code": "policy",
+          "confidence": "high",
+          "dst": "203.0.113.9",
+          "explanation": "dropped by deny rule; [redacted]",
+          "node": "node-a",
+          "packets": 33,
+          "src": "10.0.0.5",
+          "stage": "tc-egress"
+        }
+      ],
+      "transitions": [
+        {
+          "at": "2026-11-20T11:48:00Z",
+          "chart": "ebpf.conntrack_entries",
+          "from": "clear",
+          "info": "[redacted]",
+          "node": "node-a",
+          "rule": "conntrack-high",
+          "to": "critical"
+        }
+      ],
+      "truncated": []
+    },
+    "metadata": {
+      "available": true,
+      "dnsFindings": [
+        {
+          "count": 40,
+          "domain": "tunnel.example",
+          "firstSeen": "2026-11-20T11:40:00Z",
+          "lastSeen": "2026-11-20T11:58:00Z",
+          "namespace": "prod",
+          "node": "node-a",
+          "score": 0.81,
+          "severity": "warning",
+          "signals": [
+            "high-entropy"
+          ],
+          "type": "tunneling",
+          "workload": "web"
+        }
+      ],
+      "dnsHealth": [
+        {
+          "failures": 2,
+          "maxLatencyUs": 900,
+          "name": "api.example.com",
+          "namespace": "prod",
+          "node": "node-a",
+          "queries": 10,
+          "responses": 8,
+          "workload": "web"
+        },
+        {
+          "failures": 2,
+          "maxLatencyUs": 900,
+          "name": "api.example.com",
+          "namespace": "prod",
+          "node": "node-b",
+          "queries": 10,
+          "responses": 8,
+          "workload": "web"
+        }
+      ],
+      "http": [
+        {
+          "host": "svc.example.com",
+          "method": "GET",
+          "namespace": "prod",
+          "node": "node-a",
+          "requests": 5,
+          "workload": "web"
+        },
+        {
+          "host": "svc.example.com",
+          "method": "GET",
+          "namespace": "prod",
+          "node": "node-b",
+          "requests": 5,
+          "workload": "web"
+        },
+        {
+          "host": "[invalid-hostname]",
+          "method": "OTHER",
+          "node": "node-a",
+          "requests": 1
+        },
+        {
+          "host": "[invalid-hostname]",
+          "method": "OTHER",
+          "node": "node-b",
+          "requests": 1
+        }
+      ],
+      "httpStatus": [
+        {
+          "count": 4,
+          "namespace": "prod",
+          "node": "node-a",
+          "status": 503,
+          "workload": "web"
+        },
+        {
+          "count": 4,
+          "namespace": "prod",
+          "node": "node-b",
+          "status": 503,
+          "workload": "web"
+        }
+      ],
+      "note": "DNS health, TLS and HTTP rows are the agents' cumulative counters since agent start; DNS findings are the detector's live findings",
+      "tls": [
+        {
+          "blocked": 1,
+          "handshakes": 7,
+          "namespace": "prod",
+          "node": "node-a",
+          "sni": "api.example.com",
+          "workload": "web"
+        },
+        {
+          "blocked": 1,
+          "handshakes": 7,
+          "namespace": "prod",
+          "node": "node-b",
+          "sni": "api.example.com",
+          "workload": "web"
+        },
+        {
+          "blocked": 0,
+          "handshakes": 1,
+          "node": "node-a",
+          "sni": "[invalid-hostname]"
+        },
+        {
+          "blocked": 0,
+          "handshakes": 1,
+          "node": "node-b",
+          "sni": "[invalid-hostname]"
+        }
+      ],
+      "truncated": []
+    },
+    "metrics": {
+      "available": true,
+      "series": [
+        {
+          "avg": 20.666666666666668,
+          "context": "ebpf.packets",
+          "dimension": "observed",
+          "last": 40,
+          "max": 40,
+          "min": 10,
+          "scope": "all",
+          "startUnix": 1795175940,
+          "stepSeconds": 15,
+          "units": "packets/s",
+          "values": [
+            10,
+            12,
+            null,
+            40
+          ]
+        },
+        {
+          "avg": 2.5,
+          "context": "system.cpu",
+          "dimension": "user",
+          "last": 4,
+          "max": 4,
+          "min": 1,
+          "scope": "all",
+          "startUnix": 1795175940,
+          "stepSeconds": 15,
+          "units": "%",
+          "values": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      ],
+      "truncated": []
+    },
+    "network_changes": {
+      "available": true,
+      "events": [
+        {
+          "action": "new",
+          "actorComm": "ip",
+          "actorConfidence": "high",
+          "actorPid": 99,
+          "at": "2026-11-20T11:50:00Z",
+          "destination": "10.1.0.0/24",
+          "gateway": "10.0.0.1",
+          "interface": "eth0",
+          "kind": "route",
+          "node": "node-a"
+        },
+        {
+          "action": "new",
+          "at": "2026-11-20T11:51:00Z",
+          "detail": "ENOBUFS [redacted]",
+          "kind": "overrun",
+          "node": "node-a"
+        }
+      ],
+      "truncated": []
+    },
+    "nodes": {
+      "available": true,
+      "gaps": [
+        "netlink recorder on node-a lost events (overruns=1 missed=0 since agent start)",
+        "netlink recorder on node-b lost events (overruns=1 missed=0 since agent start)"
+      ],
+      "items": [
+        {
+          "ageSeconds": 3,
+          "bpfAttachAvailable": true,
+          "hooks": [
+            "tc"
+          ],
+          "interfaces": 2,
+          "mode": "observe",
+          "netlinkAvailable": true,
+          "netlinkOverruns": 1,
+          "node": "node-a",
+          "stale": false,
+          "standalone": true,
+          "startedAt": "2026-11-20T07:00:00Z"
+        },
+        {
+          "ageSeconds": 3,
+          "bpfAttachAvailable": true,
+          "hooks": [
+            "tc"
+          ],
+          "interfaces": 2,
+          "mode": "observe",
+          "netlinkAvailable": true,
+          "netlinkOverruns": 1,
+          "node": "node-b",
+          "stale": false,
+          "standalone": true,
+          "startedAt": "2026-11-20T07:00:00Z"
+        }
+      ],
+      "truncated": []
+    },
+    "timeline": {
+      "available": true,
+      "counts": {
+        "break": 3,
+        "category:alert": 2,
+        "category:anomaly": 1,
+        "category:audit": 1,
+        "category:ebpf": 1,
+        "category:finding": 2,
+        "category:lease": 2,
+        "category:network": 2,
+        "change": 4,
+        "context": 1,
+        "state": 3
+      },
+      "entries": [
+        {
+          "at": "2026-11-20T11:48:00Z",
+          "atKnown": true,
+          "category": "alert",
+          "class": "break",
+          "node": "node-a",
+          "ref": "insights/transitions/0",
+          "severity": "critical",
+          "summary": "alert conntrack-high on node-a clear -\u003e critical"
+        },
+        {
+          "at": "2026-11-20T11:49:00Z",
+          "atKnown": true,
+          "category": "anomaly",
+          "class": "break",
+          "node": "node-a",
+          "ref": "insights/anomalies/0",
+          "severity": "critical",
+          "summary": "55% of samples anomalous on node-a"
+        },
+        {
+          "at": "2026-11-20T11:50:00Z",
+          "atKnown": true,
+          "category": "network",
+          "class": "change",
+          "node": "node-a",
+          "ref": "network_changes/events/0",
+          "severity": "info",
+          "summary": "route new 10.1.0.0/24 via 10.0.0.1 dev eth0 (by ip pid 99)"
+        },
+        {
+          "at": "2026-11-20T11:51:00Z",
+          "atKnown": true,
+          "category": "network",
+          "class": "context",
+          "node": "node-a",
+          "ref": "network_changes/events/1",
+          "severity": "warning",
+          "summary": "overrun new  (ENOBUFS [redacted]"
+        },
+        {
+          "at": "2026-11-20T11:52:00Z",
+          "atKnown": true,
+          "category": "audit",
+          "class": "change",
+          "ref": "audit/entries/0",
+          "severity": "info",
+          "summary": "alice ebpf.mode cluster"
+        },
+        {
+          "at": "2026-11-20T11:53:00Z",
+          "atKnown": true,
+          "category": "lease",
+          "class": "change",
+          "ref": "ebpf/leaseChanges/0",
+          "severity": "info",
+          "summary": "deny lease create egress|203.0.113.0/24"
+        },
+        {
+          "at": "2026-11-20T11:54:00Z",
+          "atKnown": true,
+          "category": "lease",
+          "class": "change",
+          "ref": "ebpf/leaseChanges/1",
+          "severity": "warning",
+          "summary": "deny lease reject ds2"
+        },
+        {
+          "at": "2026-11-20T11:58:00Z",
+          "atKnown": true,
+          "category": "finding",
+          "class": "break",
+          "node": "node-a",
+          "ref": "metadata/dnsFindings/0",
+          "severity": "warning",
+          "summary": "dns tunneling on tunnel.example (score 0.81)"
+        },
+        {
+          "atKnown": false,
+          "category": "alert",
+          "class": "state",
+          "node": "node-a",
+          "ref": "insights/alerts/0",
+          "severity": "critical",
+          "summary": "alert conntrack-high raised (critical) on node-a"
+        },
+        {
+          "atKnown": false,
+          "category": "ebpf",
+          "class": "state",
+          "node": "node-a",
+          "ref": "ebpf/findings/0",
+          "severity": "warning",
+          "summary": "hook-drift: program replaced [redacted]"
+        },
+        {
+          "atKnown": false,
+          "category": "finding",
+          "class": "state",
+          "node": "node-a",
+          "ref": "insights/drops/0",
+          "severity": "warning",
+          "summary": "drops: policy at tc-egress (33 packets)"
+        }
+      ],
+      "note": "ordering is not causation; entries without a time are current state",
+      "truncated": []
+    }
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "seed": "ffbe6246718d14c4044cce526234e0990c5e23a575bf07065eef6cbc854452b4",
+    "chain": [
+      {
+        "section": "nodes",
+        "sha256": "ae3ca57a91c7ecdf7d9fac90520022d74b32b9a878ea46815b20fadec20d8edb",
+        "chain": "4bcba839fdca00b7da32766d2968774ae50f51abfef09cc9bd84bef94f755818",
+        "bytes": 648
+      },
+      {
+        "section": "metrics",
+        "sha256": "1f9a634292841980f2b61e63b5532ee14af4c88989d32d956c54dd7d18cd4213",
+        "chain": "2e3b408f86df7872e30ce418b6ded5b2f72297b0974d5188f9947d1fbde7884a",
+        "bytes": 410
+      },
+      {
+        "section": "flows",
+        "sha256": "2d730125792902a6a5ef7ffc8eb4bce554be7fd02ec60e889e5b055b61a270f1",
+        "chain": "80ab1cf5a38fc5c8a3bbb3fbe388cb148c377ca4590da47769132292b956f13a",
+        "bytes": 388
+      },
+      {
+        "section": "network_changes",
+        "sha256": "8a6894cd31edd80632b068dda8c0a3472b3c0d71dba981df3c7e323863224ccd",
+        "chain": "4804812d6047d11dfb3a46fb861643d1ba06f0254c00077e408716a85acca59e",
+        "bytes": 352
+      },
+      {
+        "section": "metadata",
+        "sha256": "a29c44083089d33cf6dfb3503ae33edf73354eb5ddad230e6f20c038c86d656a",
+        "chain": "f87e1b424fe9506e11d917559154aa75df7cb1e921e74b9cbfa2e9f23324a61c",
+        "bytes": 1625
+      },
+      {
+        "section": "ebpf",
+        "sha256": "7c77ae29c5465af8904f5420388e26716335af5ba67fe5480b37bcb5962c9ead",
+        "chain": "4df004dc0569a8ee8bb4ccda6fe7c35f3e6e8887af7aa50816f795815276632a",
+        "bytes": 1724
+      },
+      {
+        "section": "audit",
+        "sha256": "1db320615d0f5f78d72d37f2d582f1064b9b25ebcc6dc0c6c561797a943dae72",
+        "chain": "6874fccd64b0fffdbf120abe8394c32859b83a05c4d758d28ed85dbac06e44a9",
+        "bytes": 220
+      },
+      {
+        "section": "insights",
+        "sha256": "f07c8faa1137fdfd6a61896bd6294873782ac24c84b69d6e35a26e5f2c1cca6c",
+        "chain": "5d1173ac4a7be04637ff8d69ce78cfc3faddc6f0b010dbb26eb7c46ffbe1410c",
+        "bytes": 684
+      },
+      {
+        "section": "timeline",
+        "sha256": "8e1892be5d9fd5caed21fab61d5d14b7d82b7762378d9182ab98b2112654c74f",
+        "chain": "d02aaf91bf4764212e07e14c64cbd580c5cf12d6ac9d55cc80ac117103f000eb",
+        "bytes": 2366
+      }
+    ],
+    "head": "d02aaf91bf4764212e07e14c64cbd580c5cf12d6ac9d55cc80ac117103f000eb"
+  },
+  "caveats": [
+    "A bundle is a view over Netra's existing in-memory and sidecar stores. It records nothing new: a store that was off, overran or restarted inside the window shows as a gap, not as quiet.",
+    "Metadata counters (DNS health, TLS, HTTP) are the agents' cumulative counters since agent start, not windowed deltas.",
+    "The hash chain makes tampering visible to anyone holding the bundle; it is not a signature and does not prove who produced it.",
+    "Ordering in the timeline is not causation."
+  ]
+}
