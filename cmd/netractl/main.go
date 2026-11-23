@@ -271,6 +271,8 @@ func run(args []string) error {
 		return insightCmd()
 	case "incidents":
 		return incidentsCmd()
+	case "incident":
+		return incidentCmd(os.Args[2:])
 	case "ai":
 		return aiCmd()
 	default:

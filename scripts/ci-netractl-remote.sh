@@ -181,6 +181,11 @@ while IFS= read -r line; do
           f="$TMP/archive-out.json"
           : >"$f"
           ;;
+        bundle)
+          # A real bundle from the live controller: verify and diff read it offline.
+          f="$TMP/incident-bundle.json"
+          "$NETRACTL" incident bundle --minutes 5 --out "$f" >/dev/null
+          ;;
         *)
           f="$TMP/fixture.bin"
           : >"$f"
