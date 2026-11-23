@@ -41,6 +41,7 @@ export const navGroups: NavGroup[] = [
       { page: 'node-resources', label: 'Node Resources', blurb: 'Per-node CPU, memory, and load average, plus per-workload cgroup CPU/memory usage — a "top"-like view, attributed to workloads rather than raw PIDs.' },
       { page: 'l7', label: 'L7', blurb: 'Best-effort SNI and HTTP Host from the datapath.' },
       { page: 'deny-preview', label: 'Deny Preview', blurb: 'Review-only blast radius for a proposed emergency deny against live counters or flow history.' },
+      { page: 'deny-leases', label: 'Deny Leases', blurb: 'Leased deny rules from declarative denysets: expiring soon, lease timeline, safety rails. Read-only.' },
       { page: 'netlink', label: 'Netlink', blurb: 'Read-only RTNL change recorder and findings — routes, links, neighbors. Never mutates.' },
       { page: 'bpf-attachments', label: 'BPF Attachments', blurb: 'Inventory of attached programs and hook drift. Sees, does not repair.' },
       { page: 'ebpf-maps', label: 'eBPF Maps', blurb: 'Controller-desired map inventory under /sys/fs/bpf/netra. Read-only.' },

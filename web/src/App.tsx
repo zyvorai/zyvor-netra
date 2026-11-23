@@ -28,6 +28,7 @@ import Capture from './pages/Capture';
 import CongestionMap from './pages/CongestionMap';
 import SysctlAudit from './pages/SysctlAudit';
 import NodeResources from './pages/NodeResources';
+import DenyLeases from './pages/DenyLeases';
 import DenyPreview from './pages/DenyPreview';
 import Netlink from './pages/Netlink';
 import WhatChanged from './pages/WhatChanged';
@@ -206,6 +207,12 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     title: 'Blast radius before you lease.',
     lede: 'Review-only match of a proposed emergency deny against live agent counters or retained flow history. Applies nothing.',
     tint: 'red',
+  },
+  'deny-leases': {
+    eyebrow: 'Deny Leases',
+    title: 'What expires, and who changed it.',
+    lede: 'Read-only view of leased deny rules created by declarative denysets: expiring soon, the create/extend/expire/revoke timeline and the safety rails.',
+    tint: 'amber',
   },
   netlink: {
     eyebrow: 'Netlink',
@@ -415,6 +422,7 @@ export default function App() {
     'node-resources': <NodeResources />,
     l7: <L7 />,
     'deny-preview': <DenyPreview />,
+    'deny-leases': <DenyLeases />,
     netlink: <Netlink />,
     'bpf-attachments': <BpfAttachments />,
     'ebpf-maps': <EbpfMaps />,

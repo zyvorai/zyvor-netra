@@ -33,6 +33,7 @@ const PAGE_CTA: Partial<Record<Page, string>> = {
   detect: 'Open Detect',
   surfaces: 'Open Surfaces',
   'deny-preview': 'Open Deny Preview',
+  'deny-leases': 'Open Deny Leases',
   netlink: 'Open Netlink',
   'bpf-attachments': 'Open BPF Attachments',
   metrics: 'Open Metrics',
