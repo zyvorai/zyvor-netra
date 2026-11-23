@@ -203,19 +203,19 @@ service:
   type: ClusterIP
   port: 30870
   nodePort: null
-# Envoy in front of the API/UI, through Gateway API (works with Envoy Gateway
-# or any Gateway API implementation). Off by default; Netra's own auth is
-# unchanged. See docs/envoy-gateway.md.
+# Setura Gateway in front of the API/UI, through Gateway API (works with any
+# Gateway API implementation). Off by default; Netra's own auth is
+# unchanged. See docs/setura-gateway.md.
 gateway:
   enabled: false
-  # Gateway to attach to, e.g. [{name: eg, namespace: envoy-gateway-system}].
+  # Gateway to attach to, e.g. [{name: setura, namespace: default}].
   parentRefs: []
   hostnames: []
   path: /
   annotations: {}
-  # "0s" keeps long-lived SSE / metric streams from being cut by Envoy.
+  # "0s" keeps long-lived SSE / metric streams from being cut by the gateway.
   requestTimeout: "0s"
-  # Netra's Service is HTTPS by default, so Envoy must verify the pod cert.
+  # Netra's Service is HTTPS by default, so the gateway must verify the pod cert.
   # Point caCertificateRefs at a ConfigMap holding the CA of tls.existingSecret.
   backendTLS:
     enabled: true
@@ -224,10 +224,6 @@ gateway:
     caCertificateRefs: []
     # e.g. [{group: "", kind: ConfigMap, name: netra-ca}]
     wellKnownCACertificates: ""
-  # Envoy Gateway only. Needed for WebSocket streams when backendTLS is on.
-  backendTrafficPolicy:
-    enabled: false
-    useClientProtocol: true
 tls:
   # HTTPS is the default. Init container mints a self-signed P-256 cert into
   # an emptyDir; probes and the Service use scheme/port name https.

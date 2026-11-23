@@ -24,7 +24,7 @@
     "integrations": {
       "label": "Integrations",
       "position": 7,
-      "description": "MCP for AI agents, Envoy in front of the API, and SIEM export."
+      "description": "MCP for AI agents, Setura Gateway in front of the API, and SIEM export."
     },
     "reference": {
       "label": "Reference",
@@ -154,8 +154,8 @@
       "position": 1
     },
     {
-      "src": "envoy-gateway.md",
-      "dest": "integrations/envoy-gateway",
+      "src": "setura-gateway.md",
+      "dest": "integrations/setura-gateway",
       "position": 2
     }
   ],
