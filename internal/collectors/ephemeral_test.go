@@ -49,7 +49,7 @@ func runEphemeral(t *testing.T, f fsys) found {
 	}
 	out := found{}
 	for _, s := range e.Samples() {
-		out[s.Series.Context+"/"+s.Series.Dimension] = s.V
+		out[s.Context+"/"+s.Dimension] = s.V
 	}
 	return out
 }
