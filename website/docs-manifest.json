@@ -109,6 +109,11 @@
       "position": 5
     },
     {
+      "src": "incident-bundle.md",
+      "dest": "diagnose/incident-bundle",
+      "position": 7
+    },
+    {
       "src": "bpf-attachments.md",
       "dest": "diagnose/bpf-attachments",
       "position": 6
