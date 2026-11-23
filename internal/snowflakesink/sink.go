@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	sf "github.com/snowflakedb/gosnowflake"
+	sf "github.com/snowflakedb/gosnowflake/v2"
 	"github.com/zyvorai/netra/internal/models"
 	"github.com/zyvorai/netra/internal/siem"
 )
