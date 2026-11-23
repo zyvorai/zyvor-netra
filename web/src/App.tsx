@@ -32,6 +32,7 @@ import DenyLeases from './pages/DenyLeases';
 import DenyPreview from './pages/DenyPreview';
 import Netlink from './pages/Netlink';
 import WhatChanged from './pages/WhatChanged';
+import IncidentBundle from './pages/IncidentBundle';
 import NetworkRisk from './pages/NetworkRisk';
 import BpfAttachments from './pages/BpfAttachments';
 import Detect from './pages/Detect';
@@ -114,6 +115,12 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
     eyebrow: 'What changed',
     title: 'What changed, then what broke.',
     lede: 'Audit, netlink, BPF attachment, drop, anomaly and alert signals in one order, with suspects and gaps. Read-only.',
+    tint: 'purple',
+  },
+  'incident-bundle': {
+    eyebrow: 'Flight recorder',
+    title: 'The last N minutes, as one safe-to-share file.',
+    lede: 'A redacted, hash-chained bundle built from stores Netra already keeps: metrics, flows, netlink changes, metadata, BPF state, leases, audit and a what-changed timeline. Read-only.',
     tint: 'purple',
   },
   'network-risk': {
@@ -454,6 +461,7 @@ export default function App() {
     'listen-queues': <ListenQueues />,
     'incident-timeline': <IncidentTimeline />,
     'what-changed': <WhatChanged />,
+    'incident-bundle': <IncidentBundle />,
     'network-risk': <NetworkRisk />,
     'process-integrity': <ProcessIntegrity />,
   }[page];
