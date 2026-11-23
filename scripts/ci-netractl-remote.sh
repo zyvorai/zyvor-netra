@@ -173,6 +173,10 @@ while IFS= read -r line; do
           f="$TMP/explain.json"
           printf '%s\n' '{"items":[{"node":"ci","containers":[]}]}' >"$f"
           ;;
+        denyset)
+          f="$TMP/ci.denyset"
+          printf '%s\n' 'netra-denyset/1' 'name: ci' 'lease: 10m' 'deny cidr 203.0.113.0/24 egress' >"$f"
+          ;;
         out)
           f="$TMP/archive-out.json"
           : >"$f"

@@ -30,9 +30,9 @@ fs.mkdirSync(OUT, { recursive: true });
 // Kept in step with web/src/lib/investigation.ts's `pages` const by a check below.
 const PAGES = [
   'overview', 'connections', 'workloads', 'explain', 'pods', 'vms', 'investigate', 'flow-observe',
-  'health', 'path', 'drops', 'congestion', 'sysctl-audit', 'node-resources', 'l7', 'deny-preview',
+  'health', 'path', 'drops', 'congestion', 'sysctl-audit', 'node-resources', 'l7', 'deny-preview', 'deny-leases',
   'netlink', 'bpf-attachments', 'ebpf-maps', 'detect', 'surfaces', 'tls-fingerprints', 'features',
-  'insights', 'topology', 'incidents', 'incident-timeline', 'what-changed', 'security-review', 'policies', 'flows',
+  'insights', 'topology', 'incidents', 'incident-timeline', 'what-changed', 'network-risk', 'security-review', 'policies', 'flows',
   'ebpf', 'audit', 'report', 'scorecard', 'talkers', 'fleet', 'traffic', 'capture', 'metrics',
   'metric-anomalies', 'metric-alerts', 'ai', 'handoff', 'slo', 'drop-reasons', 'listen-queues',
   'process-integrity',

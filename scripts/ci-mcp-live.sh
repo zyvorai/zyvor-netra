@@ -62,7 +62,9 @@ curl -sf -H "Authorization: Bearer ${API_KEY}" "${URL}/api/v1/status" >/dev/null
 
 # The number of mutating tools, read from the source: the two registration styles
 # are a table of `name:` entries and individual `Name:` fields.
-MUTATING="$(grep -oE '^[[:space:]]+(name|Name):[[:space:]]+"netra_[a-z0-9_]+"' cmd/netra-mcp/tools_mutate.go | grep -oE 'netra_[a-z0-9_]+' | sort -u | tr '\n' ' ')"
+# The denyset mutators live in tools_denyset.go, inside registerDenysetMutateTools
+# (the file also holds read-only tools, so only that function is read).
+MUTATING="$({ cat cmd/netra-mcp/tools_mutate.go; sed -n '/^func registerDenysetMutateTools/,/^}/p' cmd/netra-mcp/tools_denyset.go; } | grep -oE '^[[:space:]]+(name|Name):[[:space:]]+"netra_[a-z0-9_]+"' | grep -oE 'netra_[a-z0-9_]+' | sort -u | tr '\n' ' ')"
 echo "    mutating tools in source: $(wc -w <<<"$MUTATING" | tr -d ' ')"
 
 BIN_DIR="$BIN_DIR" URL="$URL" API_KEY="$API_KEY" MUTATING="$MUTATING" python3 - <<'PY'

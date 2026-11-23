@@ -133,8 +133,8 @@ func Parse(data []byte) (*File, []ParseError) {
 			continue
 		}
 		fields := strings.Fields(line)
-		switch {
-		case fields[0] == "name:":
+		switch fields[0] {
+		case "name:":
 			if sawName {
 				add(n, "duplicate name")
 			} else if len(fields) != 2 || !nameRe.MatchString(fields[1]) {
@@ -143,7 +143,7 @@ func Parse(data []byte) (*File, []ParseError) {
 				f.Name = fields[1]
 			}
 			sawName = true
-		case fields[0] == "lease:":
+		case "lease:":
 			if sawLease {
 				add(n, "duplicate lease")
 			} else if len(fields) != 2 {
@@ -154,7 +154,7 @@ func Parse(data []byte) (*File, []ParseError) {
 				f.LeaseSeconds = int64(d / time.Second)
 			}
 			sawLease = true
-		case fields[0] == "deny":
+		case "deny":
 			if len(f.Rules) >= MaxRules {
 				add(n, "more than %d rules", MaxRules)
 				continue
