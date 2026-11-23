@@ -851,6 +851,16 @@ func registerReadTools(srv *mcpserver.Server, c *client) error {
 			queryParams: []string{"since"},
 		},
 		{
+			name: "netra_incidents_changes", method: "GET", path: "/api/v1/incidents/changes",
+			description: "Ordered 'what changed, then what broke' timeline joining the audit log, netlink change recorder (with requester comm/pid), BPF attachment findings, drop attribution, metric anomaly bursts and metric alert transitions. Each break lists suspect changes that preceded it on the same node. Ordering is not causation; drop and attachment findings are level-triggered (no event time) and are never paired. Gaps list missing sources. Read-only: never acks or silences an alert.",
+			schema: objSchema(map[string]any{
+				"since": strProp("Lookback duration, e.g. 30m. Default 1h, max 24h."),
+				"lead":  strProp("How long before a break a change counts as a suspect, e.g. 10m. Default 10m, max 6h."),
+				"node":  strProp("Limit to one node (cluster-wide audit entries are kept)."),
+			}),
+			queryParams: []string{"since", "lead", "node"},
+		},
+		{
 			name: "netra_insights_policy_review", method: "GET", path: "/api/v1/insights/policy-review",
 			description: "Full review for one policy recommendation (from netra_insights_recommendations): which live CiliumNetworkPolicy actually governs the workload (best-effort label match, may be ambiguous), a semantic diff against it, a traffic-aware blast-radius check for each destination the diff would remove (CIDR destinations checked against live traffic; FQDN/entity destinations honestly marked \"could not correlate\", never a false negative), and recent policy revision history. Read-only — never applies anything.",
 			schema: objSchema(map[string]any{
@@ -982,7 +992,7 @@ func registerReadTools(srv *mcpserver.Server, c *client) error {
 		},
 		{
 			name: "netra_ebpf_deny_preview", method: "POST", path: "/api/v1/ebpf/deny/preview",
-			description: "Review-only blast radius for a proposed emergency deny. Matches live non-stale agent flow counters, connect-attempt, DNS, TLS SNI, or sampled process events. Applies nothing, writes nothing, does not flip enforce mode. Absence of a hit is not proof the destination is unused.",
+			description: "Review-only blast radius for a proposed emergency deny. Matches live non-stale agent flow counters, connect-attempt, DNS, TLS SNI, or sampled process events. Applies nothing, writes nothing, does not flip enforce mode. The response carries a \"lockout\" section flagging proposals that reach the kube-apiserver, DNS resolvers, the controller port or operator-protected destinations. Absence of a hit is not proof the destination is unused.",
 			schema: objSchema(map[string]any{
 				"kind":         enumProp("Deny kind to preview.", "ip", "cidr", "port", "dns", "sni", "process"),
 				"value":        strProp("IP, CIDR, port number, DNS name, SNI, or process comm."),
@@ -999,7 +1009,7 @@ func registerReadTools(srv *mcpserver.Server, c *client) error {
 		},
 		{
 			name: "netra_ebpf_deny_preview_history", method: "POST", path: "/api/v1/ebpf/deny/preview-history",
-			description: "Review-only historical blast radius for a proposed emergency deny against the controller flowlog (up to 7 days). Uses counterfactual evaluation over retained flow deltas. Applies nothing. Prefer live netra_ebpf_deny_preview for process matches and current counters; DNS/SNI often empty on historical rows.",
+			description: "Review-only historical blast radius for a proposed emergency deny against the controller flowlog (up to 7 days). Uses counterfactual evaluation over retained flow deltas. Applies nothing. Includes the same \"lockout\" self-lockout check. Prefer live netra_ebpf_deny_preview for process matches and current counters; DNS/SNI often empty on historical rows.",
 			schema: objSchema(map[string]any{
 				"kind":         enumProp("Deny kind to preview.", "ip", "cidr", "port", "dns", "sni"),
 				"value":        strProp("IP, CIDR, port number, DNS name, or SNI."),

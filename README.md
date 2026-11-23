@@ -35,6 +35,7 @@ From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.32.0):
 
 | | |
 |---|---|
+| **What changed, then what broke** *(Unreleased)* | One ordered timeline of audit, netlink, BPF attachment, drop, anomaly and alert signals with suspects and gaps, plus a self-lockout check on deny previews. [Docs →](docs/incident-changes.md) |
 | **Per-node agent mTLS identity** *(0.32.0)* | Opt-in `NETRA_AGENT_MTLS_BIND_NODE` requires the reported node to match the agent's client certificate; revoked serials can be hot-reloaded. [Docs →](docs/agent-mtls.md) |
 | **Scoped authorization** *(0.32.0)* | OIDC claims and `NETRA_SERVICE_CREDENTIALS_FILE` add namespace, cluster and tenant ACLs on top of viewer, operator and admin. [Docs →](docs/auth-oidc-rbac.md) |
 | **Failed-connection investigation** *(0.32.0)* | A timeline for one failed connection, from the API, `netractl investigate connection` or MCP. [Docs →](docs/investigate-connection.md) |

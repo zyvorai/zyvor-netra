@@ -17,6 +17,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/zyvorai/netra/internal/workloadobs"
 )
 
 var base = strings.TrimRight(env("NETRA_URL", "https://127.0.0.1:30870"), "/")
@@ -157,6 +159,12 @@ func run(args []string) error {
 	case "whoami":
 		return request("GET", "/api/v1/whoami", nil)
 	case "slo":
+		if len(args) > 1 {
+			if args[1] != "lint" || len(args) != 3 {
+				return fmt.Errorf("usage: netractl slo [lint OPENSLO_FILE]")
+			}
+			return sloLint(args[2], os.Stdout)
+		}
 		return request("GET", "/api/v1/slo", nil)
 	case "status":
 		return statusCmd(args[1:], os.Stdout)
@@ -1851,8 +1859,26 @@ func incidentsCmd() error {
 			p += "?since=" + url.QueryEscape(os.Args[3])
 		}
 		return request("GET", p, nil)
+	case "changes":
+		// incidents changes [--since 1h] [--lead 10m] [--node NAME]
+		q := url.Values{}
+		for i := 3; i < len(os.Args); i += 2 {
+			flag := os.Args[i]
+			if flag != "--since" && flag != "--lead" && flag != "--node" {
+				return fmt.Errorf("unknown incidents changes flag %s (use --since, --lead, --node)", flag)
+			}
+			if i+1 >= len(os.Args) {
+				return fmt.Errorf("%s requires a value", flag)
+			}
+			q.Set(strings.TrimPrefix(flag, "--"), os.Args[i+1])
+		}
+		p := "/api/v1/incidents/changes"
+		if len(q) > 0 {
+			p += "?" + q.Encode()
+		}
+		return request("GET", p, nil)
 	default:
-		return fmt.Errorf("unknown incidents command")
+		return fmt.Errorf("unknown incidents command (timeline, changes)")
 	}
 }
 
@@ -1997,4 +2023,28 @@ func env(k, d string) string {
 		return v
 	}
 	return d
+}
+
+// sloLint validates an OpenSLO file offline (the same parser NETRA_SLO_FILE
+// uses) and prints what netrad would load. It talks to no server.
+func sloLint(path string, out io.Writer) error {
+	defs, err := workloadobs.LoadOpenSLOFile(path)
+	if err != nil {
+		return err
+	}
+	type view struct {
+		Name      string  `json:"name"`
+		SLI       string  `json:"sli"`
+		Namespace string  `json:"namespace,omitempty"`
+		Workload  string  `json:"workload,omitempty"`
+		TargetPct float64 `json:"targetPct"`
+		Window    string  `json:"window"`
+	}
+	vs := make([]view, 0, len(defs))
+	for _, d := range defs {
+		vs = append(vs, view{d.Name, d.SLI, d.Namespace, d.Workload, d.TargetPct, d.Window.String()})
+	}
+	enc := json.NewEncoder(out)
+	enc.SetIndent("", "  ")
+	return enc.Encode(map[string]any{"ok": true, "count": len(vs), "slos": vs})
 }

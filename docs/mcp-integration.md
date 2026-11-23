@@ -272,7 +272,7 @@ All tool names are prefixed `netra_`. Every tool maps 1:1 to one Netra controlle
 | `netra_ebpf_ai_destinations` | `GET /api/v1/ebpf/ai-destinations` | — | Observe known GenAI/MCP SaaS via SNI/Host/DNS |
 | `netra_ebpf_auto_mitigate` | `GET /api/v1/ebpf/auto-mitigate` | — | Volumetric auto-mitigation status |
 | `netra_ebpf_auto_mitigate_preview` | `GET /api/v1/ebpf/auto-mitigate/preview` | — | Shadow candidates from scan/UDP rules; applies nothing |
-| `netra_ebpf_deny_preview` | `POST /api/v1/ebpf/deny/preview` | `kind`, `value`, optional direction/protocol/scope | Observed-counter blast radius for a proposed deny. Applies nothing |
+| `netra_ebpf_deny_preview` | `POST /api/v1/ebpf/deny/preview` | `kind`, `value`, optional direction/protocol/scope | Observed-counter blast radius for a proposed deny, plus a `lockout` self-lockout check. Applies nothing |
 | `netra_ebpf_deny_preview_history` | `POST /api/v1/ebpf/deny/preview-history` | same as deny preview plus optional `since` | Historical blast radius over flowlog deltas via counterfactual. Applies nothing |
 | `netra_ebpf_dns_findings` | `GET /api/v1/ebpf/dns-findings` | — | Metadata-only DNS anomaly findings (tunneling, DGA, beaconing, storms) from a continuously-running detector. Returns 409 if disabled |
 | `netra_ebpf_scan_findings` | `GET /api/v1/ebpf/scan-findings` | — | Port-scan/fan-out/lateral-movement/SYN-flood findings from a continuously-running detector. Returns 409 if disabled |
@@ -336,6 +336,7 @@ All tool names are prefixed `netra_`. Every tool maps 1:1 to one Netra controlle
 | `netra_insights_protocol_downgrades` | `GET /api/v1/insights/protocol-downgrades` | — | Workload/host pairs with baseline TLS history now showing cleartext HTTP; coexistence-tolerant correlation, never a verdict; check `l7Degraded` before reading empty as "clean" |
 | `netra_incidents` | `GET /api/v1/incidents` | `auditLimit` (1-1000, default 200) | Cross-signal clusters joining health/drift/rate-drift/exposure/detective/audit findings by shared source; only surfaced with ≥2 contributing signal kinds |
 | `netra_incidents_timeline` | `GET /api/v1/incidents/timeline` | `since` (RFC3339, optional) | Chronological, human-readable merge of the audit log and cluster-health-signature transitions |
+| `netra_incidents_changes` | `GET /api/v1/incidents/changes` | `since` (duration, default 1h, max 24h), `lead` (default 10m, max 6h), `node` | Ordered changes-then-breaks timeline with suspects and gaps; ordering is not causation. See `docs/incident-changes.md` |
 | `netra_insights_remediations` | `GET /api/v1/insights/remediations` | `limit` (1-200, default 50), `window` | Proposed remediations; result always carries `reviewRequired: true`, `autoApply: false` |
 | `netra_insights_red` | `GET /api/v1/insights/red` | `window` (duration, default 5m, max 168h) | Per-workload rate, drop/retransmit errors, and TCP SRTT. Not HTTP status. See `docs/flow-log.md` |
 | `netra_insights_traces` | `GET /api/v1/insights/traces` | `since` (duration, default 15m, max 168h), `namespace`, `pod` | Inferred spans from flow edges and pod IPs. No propagated traceparent |

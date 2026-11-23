@@ -128,6 +128,7 @@ func allCLICommands() []cliCommand {
 		// Incidents
 		{Name: "incidents", Args: []string{"incidents"}},
 		{Name: "incidents-timeline", Args: []string{"incidents", "timeline"}},
+		{Name: "incidents-changes", Args: []string{"incidents", "changes", "--since", "1h"}},
 
 		// Explain with fixture input
 		{Name: "explain-all", Args: []string{"explain", "--all", "--input", "$FILE", "--format", "json"}, FileKind: "explain"},

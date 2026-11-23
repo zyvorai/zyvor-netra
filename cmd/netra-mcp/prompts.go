@@ -68,6 +68,17 @@ func registerPrompts(srv *mcpserver.Server) error {
 			}},
 		},
 		{
+			Name:        "netra_what_changed",
+			Description: "Explain what changed and then what broke, with suspect changes per break. Read-only.",
+			Arguments: []mcpserver.PromptArg{
+				{Name: "since", Description: "Lookback duration such as 30m. Default 1h.", Required: false},
+			},
+			Messages: []mcpserver.PromptMessage{{
+				Role: "user",
+				Text: "Call netra_incidents_changes with since={{since}}. Walk the entries in order, then list each suspect pairing. Say plainly that a suspect is a preceding change, not a proven cause. Report every gap the tool lists. Do not invent a change, cause or timestamp. Stay read-only.",
+			}},
+		},
+		{
 			Name:        "netra_policy_review",
 			Description: "Review insight-generated policy drafts, including a traffic-aware blast-radius check. Never apply them.",
 			Arguments: []mcpserver.PromptArg{

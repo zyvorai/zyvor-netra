@@ -116,6 +116,30 @@ Helm: `slo.definitions` (a list of the same objects) and `slo.interval`.
 Malformed definitions **stop `netrad` at startup** rather than being silently
 defaulted.
 
+### OpenSLO-style file
+
+`NETRA_SLO_FILE=/etc/netra/slo.yaml` loads SLOs from a multi-document YAML file in an [OpenSLO](https://github.com/OpenSLO/OpenSLO) v1 subset, merged with `NETRA_SLO_DEFINITIONS` (a name in both is an error; at most 64 SLOs in total, 256 KiB of YAML).
+
+```yaml
+apiVersion: openslo/v1
+kind: SLO
+metadata:
+  name: checkout-availability
+  annotations:
+    netra.zyvor.dev/sli: http_5xx          # required: http_5xx or dns_failure
+    netra.zyvor.dev/namespace: shop        # optional filters
+    netra.zyvor.dev/workload: Deployment/checkout
+spec:
+  budgetingMethod: Occurrences             # or omitted
+  timeWindow:
+    - duration: 30d                        # one rolling window, 1h to 90d
+      isRolling: true
+  objectives:
+    - target: 0.999                        # or targetPercent: 99.9; one objective
+```
+
+Netra's SLIs are fixed counter ratios, so the SLI is chosen by annotation and the OpenSLO indicator is not interpreted. Rejected with a reason rather than reinterpreted: `Timeslices` budgeting, calendar-aligned windows, several objectives or windows, `thresholdMetric` (latency) indicators, other kinds (`SLI`, `AlertPolicy`) and an `apiVersion` other than `openslo/v1`. A bad file stops `netrad` at startup. Check a file offline with `netractl slo lint FILE`. Helm does not mount this file yet; use `slo.definitions` there.
+
 ### What an SLI is here — and is not
 
 | `sli` | Good/total ratio |

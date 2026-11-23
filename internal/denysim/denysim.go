@@ -70,6 +70,9 @@ type Result struct {
 	TotalBytes   uint64   `json:"totalBytes"`
 	Workloads    int      `json:"workloads"`
 	Caveat       string   `json:"caveat"`
+	// Lockout is the self-lockout check (filled by the API layer, which knows
+	// the controller environment). Nil only when the check could not run.
+	Lockout *Lockout `json:"lockout,omitempty"`
 }
 
 func (p Proposal) normalize() (Proposal, error) {

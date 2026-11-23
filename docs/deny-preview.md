@@ -54,6 +54,24 @@ netractl ebpf deny-preview port 445 --protocol TCP --since 24h
 
 MCP tool: `netra_ebpf_deny_preview_history` (read-only).
 
+## Self-lockout check
+
+Both previews return a `lockout` object:
+
+```json
+{"risk": "likely", "warnings": [{"protected": "kube-apiserver", "severity": "critical", "reason": "ip 10.96.0.1 overlaps kube-apiserver"}], "checked": ["dns (any resolver)", "kube-apiserver"], "caveat": "..."}
+```
+
+`risk` is `none-detected`, `possible` (only a workload-scoped proposal reaches a protected path) or `likely`. The controller compares the proposal with:
+
+- DNS: port 53 and the nameservers in the controller's `/etc/resolv.conf`.
+- The kube-apiserver address from `KUBERNETES_SERVICE_HOST` / `KUBERNETES_SERVICE_PORT`.
+- The controller listen port (`NETRA_LISTEN`).
+- Any catch-all prefix (`0.0.0.0/0`, `::/0`).
+- `NETRA_PROTECTED_DESTINATIONS`: comma- or space-separated `IP`, `CIDR`, `IP:port`, `[v6]:port`, `:port`, a DNS name (exact or `*.` wildcard) or `process:comm`. A malformed list is ignored and the caveat says so.
+
+This is the controller's own view. It cannot see node-local resolvers, cloud metadata or paths it does not know about, so `none-detected` is not a guarantee, and nothing blocks an apply: enforce stays leased, risk-confirmed and fail-open. List what you cannot lose in `NETRA_PROTECTED_DESTINATIONS`.
+
 ## Evidence boundaries
 
 - Live hits are **cumulative counters from the current agent snapshot**.
