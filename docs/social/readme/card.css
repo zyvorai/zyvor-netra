@@ -24,3 +24,6 @@ h1 em { font-style:normal; color:var(--signal); }
 .row { display:grid; gap:34px; }
 .foot { margin-top:auto; padding-top:12px; border-top:1px solid rgba(255,255,255,.16); display:flex; font-family:var(--mono); font-size:20px; color:var(--soft); }
 .foot b { color:var(--ink); } .foot .r { margin-left:auto; }
+.kl { margin-left:28px; color:#f0d58a; font-weight:700; letter-spacing:.04em; }
+.kasavu { position:absolute; left:0; right:0; bottom:0; height:9px; z-index:9; border-top:2px solid #d4a73a;
+  background:repeating-linear-gradient(90deg,#f6e7b4 0 9px,#c9962b 9px 11px,#f6e7b4 11px 20px,#fff6d6 20px 22px); }
