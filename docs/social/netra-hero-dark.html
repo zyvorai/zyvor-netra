@@ -52,6 +52,7 @@
     background:rgba(0,0,0,.62); border:1.5px solid rgba(212,167,58,.7); box-shadow:0 0 28px rgba(212,167,58,.22); }
   .ded .en { font-family:var(--mono); font-size:13px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#f6e7b4; }
   .ded .ml { margin-top:4px; font-family:'Malayalam MN','Malayalam Sangam MN','Noto Sans Malayalam',var(--sans); font-size:22px; line-height:1.2; font-weight:700; color:#ffe8a3; }
+  .kerala { position:absolute; left:60px; top:488px; width:500px; height:66px; z-index:4; opacity:.92; }
 </style>
 </head>
 <body>
@@ -143,6 +144,27 @@
   <g id="lashes" fill="none" stroke="#e8f4ff" stroke-linecap="round"></g>
   <g id="lowlashes" fill="none" stroke="#9ec9ff" stroke-linecap="round" stroke-opacity=".6"></g>
   <path d="M150,236 C200,170 270,145 335,145 C400,145 462,162 515,196" fill="none" stroke="#2997ff" stroke-width="10" opacity=".45" filter="url(#bloom)"/>
+  <!-- Kerala style: heavy kohl with a winged tail, gold-ringed iris with MEKHA in hex, a bindi -->
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a6a16"/><stop offset=".5" stop-color="#ffe8a3"/><stop offset="1" stop-color="#c9962b"/>
+    </linearGradient>
+    <path id="hexring" d="M335,152 a62,62 0 1,1 -0.01,0"/>
+  </defs>
+  <g clip-path="url(#eyeClip)">
+    <circle cx="335" cy="214" r="86" fill="none" stroke="url(#gold)" stroke-width="3.5" opacity=".95"/>
+    <circle cx="335" cy="214" r="76" fill="none" stroke="#ffe8a3" stroke-width=".8" stroke-dasharray="2 5" opacity=".7"/>
+    <text font-family="SF Mono, Menlo, monospace" font-size="10" font-weight="700" fill="#ffe8a3" opacity=".9" letter-spacing="1">
+      <textPath href="#hexring" textLength="384" lengthAdjust="spacing">4D 45 4B 48 41 &#183; 4D 45 4B 48 41 &#183; 4D 45 4B 48 41 &#183; 4D 45 4B 48 41 &#183;</textPath>
+    </text>
+  </g>
+  <path d="M150,236 C200,170 270,145 335,145 C400,145 462,162 515,196 C540,188 566,174 586,154" fill="none" stroke="#04060c" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M150,236 C200,170 270,145 335,145 C400,145 462,162 515,196 C540,188 566,174 586,154" fill="none" stroke="url(#gold)" stroke-width="1.6" stroke-linecap="round" opacity=".9" transform="translate(0,-6)"/>
+  <path d="M150,236 C200,282 262,308 335,308 C405,306 468,268 515,196" fill="none" stroke="#04060c" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+  <g fill="#ffe8a3"><circle cx="548" cy="176" r="2.2"/><circle cx="564" cy="168" r="2"/><circle cx="578" cy="160" r="1.8"/></g>
+  <!-- bindi -->
+  <circle cx="96" cy="232" r="15" fill="none" stroke="url(#gold)" stroke-width="2.4"/>
+  <circle cx="96" cy="232" r="9" fill="#d7263d"/><circle cx="93" cy="229" r="2.6" fill="#ff8d9a" opacity=".8"/>
 </svg>
 
 <div class="left">
@@ -152,6 +174,25 @@
   <div class="lede">Standalone eBPF network observability and leased, fail-open emergency network control for Linux and Kubernetes, on any CNI.</div>
   <div class="stats"><div class="stat"><b>189</b><span>MCP tools</span></div><div class="stat"><b>Any</b><span>CNI</span></div><div class="stat"><b>5.8+</b><span>Linux kernel</span></div></div>
 </div>
+<svg class="kerala" viewBox="0 0 500 66" aria-hidden="true" fill="none" stroke="url(#gold2)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+  <defs><linearGradient id="gold2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c9962b"/><stop offset=".5" stop-color="#ffe8a3"/><stop offset="1" stop-color="#c9962b"/></linearGradient></defs>
+  <!-- backwater -->
+  <path d="M0,58 q12,-5 25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0" stroke-opacity=".75"/>
+  <path d="M30,64 q12,-4 25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0 t25,0" stroke-opacity=".35"/>
+  <!-- coconut palm, left -->
+  <path d="M56,56 C60,40 54,24 62,8"/>
+  <path d="M62,8 q-22,-3 -36,12 M62,8 q-14,-14 -34,-8 M62,8 q22,-3 36,12 M62,8 q14,-14 34,-8 M62,8 q-3,-10 -10,-13"/>
+  <!-- kettuvallam houseboat: arched thatch roof over a curved hull -->
+  <path d="M170,52 Q260,66 350,52 L342,44 L178,44 Z"/>
+  <path d="M190,44 Q190,18 260,18 Q330,18 330,44"/>
+  <path d="M215,44 Q215,22 232,20 M240,44 Q240,20 260,18 M285,44 Q285,20 288,19 M308,44 Q306,24 296,19" stroke-opacity=".6"/>
+  <path d="M355,50 L420,28" stroke-opacity=".7"/>
+  <!-- palms, right -->
+  <path d="M440,56 C436,42 442,28 434,14"/>
+  <path d="M434,14 q-18,-3 -28,10 M434,14 q-10,-12 -28,-6 M434,14 q18,-3 28,10 M434,14 q10,-12 28,-6"/>
+  <path d="M474,56 C472,46 477,38 471,28"/>
+  <path d="M471,28 q-12,-2 -18,7 M471,28 q10,-2 18,7 M471,28 q-6,-9 -16,-5 M471,28 q6,-9 16,-5"/>
+</svg>
 <div class="pill"><span class="b">github.com/zyvorai/zyvor-netra</span><span>Zyvor Production</span></div>
 
 <div class="ded"><div class="en">Dedicated to Kerala &middot; Thiruvananthapuram</div><div class="ml">കേരളം · തിരുവനന്തപുരം</div></div>
