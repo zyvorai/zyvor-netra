@@ -16,6 +16,6 @@ render() { # <html> <jpg> <height>
   sips -s format jpeg -s formatOptions 90 "$TMP/$2.png" --out "$OUT/$2" >/dev/null
   echo "wrote docs/ux/$2 ($(du -k "$OUT/$2" | cut -f1) KB)"
 }
-render how-it-works.html readme-how-it-works.jpg 560
-render capabilities.html readme-capabilities.jpg 700
-render lease-safety.html readme-lease-safety.jpg 560
+render how-it-works.html readme-how-it-works.jpg 702
+render capabilities.html readme-capabilities.jpg 842
+render lease-safety.html readme-lease-safety.jpg 702

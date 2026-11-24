@@ -4,12 +4,12 @@
      1600x560. Rendered by ./build.sh to docs/ux/readme-how-it-works.jpg. Claims are the README's own. -->
 <link rel="stylesheet" href="card.css">
 <style>
-  body { height:560px; }
+  body { height:702px; }
   .flow { margin-top:24px; grid-template-columns:repeat(5,1fr); }
   .flow .card { min-height:212px; }
   .flow .card:not(:last-child)::after { content:""; position:absolute; right:-31px; top:50%; margin-top:-11px;
     border-left:16px solid var(--soft); border-top:11px solid transparent; border-bottom:11px solid transparent; }
-  .lease { margin-top:24px; display:flex; align-items:center; gap:16px; background:var(--ink); color:#f3ede4; border-radius:12px; padding:14px 22px; font-family:var(--mono); font-size:21px; }
+  .lease { margin-top:24px; display:flex; align-items:center; gap:16px; background:#161617; border:1px solid rgba(255,255,255,.1); color:#f3ede4; border-radius:12px; padding:14px 22px; font-family:var(--mono); font-size:21px; }
   .lease .tag { color:var(--signal); font-weight:700; letter-spacing:.1em; font-size:15px; }
 </style></head><body>
 <div class="bar"></div>
@@ -26,5 +26,7 @@
   <div class="lease"><span class="tag">SAFETY LANE</span><span>Enforcement is leased. It returns to <b>observe</b> on expiry, lost controller state, restart or HA failover.</span></div>
   <div class="foot"><b>zyvor.dev/netra</b><span class="kl">Dedicated to Kerala &middot; Thiruvananthapuram &middot; കേരളം</span><span class="r">Observe-first &middot; no payload collection</span></div>
 </div>
+<div id="kscene"></div>
+<script src="../kerala-scene.js"></script>
 <div class="kasavu"></div>
 </body></html>
