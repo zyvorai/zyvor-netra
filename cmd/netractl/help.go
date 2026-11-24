@@ -69,6 +69,7 @@ func helpSections() []helpSection {
 				{"insights … | incidents …", "Baselines, drift, joined incidents"},
 				{"incident bundle --minutes N --out FILE", "Incident flight recorder: one redacted, hash-chained bundle of the last N minutes"},
 				{"incident verify FILE | diff A B", "Check a bundle offline (fails closed) or compare two"},
+				{"incident seal FILE | report FILE", "HMAC-seal a bundle for a recipient with the same key, or render an offline incident report draft"},
 			},
 		},
 		{
@@ -191,5 +192,5 @@ func usagePlain(w io.Writer) {
   flows watch|summary [--verdict X --direction X --protocol X --namespace X --pod X --to IP/CIDR]
   flows history [--since 1h --namespace NS --pod POD --peer IP --protocol tcp --app mysql --node NODE --limit N]
   drops [explain]
-  ebpf … | insights … | incidents … | incident bundle|verify|diff … | ai …`))
+  ebpf … | insights … | incidents … | incident bundle|verify|diff|seal|report … | ai …`))
 }

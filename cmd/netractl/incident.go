@@ -13,12 +13,15 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/zyvorai/netra/internal/incidentbundle"
 )
 
 const incidentUsage = "usage: netractl incident bundle [--minutes N] [--node NAME] [--exclude SECTION,...] [--mask-ips[=prefix]] [--mask-key KEY] [--format json|tgz] [--out FILE]\n" +
-	"       netractl incident verify FILE [--json]\n" +
+	"       netractl incident verify FILE [--json] [--seal FILE.seal --key-file KEY]\n" +
+	"       netractl incident seal FILE [--key-file KEY] [--out FILE.seal]\n" +
+	"       netractl incident report FILE [--json] [--out FILE]\n" +
 	"       netractl incident diff A B [--json]"
 
 // incidentCmd is the incident flight recorder: bundle, verify, diff. Bundle
@@ -34,6 +37,10 @@ func incidentCmd(args []string) error {
 		return incidentVerify(args[1:])
 	case "diff":
 		return incidentDiff(args[1:])
+	case "seal":
+		return incidentSeal(args[1:])
+	case "report":
+		return incidentReport(args[1:])
 	}
 	return fmt.Errorf("unknown incident command %q\n%s", args[0], incidentUsage)
 }
@@ -204,13 +211,41 @@ func readBundleFile(path string) ([]byte, error) {
 }
 
 func incidentVerify(args []string) error {
-	asJSON, files := splitJSONFlag(args)
+	var sealFile, keyFile string
+	var plain []string
+	for i := 0; i < len(args); i++ {
+		switch {
+		case args[i] == "--seal" && i+1 < len(args):
+			i++
+			sealFile = args[i]
+		case args[i] == "--key-file" && i+1 < len(args):
+			i++
+			keyFile = args[i]
+		default:
+			plain = append(plain, args[i])
+		}
+	}
+	asJSON, files := splitJSONFlag(plain)
 	if len(files) != 1 {
-		return fmt.Errorf("usage: netractl incident verify FILE [--json]")
+		return fmt.Errorf("usage: netractl incident verify FILE [--json] [--seal FILE.seal --key-file KEY]")
 	}
 	data, err := readBundleFile(files[0])
 	if err != nil {
 		return err
+	}
+	if sealFile != "" {
+		key, err := sealKey(keyFile)
+		if err != nil {
+			return err
+		}
+		sj, err := os.ReadFile(sealFile)
+		if err != nil {
+			return err
+		}
+		if err := incidentbundle.VerifySeal(data, sj, key); err != nil {
+			return fmt.Errorf("seal check failed: %w", err)
+		}
+		fmt.Printf("SEAL OK  %s matches %s\n", sealFile, files[0])
 	}
 	rep := incidentbundle.VerifyFile(data)
 	if asJSON {
@@ -303,5 +338,117 @@ func incidentDiff(args []string) error {
 		}
 	}
 	fmt.Println("\n" + rep.Summary)
+	return nil
+}
+
+// sealKey reads the shared seal key from --key-file or NETRA_INCIDENT_SEAL_KEY.
+// The key never appears on the command line and is never written anywhere.
+func sealKey(keyFile string) ([]byte, error) {
+	var key []byte
+	if keyFile != "" {
+		b, err := os.ReadFile(keyFile)
+		if err != nil {
+			return nil, err
+		}
+		key = bytes.TrimSpace(b)
+	} else if v := os.Getenv("NETRA_INCIDENT_SEAL_KEY"); v != "" {
+		key = []byte(strings.TrimSpace(v))
+	} else {
+		return nil, fmt.Errorf("a seal key is required: --key-file FILE or NETRA_INCIDENT_SEAL_KEY")
+	}
+	if len(key) < incidentbundle.MinSealKeyBytes {
+		return nil, fmt.Errorf("seal key must be at least %d bytes", incidentbundle.MinSealKeyBytes)
+	}
+	return key, nil
+}
+
+// incidentSeal writes a detached HMAC seal for a bundle (offline).
+func incidentSeal(args []string) error {
+	var files []string
+	var keyFile, out string
+	for i := 0; i < len(args); i++ {
+		switch a := args[i]; {
+		case a == "--key-file" && i+1 < len(args):
+			i++
+			keyFile = args[i]
+		case a == "--out" && i+1 < len(args):
+			i++
+			out = args[i]
+		case strings.HasPrefix(a, "--"):
+			return fmt.Errorf("unknown incident seal flag %s\n%s", a, incidentUsage)
+		default:
+			files = append(files, a)
+		}
+	}
+	if len(files) != 1 {
+		return fmt.Errorf("usage: netractl incident seal FILE [--key-file KEY] [--out FILE.seal]")
+	}
+	key, err := sealKey(keyFile)
+	if err != nil {
+		return err
+	}
+	data, err := readBundleFile(files[0])
+	if err != nil {
+		return err
+	}
+	s, err := incidentbundle.SealBundle(data, key, time.Now())
+	if err != nil {
+		return err
+	}
+	if out == "" {
+		out = files[0] + ".seal"
+	}
+	x, _ := json.MarshalIndent(s, "", "  ")
+	if err := os.WriteFile(out, append(x, '\n'), 0o600); err != nil {
+		return err
+	}
+	fmt.Printf("sealed %s\n  chain head %s  key id %s\n  wrote %s\n  share the key out of band; check with: netractl incident verify %s --seal %s --key-file KEY\n", files[0], s.BundleHead, s.KeyID, out, files[0], out)
+	return nil
+}
+
+// incidentReport renders an offline post-incident draft from a bundle.
+func incidentReport(args []string) error {
+	var files []string
+	var out string
+	asJSON := false
+	for i := 0; i < len(args); i++ {
+		switch a := args[i]; {
+		case a == "--json":
+			asJSON = true
+		case a == "--out" && i+1 < len(args):
+			i++
+			out = args[i]
+		case strings.HasPrefix(a, "--"):
+			return fmt.Errorf("unknown incident report flag %s\n%s", a, incidentUsage)
+		default:
+			files = append(files, a)
+		}
+	}
+	if len(files) != 1 {
+		return fmt.Errorf("usage: netractl incident report FILE [--json] [--out FILE]")
+	}
+	data, err := readBundleFile(files[0])
+	if err != nil {
+		return err
+	}
+	rep, err := incidentbundle.BuildReport(data)
+	if err != nil {
+		return err
+	}
+	var text string
+	if asJSON {
+		x, _ := json.MarshalIndent(rep, "", "  ")
+		text = string(x) + "\n"
+	} else {
+		text = rep.Markdown()
+	}
+	if out == "" {
+		fmt.Print(text)
+		return nil
+	}
+	if err := os.WriteFile(out, []byte(text), 0o600); err != nil {
+		return err
+	}
+	fmt.Println("wrote " + out)
 	return nil
 }

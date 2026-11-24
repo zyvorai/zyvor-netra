@@ -69,3 +69,24 @@ Window 1 minute to 24 h. Rows: 60 metric series of 120 points, 100 flows, 50 tal
 ## Validation
 
 `go test ./internal/incidentbundle ./internal/api -run IncidentBundle ./cmd/netractl` covers a golden bundle for a fixture window (`testdata/golden.json`, rewrite with `-update`), secrets and payload-like fields injected into every store fixture, mask stability and prefix preservation, bounds and truncation, hostile inputs, tamper detection, tar.gz round trip and diff determinism. `web/src/lib/incidentBundle.test.ts` covers the console helpers. `scripts/ci-netractl-live.sh` builds a real bundle from a live controller, verifies and diffs it.
+
+## Seal: keyed attestation (`netra-incident-seal/1`)
+
+The hash chain makes edits visible but is not a signature. For a recipient who shares a key with you, add a detached HMAC seal:
+
+```bash
+netractl incident seal incident.json --key-file ./seal.key        # writes incident.json.seal (0600)
+netractl incident verify incident.json --seal incident.json.seal --key-file ./seal.key
+```
+
+The key (at least 16 bytes) comes from `--key-file` or `NETRA_INCIDENT_SEAL_KEY`, never from an argument, and is never written to the seal or bundle. The seal holds the schema, `hmac-sha256`, the bundle chain head and window, a key id (first 4 bytes of a domain-separated hash), the seal time and the tag. `seal` refuses a bundle that does not verify; `verify --seal` verifies the bundle first, then checks that the seal names this bundle, was made with this key and that the tag matches (constant-time compare). It is symmetric: anyone holding the key can also forge a seal, so it proves "made by a holder of this key", not who. Key distribution and rotation are yours. It works on `.json` and `.tar.gz` bundles, offline.
+
+## Report: an offline incident draft
+
+```bash
+netractl incident report incident.json                 # Markdown to stdout
+netractl incident report incident.json --json --out report.json
+```
+
+The report is derived only from a bundle that verifies, so it adds no data and cannot widen redaction. It gives a verdict (`quiet`, `changes-only` or `breaks`), the first break-class event, the change-class events in the 15 minutes before it (nearest first, at most 10; temporal order, not proof of cause), up to 40 change and break events, up to 12 key signal ranges, deny lease activity and a trust section listing blind spots, excluded or unavailable sections, truncated lists and warning findings without an event time. Output is deterministic for a given bundle. It does not call an LLM and does not contact the controller.
+
