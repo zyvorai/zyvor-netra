@@ -199,19 +199,25 @@ func TestElectionLoopStopsOTLPExporterOnDemote(t *testing.T) {
 			nil, alert.Config{}, nil, gitops.Config{}, false)
 	}
 
-	parent, cancelAll := context.WithTimeout(context.Background(), 600*time.Millisecond)
+	// Handoff is driven by observed pushes, not fixed sleeps: lease timing
+	// stretches on a loaded host.
+	parent, cancelAll := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancelAll()
 	var wg sync.WaitGroup
 	ctxA, cancelA := context.WithCancel(parent)
 	wg.Add(1)
 	go run(ctxA, &wg, "replica-a")
-	time.Sleep(70 * time.Millisecond)
+	for deadline := time.Now().Add(10 * time.Second); rec.count("/v1/metrics") == 0 && time.Now().Before(deadline); {
+		time.Sleep(10 * time.Millisecond)
+	}
 	ctxB, cancelB := context.WithCancel(parent)
 	defer cancelB()
 	wg.Add(1)
 	go run(ctxB, &wg, "replica-b")
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	cancelA() // forced handoff
+	time.Sleep(600 * time.Millisecond)
+	cancelAll()
 
 	done := make(chan struct{})
 	go func() { wg.Wait(); close(done) }()
