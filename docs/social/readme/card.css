@@ -7,7 +7,7 @@
 html,body { margin:0; padding:0; }
 body { width:1600px; overflow:hidden; background:var(--warm); color:var(--ink); font-family:var(--sans); position:relative; }
 .bar { display:none; }
-.wrap { position:absolute; left:64px; right:56px; top:40px; bottom:34px; display:flex; flex-direction:column; }
+.wrap { position:absolute; left:64px; right:56px; top:40px; bottom:176px; display:flex; flex-direction:column; }
 .top { display:flex; align-items:center; gap:14px; font-family:var(--mono); font-size:18px; letter-spacing:.14em; text-transform:uppercase; color:var(--soft); }
 .top img { height:34px; } .top b { color:var(--ink); } .top .r { margin-left:auto; }
 h1 { margin:18px 0 0; font-size:56px; line-height:1.06; letter-spacing:-.025em; font-weight:700; }
@@ -27,3 +27,4 @@ h1 em { font-style:normal; color:var(--signal); }
 .kl { margin-left:28px; color:#f0d58a; font-weight:700; letter-spacing:.04em; }
 .kasavu { position:absolute; left:0; right:0; bottom:0; height:9px; z-index:9; border-top:2px solid #d4a73a;
   background:repeating-linear-gradient(90deg,#f6e7b4 0 9px,#c9962b 9px 11px,#f6e7b4 11px 20px,#fff6d6 20px 22px); }
+#kscene { position:absolute; left:0; bottom:0; width:1600px; height:150px; overflow:hidden; }
