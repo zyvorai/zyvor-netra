@@ -1,8 +1,10 @@
 <div align="center">
 
-<img src="social/og.png" width="840" alt="Zyvor Netra: see every packet's story. Standalone eBPF network observability and emergency network control, shown with the web dashboard and demo data." />
+<img src="docs/social/netra-hero-dark.jpg" width="840" alt="Zyvor Netra: see every packet's story. Standalone eBPF network observability and emergency network control. A Kerala-style eye with a gold-ringed iris carrying MEKHA in hex, over a Kerala backwater at sunset. Dedicated to Kerala, Thiruvananthapuram." />
 
 # Netra
+
+*Dedicated to Kerala · Thiruvananthapuram · കേരളം · തിരുവനന്തപുരം*
 
 [![CI](https://github.com/zyvorai/zyvor-netra/actions/workflows/ci.yml/badge.svg)](https://github.com/zyvorai/zyvor-netra/actions/workflows/ci.yml)
 [![License: Zyvor Production v1.0](https://img.shields.io/badge/License-Zyvor%20Production%20v1.0-orange.svg)](LICENSE)
