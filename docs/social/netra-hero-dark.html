@@ -44,6 +44,14 @@
   .pill span.b { background:var(--blue); border-color:var(--blue); color:#fff; box-shadow:0 0 24px rgba(0,113,227,.55); }
   #eye { position:absolute; left:600px; top:95px; width:640px; height:440px; z-index:4; }
   .lbl { font-family:'SF Mono',Menlo,monospace; font-size:13px; font-weight:700; letter-spacing:.08em; fill:#cfe6ff; }
+  .kasavu { position:absolute; left:0; right:0; bottom:0; height:14px; z-index:7;
+    background:repeating-linear-gradient(90deg, #f6e7b4 0 10px, #c9962b 10px 12px, #f6e7b4 12px 22px, #fff6d6 22px 24px);
+    border-top:3px solid #d4a73a; box-shadow:0 -6px 22px rgba(212,167,58,.35); }
+  .kasavu::after { content:''; position:absolute; left:0; right:0; top:2px; height:2px; background:linear-gradient(90deg,#8a6a16,#ffe8a3,#8a6a16); }
+  .ded { position:absolute; right:44px; bottom:36px; z-index:6; text-align:right; padding:10px 18px 11px; border-radius:14px;
+    background:rgba(0,0,0,.62); border:1.5px solid rgba(212,167,58,.7); box-shadow:0 0 28px rgba(212,167,58,.22); }
+  .ded .en { font-family:var(--mono); font-size:13px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#f6e7b4; }
+  .ded .ml { margin-top:4px; font-family:'Malayalam MN','Malayalam Sangam MN','Noto Sans Malayalam',var(--sans); font-size:22px; line-height:1.2; font-weight:700; color:#ffe8a3; }
 </style>
 </head>
 <body>
@@ -146,6 +154,8 @@
 </div>
 <div class="pill"><span class="b">github.com/zyvorai/zyvor-netra</span><span>Zyvor Production</span></div>
 
+<div class="ded"><div class="en">Dedicated to Kerala &middot; Thiruvananthapuram</div><div class="ml">കേരളം · തിരുവനന്തപുരം</div></div>
+<div class="kasavu"></div>
 <script>
 (function () {
   var seed = 20261004;
@@ -207,6 +217,8 @@
   // Matrix rain: katakana, hex and digits
   var glyphs = [];
   for (var cp = 0x30A1; cp <= 0x30F6; cp++) glyphs.push(String.fromCharCode(cp));
+  // Malayalam letters (U+0D05..U+0D39), weighted so Kerala reads in the rain beside the katakana
+  for (var ml = 0x0D05; ml <= 0x0D39; ml++) { if (ml === 0x0D0D || ml === 0x0D11) continue; glyphs.push(String.fromCharCode(ml)); glyphs.push(String.fromCharCode(ml)); }
   '0123456789ABCDEF'.split('').forEach(function (ch) { glyphs.push(ch); glyphs.push(ch); });
   var rain = document.getElementById('rain');
   var W = 730, colW = 16, cols = Math.floor(W / colW), rows = 38;

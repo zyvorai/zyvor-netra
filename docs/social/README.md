@@ -9,3 +9,5 @@
 
 Every claim on the social card is one the [product brochure](../sales/brochure/README.md) already sources.
 Licence wording follows `LICENSE`: the Zyvor Production Licence v2.0; a commercial license is required for production use.
+
+The dark hero (`netra-hero-dark.html` / `.jpg`) carries a dedication to Kerala and Thiruvananthapuram (English and Malayalam), a gold kasavu border along the bottom edge, and Malayalam letters mixed into the code rain. The README hero and the website's social preview both use it.
