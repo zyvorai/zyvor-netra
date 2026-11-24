@@ -29,7 +29,7 @@ import (
 	"github.com/zyvorai/netra/internal/models"
 	"github.com/zyvorai/netra/internal/policy"
 	"github.com/zyvorai/netra/internal/store"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 // Actor is recorded on every audit event/revision GitOps produces, the same

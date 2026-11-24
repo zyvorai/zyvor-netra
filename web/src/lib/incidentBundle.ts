@@ -61,3 +61,12 @@ export function bundleFileName(doc: BundleDoc | undefined): string {
   const stamp = (doc?.generatedAt || '').replace(/[^0-9TZ]/g, '').slice(0, 16) || 'bundle';
   return `netra-incident-${stamp}.json`;
 }
+
+// verifySummary renders the POST /api/v1/incident/verify answer in one line.
+export function verifySummary(res: { verify?: { ok?: boolean; problems?: string[] | null; sections?: number }; seal?: { ok?: boolean; error?: string } } | undefined): string {
+  const v = res?.verify;
+  if (!v) return 'no verification result';
+  const parts = [v.ok ? `bundle verifies (${v.sections ?? 0} sections, hash chain intact)` : `bundle does NOT verify: ${(v.problems || [])[0] || 'unknown problem'}`];
+  if (res?.seal) parts.push(res.seal.ok ? 'seal matches' : `seal check failed: ${res.seal.error || 'mismatch'}`);
+  return parts.join('; ');
+}

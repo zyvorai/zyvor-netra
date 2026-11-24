@@ -134,6 +134,8 @@ See [`incident-bundle.md`](incident-bundle.md), [`incident-changes.md`](incident
 netractl security floods [30m]                 # inbound floods + a suggested deny (never applied)
 netractl capacity forecast --window 1h         # conntrack / ephemeral-port exhaustion forecast
 netractl insights tls-posture                  # TLS versions clients offer (JA4 metadata)
+netractl insights dependency-drift --recent 1h # new / vanished dependencies vs flow history (docs/flow-drift.md)
+netractl insights volume-shift --factor 3      # workload byte-rate surges and drops vs baseline
 netractl export flow-summary --format csv --since 1h --limit 1000 [--namespace NS]
 ```
 

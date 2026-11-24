@@ -82,6 +82,8 @@ var viewerPOST = map[string]bool{
 	"POST /api/v1/ebpf/scope/preview":            true,
 	"POST /api/v1/ebpf/netpol/default-deny/plan": true,
 	"POST /api/v1/investigate/connection":        true,
+	"POST /api/v1/incident/verify":               true,
+	"POST /api/v1/incident/report":               true,
 }
 
 // requiredRole is the minimum role for the request's matched route.

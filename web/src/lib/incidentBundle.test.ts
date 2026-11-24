@@ -1,7 +1,7 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 import { describe, expect, it } from 'vitest';
-import { bundleFileName, bundleQuery, headline, rowCount, truncatedLists } from './incidentBundle';
+import { bundleFileName, bundleQuery, verifySummary, headline, rowCount, truncatedLists } from './incidentBundle';
 
 describe('incident bundle helpers', () => {
   it('clamps minutes and drops unknown sections and masks', () => {
@@ -30,5 +30,15 @@ describe('incident bundle helpers', () => {
   it('names the download from the generation time', () => {
     expect(bundleFileName({ generatedAt: '2026-11-20T12:00:00Z' })).toBe('netra-incident-20261120T120000Z.json');
     expect(bundleFileName(undefined)).toBe('netra-incident-bundle.json');
+  });
+});
+
+describe('verifySummary', () => {
+  it('states a clean bundle, a failure, and a seal result', () => {
+    expect(verifySummary(undefined)).toBe('no verification result');
+    expect(verifySummary({ verify: { ok: true, sections: 9 } })).toBe('bundle verifies (9 sections, hash chain intact)');
+    expect(verifySummary({ verify: { ok: false, problems: ['chain broken at flows'] } })).toBe('bundle does NOT verify: chain broken at flows');
+    expect(verifySummary({ verify: { ok: true, sections: 1 }, seal: { ok: false, error: 'different key' } })).toContain('seal check failed: different key');
+    expect(verifySummary({ verify: { ok: true, sections: 1 }, seal: { ok: true } })).toContain('seal matches');
   });
 });

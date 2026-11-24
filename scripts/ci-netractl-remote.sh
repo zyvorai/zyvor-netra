@@ -197,6 +197,30 @@ while IFS= read -r line; do
   run_one "$name" "$optional" "${args[@]}"
 done <"$DUMP"
 
+# The same bundle through the API: verify and report are viewer-role POSTs that
+# compute over the posted bytes, and the seal needs a controller-side key.
+if command -v curl >/dev/null 2>&1; then
+  live_bundle="$TMP/api-bundle.json"
+  "$NETRACTL" incident bundle --minutes 5 --out "$live_bundle" >/dev/null
+  curl_api() { curl -sS ${NETRA_TLS_INSECURE:+-k} -H "Authorization: Bearer ${NETRA_API_KEY:-}" "$@"; }
+  if curl_api -X POST --data-binary "@$live_bundle" "$NETRA_URL/api/v1/incident/verify" | grep -q '"ok":true'; then
+    pass=$((pass + 1)); echo "ok   api incident verify"
+  else
+    fail=$((fail + 1)); FAILED+=("api incident verify"); echo "FAIL api incident verify"
+  fi
+  if curl_api -X POST --data-binary "@$live_bundle" "$NETRA_URL/api/v1/incident/report" | grep -q 'netra-incident-report/1'; then
+    pass=$((pass + 1)); echo "ok   api incident report"
+  else
+    fail=$((fail + 1)); FAILED+=("api incident report"); echo "FAIL api incident report"
+  fi
+  if curl_api "$NETRA_URL/api/v1/insights/dependency-drift" | grep -q 'netra-dependency-drift/1' &&
+    curl_api "$NETRA_URL/api/v1/insights/volume-shift" | grep -q 'netra-volume-shift/1'; then
+    pass=$((pass + 1)); echo "ok   api flow drift and volume shift"
+  else
+    fail=$((fail + 1)); FAILED+=("api flow drift"); echo "FAIL api flow drift"
+  fi
+fi
+
 echo
 echo "==== summary ===="
 echo "pass=$pass fail=$fail skip=$skip"

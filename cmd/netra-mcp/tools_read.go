@@ -872,6 +872,53 @@ func registerReadTools(srv *mcpserver.Server, c *client) error {
 			queryParams: []string{"minutes", "node", "exclude", "mask_ips"},
 		},
 		{
+			name: "netra_incident_verify", method: "POST", path: "/api/v1/incident/verify",
+			description: "Verify an incident bundle (netra-incident-bundle/1, JSON text) the same fail-closed way as netractl incident verify: schema, bounds, allow-listed fields, payload- or secret-shaped content, unmasked addresses and the hash chain. Optionally pass seal (a netra-incident-seal/1 document) to check it against the controller's configured seal key; the key is never sent or returned. Read-only: nothing is stored.",
+			schema: objSchema(map[string]any{
+				"bundle": strProp("The bundle as JSON text."),
+				"seal":   strProp("Optional seal document text to check against the controller's NETRA_INCIDENT_SEAL_KEY."),
+			}, "bundle"),
+			bodyFields: true,
+		},
+		{
+			name: "netra_incident_report", method: "POST", path: "/api/v1/incident/report",
+			description: "Render a deterministic post-incident draft (verdict, first break, the changes before it in temporal order which is not proof of cause, key signal ranges, deny lease activity and how far to trust it) from an incident bundle. Refuses a bundle that does not verify. Adds no data. format=json or markdown. Read-only.",
+			schema: objSchema(map[string]any{
+				"bundle": strProp("The bundle as JSON text."),
+			}, "bundle"),
+			bodyFields:  true,
+			queryParams: []string{"format"},
+		},
+		{
+			name: "netra_insights_dependency_drift", method: "GET", path: "/api/v1/insights/dependency-drift",
+			description: "Workload dependencies (peer, port, protocol) that are new in the recent window compared with the earlier baseline of retained flow history, plus edges that have gone quiet. New public egress destinations are flagged and ranked first. Reports not-ready (and lists nothing as new) until enough baseline history exists. A lead, not a verdict: history is bounded and pod IP churn shows as new private edges (use public_only). Read-only; applies nothing.",
+			schema: objSchema(map[string]any{
+				"recent":       strProp("Recent window, 1m to 48h. Default 1h."),
+				"baseline":     strProp("Baseline window before it, 1h up to the flow retention (max 336h). Default 144h."),
+				"min_baseline": strProp("History required before the recent window, default 1h."),
+				"namespace":    strProp("Only this namespace."),
+				"node":         strProp("Only this node."),
+				"public_only":  strProp("\"true\" to report only public peers."),
+				"limit":        intProp("Max rows per list, 1-500. Default 100."),
+			}),
+			queryParams: []string{"recent", "baseline", "min_baseline", "namespace", "node", "public_only", "limit"},
+		},
+		{
+			name: "netra_insights_volume_shift", method: "GET", path: "/api/v1/insights/volume-shift",
+			description: "Workloads whose per-direction byte rate in the recent window is at least factor times (surge) or at most 1/factor of (drop) their own baseline rate from retained flow history, above a minimum byte floor. The baseline is one average, so daily cycles can look like shifts. Not ready until enough history exists. Read-only.",
+			schema: objSchema(map[string]any{
+				"recent":       strProp("Recent window, 1m to 48h. Default 1h."),
+				"baseline":     strProp("Baseline window, default 144h."),
+				"min_baseline": strProp("History required before the recent window, default 1h."),
+				"namespace":    strProp("Only this namespace."),
+				"node":         strProp("Only this node."),
+				"factor":       strProp("Ratio threshold, 1.5 to 1000. Default 3."),
+				"min_bytes":    intProp("Byte floor for a surge (and for the expected volume of a drop). Default 10485760."),
+				"limit":        intProp("Max rows, 1-500. Default 100."),
+			}),
+			queryParams: []string{"recent", "baseline", "min_baseline", "namespace", "node", "factor", "min_bytes", "limit"},
+		},
+		{
 			name: "netra_capacity_forecast", method: "GET", path: "/api/v1/capacity/forecast",
 			description: "Per-node time-to-exhaustion forecast for the conntrack table and the ephemeral port range, from the stored per-second utilization series (linear fit plus a check of the most recent samples; silent when the trend is flat, noisy or reversing). Ephemeral-port utilization is the host's own sockets toward the busiest single destination; SNAT ports are not visible. Needs the metrics platform. Read-only: changes no sysctl.",
 			schema: objSchema(map[string]any{

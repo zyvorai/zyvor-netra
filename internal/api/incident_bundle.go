@@ -166,6 +166,12 @@ func (s *Server) incidentBundle(w http.ResponseWriter, r *http.Request) {
 		errorJSON(w, http.StatusInternalServerError, "could not build the bundle: "+err.Error())
 		return
 	}
+	if q.Get("seal") == "true" {
+		if msg, ok := sealHeader(w, out); !ok {
+			errorJSON(w, http.StatusBadRequest, msg)
+			return
+		}
+	}
 	w.Header().Set("Cache-Control", "no-store")
 	writeRawJSON(w, http.StatusOK, out)
 }

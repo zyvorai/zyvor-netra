@@ -90,3 +90,14 @@ netractl incident report incident.json --json --out report.json
 
 The report is derived only from a bundle that verifies, so it adds no data and cannot widen redaction. It gives a verdict (`quiet`, `changes-only` or `breaks`), the first break-class event, the change-class events in the 15 minutes before it (nearest first, at most 10; temporal order, not proof of cause), up to 40 change and break events, up to 12 key signal ranges, deny lease activity and a trust section listing blind spots, excluded or unavailable sections, truncated lists and warning findings without an event time. Output is deterministic for a given bundle. It does not call an LLM and does not contact the controller.
 
+
+## API: verify, report and seal over HTTP
+
+The offline commands have read-only API and MCP twins, so an agent or the console can check and summarise a bundle without shell access.
+
+- `POST /api/v1/incident/verify`: body is the bundle (JSON or `.tar.gz`), or `{"bundle": "<json text>", "seal": "<seal text>"}`. Returns `{"verify": {...}}` with the same fail-closed result as `netractl incident verify`. A seal (the `X-Netra-Incident-Seal` header or the `seal` field) is checked against the controller's `NETRA_INCIDENT_SEAL_KEY`; `400` if none is configured. The key is never accepted in a request and never returned.
+- `POST /api/v1/incident/report?format=json|markdown`: the same deterministic draft as `netractl incident report`. `422` for a bundle that does not verify.
+- `GET /api/v1/incident/bundle?seal=true`: also returns the seal in the `X-Netra-Incident-Seal` response header, made with the controller key (`400` if none is configured).
+- MCP: `netra_incident_verify`, `netra_incident_report` (read-only). Console: the **Incident Bundle** page has Verify and Incident report buttons.
+
+Both POST routes are viewer-role computations over the posted bytes: they read no store, keep nothing and are bounded to the bundle file limit. The seal is symmetric (no non-repudiation); whoever holds the controller key can seal.

@@ -67,6 +67,7 @@ func helpSections() []helpSection {
 				{"ebpf coverage | census | maps | capabilities", "Hook coverage + map inventory"},
 				{"drops [explain]", "Drop explain from policy + kernel"},
 				{"insights … | incidents …", "Baselines, drift, joined incidents"},
+				{"insights dependency-drift | volume-shift [--recent 1h --baseline 144h]", "New or vanished dependencies and byte-rate surges versus flow history"},
 				{"incident bundle --minutes N --out FILE", "Incident flight recorder: one redacted, hash-chained bundle of the last N minutes"},
 				{"incident verify FILE | diff A B", "Check a bundle offline (fails closed) or compare two"},
 				{"incident seal FILE | report FILE", "HMAC-seal a bundle for a recipient with the same key, or render an offline incident report draft"},
