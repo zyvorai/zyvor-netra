@@ -37,6 +37,7 @@ From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.32.0):
 |---|---|
 | **Floods, capacity and TLS posture** *(Unreleased)* | Per-vector inbound flood findings with a review-only suggested deny, conntrack and ephemeral-port exhaustion forecasts, a TLS client posture inventory and an IPFIX-named flow summary export. [Docs →](docs/flood-detection.md) |
 | **Incident flight recorder** *(Unreleased)* | The last N minutes as one redacted, hash-chained, bounded bundle built from stores Netra already keeps, with offline `verify` and `diff`. [Docs →](docs/incident-bundle.md) |
+| **Sealed bundles and incident report** *(Unreleased)* | `netractl incident seal` adds a keyed HMAC attestation to a bundle for a recipient who shares the key, and `incident report` renders an offline post-incident draft (first break, precursor changes, blind spots) from a verified bundle. [Docs →](docs/incident-bundle.md) |
 | **What changed, then what broke** *(Unreleased)* | One ordered timeline of audit, netlink, BPF attachment, drop, anomaly and alert signals with suspects and gaps, plus a self-lockout check on deny previews. [Docs →](docs/incident-changes.md) |
 | **Per-node agent mTLS identity** *(0.32.0)* | Opt-in `NETRA_AGENT_MTLS_BIND_NODE` requires the reported node to match the agent's client certificate; revoked serials can be hot-reloaded. [Docs →](docs/agent-mtls.md) |
 | **Scoped authorization** *(0.32.0)* | OIDC claims and `NETRA_SERVICE_CREDENTIALS_FILE` add namespace, cluster and tenant ACLs on top of viewer, operator and admin. [Docs →](docs/auth-oidc-rbac.md) |
