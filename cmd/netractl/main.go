@@ -1706,6 +1706,10 @@ func insightCmd() error {
 		return request("GET", "/api/v1/insights/protocol-downgrades", nil)
 	case "tls-posture":
 		return request("GET", "/api/v1/insights/tls-posture", nil)
+	case "dependency-drift":
+		return historyShiftCmd("/api/v1/insights/dependency-drift", os.Args[3:], false)
+	case "volume-shift":
+		return historyShiftCmd("/api/v1/insights/volume-shift", os.Args[3:], true)
 	case "policy-review":
 		if len(os.Args) < 4 {
 			return fmt.Errorf("policy-review requires a recommendation ID (see insights recommendations for ids)")
@@ -2081,4 +2085,39 @@ func capacityCmd(args []string) error {
 		p += "?" + q.Encode()
 	}
 	return request("GET", p, nil)
+}
+
+// historyShiftCmd runs the flow-history comparison reports:
+//
+//	insights dependency-drift [--recent 1h] [--baseline 144h] [--min-baseline 1h]
+//	    [--namespace NS] [--node NODE] [--public-only] [--limit N]
+//	insights volume-shift     [the same, plus --factor 3 --min-bytes N]
+//
+// Read-only: both only read the retained flow history.
+func historyShiftCmd(path string, args []string, shift bool) error {
+	valued := map[string]string{"--recent": "recent", "--baseline": "baseline", "--min-baseline": "min_baseline",
+		"--namespace": "namespace", "--node": "node", "--limit": "limit"}
+	if shift {
+		valued["--factor"], valued["--min-bytes"] = "factor", "min_bytes"
+	}
+	q := url.Values{}
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--public-only" && !shift {
+			q.Set("public_only", "true")
+			continue
+		}
+		param, ok := valued[args[i]]
+		if !ok {
+			return fmt.Errorf("unknown flag %s (see netractl help insights)", args[i])
+		}
+		if i+1 >= len(args) {
+			return fmt.Errorf("%s requires a value", args[i])
+		}
+		i++
+		q.Set(param, args[i])
+	}
+	if len(q) > 0 {
+		path += "?" + q.Encode()
+	}
+	return request("GET", path, nil)
 }

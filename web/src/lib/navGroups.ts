@@ -70,6 +70,7 @@ export const navGroups: NavGroup[] = [
       { page: 'what-changed', label: 'What Changed', blurb: 'Changes then breaks in one order, with suspects and gaps. Read-only.' },
       { page: 'incident-bundle', label: 'Incident Bundle', blurb: 'Flight recorder: the last N minutes as one redacted, hash-chained file. Read-only.' },
       { page: 'network-risk', label: 'Network Risk', blurb: 'Floods with a suggested deny, conntrack and port exhaustion forecasts, TLS posture. Read-only.' },
+      { page: 'flow-drift', label: 'Flow Drift', blurb: 'New and vanished dependencies and byte-rate surges versus flow history. Read-only.' },
       { page: 'incident-timeline', label: 'Incident Timeline', blurb: 'Chronological audit + health-signature narrative. Observe-only.' },
       { page: 'surfaces', label: 'Surfaces', blurb: 'JA3 risk, ECH blindness, DNS intel, exfil/lateral drafts, compliance — observe-only.' },
       { page: 'ebpf', label: 'Firewall', blurb: 'Deny lists, DDoS shield, NetPol, and emergency controls in one place.' },

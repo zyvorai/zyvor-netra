@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { authHeaders } from '../api';
 import PagePulse from '../components/kit/PagePulse';
-import { bundleFileName, bundleQuery, bundleSections, headline, rowCount, truncatedLists, type BundleDoc } from '../lib/incidentBundle';
+import { bundleFileName, verifySummary, bundleQuery, bundleSections, headline, rowCount, truncatedLists, type BundleDoc } from '../lib/incidentBundle';
 
 export default function IncidentBundle() {
   const [doc, setDoc] = useState<BundleDoc>();
@@ -17,6 +17,43 @@ export default function IncidentBundle() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [tick, setTick] = useState(0);
+  const [verifyMsg, setVerifyMsg] = useState('');
+  const [reportMd, setReportMd] = useState('');
+
+  const postBundle = (path: string, accept: string) =>
+    fetch(path, { method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json', Accept: accept }, body: raw }).then(async (r) => {
+      const text = await r.text();
+      if (!r.ok) {
+        let msg = text;
+        try {
+          msg = JSON.parse(text).error || text;
+        } catch {
+          /* plain text error */
+        }
+        throw new Error(msg || r.statusText);
+      }
+      return text;
+    });
+
+  const verify = () => {
+    if (!raw) return;
+    setBusy(true);
+    postBundle('/api/v1/incident/verify', 'application/json')
+      .then((t) => setVerifyMsg(verifySummary(JSON.parse(t))))
+      .then(() => setErr(''))
+      .catch((e) => setErr(String(e.message || e)))
+      .finally(() => setBusy(false));
+  };
+
+  const render = () => {
+    if (!raw) return;
+    setBusy(true);
+    postBundle('/api/v1/incident/report?format=markdown', 'text/markdown')
+      .then((t) => setReportMd(t))
+      .then(() => setErr(''))
+      .catch((e) => setErr(String(e.message || e)))
+      .finally(() => setBusy(false));
+  };
 
   const build = () => {
     setBusy(true);
@@ -33,6 +70,8 @@ export default function IncidentBundle() {
           throw new Error(msg || r.statusText);
         }
         setRaw(text);
+        setVerifyMsg('');
+        setReportMd('');
         setDoc(JSON.parse(text) as BundleDoc);
         setErr('');
         setTick(Date.now());
@@ -99,6 +138,12 @@ export default function IncidentBundle() {
           <button type="button" onClick={download} disabled={!doc}>
             Download JSON
           </button>
+          <button type="button" onClick={verify} disabled={!doc || busy}>
+            Verify
+          </button>
+          <button type="button" onClick={render} disabled={!doc || busy}>
+            Incident report
+          </button>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '0.5rem' }}>
           <span>Leave out:</span>
@@ -114,7 +159,17 @@ export default function IncidentBundle() {
           ))}
         </div>
         {err && <p className="warning">{err}</p>}
+        {verifyMsg && <p className="empty-state">{verifyMsg}</p>}
       </section>
+
+      {reportMd && (
+        <section className="card span3">
+          <p className="eyebrow">INCIDENT REPORT DRAFT</p>
+          <h2 className="card-title">Derived from the bundle above</h2>
+          <p className="empty-state">Temporal order is not proof of cause. The draft adds no data; it only restates the verified bundle.</p>
+          <pre style={{ whiteSpace: 'pre-wrap', overflowX: 'auto' }}>{reportMd}</pre>
+        </section>
+      )}
 
       {doc && (
         <>

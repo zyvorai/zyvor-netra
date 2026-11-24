@@ -87,7 +87,7 @@ printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
 
 ## Read tools and mutating tools
 
-The server exposes 227 tools: 165 read tools and 62 opt-in mutating tools. With
+The server exposes 231 tools: 169 read tools and 62 opt-in mutating tools. With
 `NETRA_MCP_ALLOW_MUTATIONS` unset or `false` (the default), only read tools are registered; the
 mutating tool names do not exist in the running process.
 

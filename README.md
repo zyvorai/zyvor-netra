@@ -21,7 +21,7 @@
 
 **Standalone eBPF network observability and emergency network control for Linux/Kubernetes — with optional Cilium + Hubble enrichment.** Kernel drop attribution, path and congestion diagnostics, live packet capture, and leased deny rules that return to observe on their own, on any CNI.
 
-**Observe-first** · **Lease-bounded, fails open** · **No CNI required** · **No payload collection** · **227 MCP tools**
+**Observe-first** · **Lease-bounded, fails open** · **No CNI required** · **No payload collection** · **231 MCP tools**
 
 📖 **[Read the full docs](https://zyvorai.github.io/zyvor-netra/)** — quickstart, architecture, security model, and a product tour.
 
@@ -38,6 +38,7 @@ From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.32.0):
 | **Floods, capacity and TLS posture** *(Unreleased)* | Per-vector inbound flood findings with a review-only suggested deny, conntrack and ephemeral-port exhaustion forecasts, a TLS client posture inventory and an IPFIX-named flow summary export. [Docs →](docs/flood-detection.md) |
 | **Incident flight recorder** *(Unreleased)* | The last N minutes as one redacted, hash-chained, bounded bundle built from stores Netra already keeps, with offline `verify` and `diff`. [Docs →](docs/incident-bundle.md) |
 | **Sealed bundles and incident report** *(Unreleased)* | `netractl incident seal` adds a keyed HMAC attestation to a bundle for a recipient who shares the key, and `incident report` renders an offline post-incident draft (first break, precursor changes, blind spots) from a verified bundle. [Docs →](docs/incident-bundle.md) |
+| **Flow drift** *(Unreleased)* | New and vanished workload dependencies and byte-rate surges against the retained flow history, with a not-ready state instead of guesses. [Docs →](docs/flow-drift.md) |
 | **What changed, then what broke** *(Unreleased)* | One ordered timeline of audit, netlink, BPF attachment, drop, anomaly and alert signals with suspects and gaps, plus a self-lockout check on deny previews. [Docs →](docs/incident-changes.md) |
 | **Per-node agent mTLS identity** *(0.32.0)* | Opt-in `NETRA_AGENT_MTLS_BIND_NODE` requires the reported node to match the agent's client certificate; revoked serials can be hot-reloaded. [Docs →](docs/agent-mtls.md) |
 | **Scoped authorization** *(0.32.0)* | OIDC claims and `NETRA_SERVICE_CREDENTIALS_FILE` add namespace, cluster and tenant ACLs on top of viewer, operator and admin. [Docs →](docs/auth-oidc-rbac.md) |
@@ -66,7 +67,7 @@ From [CHANGELOG.md](CHANGELOG.md) (0.28.2 to 0.32.0):
 | "The network is slow" with no evidence | TCP path diagnostics and a Congestion Map that colors every layer of the Linux network stack by its worst finding |
 | A chart spiked and you need to know why | Per-second metrics with anomaly detection, where every spike links to the flows, drop reasons and captures from that window |
 | You need packets from one node, now | Filtered, time-bounded live capture with a Wireshark-style layered decode, one click from a finding |
-| Your AI agent should investigate without breaking things | An MCP server with 227 tools; mutations stay behind `NETRA_MCP_ALLOW_MUTATIONS` |
+| Your AI agent should investigate without breaking things | An MCP server with 231 tools; mutations stay behind `NETRA_MCP_ALLOW_MUTATIONS` |
 
 Netra does not require Cilium. The node agent owns its own programs and maps below `/sys/fs/bpf/netra`. If Cilium/Hubble exists, Netra can manage `CiliumNetworkPolicy` and display Hubble flows, but both integrations are opt-in.
 
@@ -262,7 +263,7 @@ Details: [Architecture and visibility boundaries](docs/architecture.md) · [Safe
 
 - **`netractl`** — the operator CLI. [Docs →](docs/netractl.md)
 - **Security review** — DNS QTYPE, versioned threat feeds with TTL/rollback and optional HTTPS refresh, flat deny-predicate suggestions, and exact-workload security correlation. [Docs →](docs/security-review.md)
-- **MCP server** — 227 stdio tools (165 read, 62 opt-in mutating) for AI agents. [Docs →](docs/mcp-integration.md)
+- **MCP server** — 231 stdio tools (169 read, 62 opt-in mutating) for AI agents. [Docs →](docs/mcp-integration.md)
   - MCP Registry: [`io.github.zyvorai/netra`](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.zyvorai%2Fnetra/versions/latest) (live since v0.30.1), image `ghcr.io/zyvorai/netra-mcp:0.32.0`. [Install and use →](docs/mcp-integration.md#use-it)
 - **Built-in AI briefs** — heuristic by default, optional OpenAI-compatible rewrite, read-only. [Docs →](docs/ai.md)
 - **Export** — SIEM (CEF, syslog, JSONL, OTLP), Prometheus (scrape and remote write), Grafana, Loki, Graphite, Slack and Teams ChatOps.

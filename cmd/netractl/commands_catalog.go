@@ -199,7 +199,7 @@ func insightsReadCommands() []cliCommand {
 		"recommendations", "zero-trust", "microseg", "shadow-saas", "experience",
 		"red", "traces", "profiles", "workload-events", "kernel-notes",
 		"destination-risk", "policy-packs", "identity-drafts", "ech-blind",
-		"exfil", "lateral", "category-deny", "tls-posture",
+		"exfil", "lateral", "category-deny", "tls-posture", "dependency-drift", "volume-shift",
 	}
 	out := make([]cliCommand, 0, len(names)+6)
 	for _, n := range names {

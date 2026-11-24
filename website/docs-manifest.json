@@ -114,6 +114,11 @@
       "position": 7
     },
     {
+      "src": "flow-drift.md",
+      "dest": "diagnose/flow-drift",
+      "position": 8
+    },
+    {
       "src": "bpf-attachments.md",
       "dest": "diagnose/bpf-attachments",
       "position": 6

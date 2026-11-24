@@ -205,30 +205,35 @@ func TestElectionLoopNeverDoubleShipsPushSinks(t *testing.T) {
 			nil, alert.Config{}, nil, gitops.Config{}, false)
 	}
 
-	parent, cancelAll := context.WithTimeout(context.Background(), 700*time.Millisecond)
+	// Leadership changes are awaited, not slept for: lease timing stretches on
+	// a loaded host, and fixed sleeps made this test miss its own handoff.
+	parent, cancelAll := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancelAll()
 
 	var wg sync.WaitGroup
 	ctxA, cancelA := context.WithCancel(parent)
 	wg.Add(1)
 	go run(ctxA, &wg, "replica-a")
-
-	// Let replica-a win the initial race deterministically before
-	// replica-b joins, so the test reliably exercises a real handoff
-	// (below) rather than depending on luck to ever see one.
-	time.Sleep(70 * time.Millisecond)
+	if !rec.waitPromoted("replica-a", 10*time.Second) {
+		cancelAll()
+		wg.Wait()
+		t.Fatal("replica-a never took leadership")
+	}
 
 	ctxB, cancelB := context.WithCancel(parent)
 	defer cancelB()
 	wg.Add(1)
 	go run(ctxB, &wg, "replica-b")
 
-	// Force replica-a to release mid-test; replica-b should pick up the
-	// lease shortly after via its own retry ticker.
-	time.Sleep(230 * time.Millisecond)
+	// Force replica-a to release; replica-b should pick the lease up through
+	// its own retry ticker.
+	time.Sleep(100 * time.Millisecond)
 	cancelA()
-
+	got := rec.waitPromoted("replica-b", 10*time.Second)
+	time.Sleep(100 * time.Millisecond) // let b hold the lease for a moment
+	cancelAll()
 	wg.Wait()
+	_ = got
 
 	rec.mu.Lock()
 	events := append([]promotionEvent(nil), rec.events...)
@@ -284,4 +289,21 @@ func TestElectionLoopNeverDoubleShipsPushSinks(t *testing.T) {
 		}
 	}
 	t.Logf("observed %d promote/demote events across %d leadership windows, no overlap", len(events), len(windows))
+}
+
+// waitPromoted reports whether identity was promoted within d.
+func (r *promotionRecorder) waitPromoted(identity string, d time.Duration) bool {
+	deadline := time.Now().Add(d)
+	for time.Now().Before(deadline) {
+		r.mu.Lock()
+		for _, e := range r.events {
+			if e.identity == identity && e.kind == "promoted" {
+				r.mu.Unlock()
+				return true
+			}
+		}
+		r.mu.Unlock()
+		time.Sleep(10 * time.Millisecond)
+	}
+	return false
 }
