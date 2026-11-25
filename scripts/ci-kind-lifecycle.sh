@@ -30,7 +30,7 @@ HEAD_VERSION="$(sed -n 's/^const version = "\(.*\)"$/\1/p' cmd/netrad/main.go)"
 # The newest release tag with a DIFFERENT version than this checkout: commits on top of a fresh tag
 # still carry that tag's version, and upgrading a release to itself proves nothing (and trips the
 # "nothing is being upgraded" assertion below).
-PREVIOUS_TAG="${PREVIOUS_TAG:-$(git tag --list 'v[0-9]*' --sort=-v:refname | while read -r t; do [[ "${t#v}" != "$HEAD_VERSION" ]] && { echo "$t"; break; }; done)}"
+PREVIOUS_TAG="${PREVIOUS_TAG:-$(git tag --list 'v[0-9]*' --sort=-v:refname | while read -r t; do if [[ "${t#v}" != "$HEAD_VERSION" ]]; then echo "$t"; break; fi; done)}"
 if [[ -z "$PREVIOUS_TAG" ]]; then
   # No release tag means no upgrade to test. CI opts in to a loud skip (a warning annotation on the run);
   # a local run stays strict so the gap is not hidden from whoever is checking an upgrade.
