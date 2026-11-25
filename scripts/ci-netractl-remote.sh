@@ -219,6 +219,12 @@ if command -v curl >/dev/null 2>&1; then
   else
     fail=$((fail + 1)); FAILED+=("api flow drift"); echo "FAIL api flow drift"
   fi
+  if curl_api "$NETRA_URL/api/v1/security/beacons" | grep -q 'netra-egress-beacons/1' &&
+    curl_api "$NETRA_URL/api/v1/insights/volume-shift?baseline_mode=same-time" | grep -q '"baselineMode":"same-time"'; then
+    pass=$((pass + 1)); echo "ok   api periodic egress and same-time baseline"
+  else
+    fail=$((fail + 1)); FAILED+=("api periodic egress"); echo "FAIL api periodic egress"
+  fi
 fi
 
 echo

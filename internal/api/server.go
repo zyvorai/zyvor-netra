@@ -217,13 +217,13 @@ func (s *Server) WithArtifacts(a *capture.ArtifactStore) *Server {
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, 200, map[string]any{"ok": true, "service": "netrad", "version": "0.32.0"})
+		writeJSON(w, 200, map[string]any{"ok": true, "service": "netrad", "version": "0.33.0"})
 	})
 	mux.HandleFunc("GET /livez", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, 200, map[string]any{"ok": true, "service": "netrad", "version": "0.32.0"})
+		writeJSON(w, 200, map[string]any{"ok": true, "service": "netrad", "version": "0.33.0"})
 	})
 	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, 200, map[string]any{"ok": true, "leader": true, "version": "0.32.0"})
+		writeJSON(w, 200, map[string]any{"ok": true, "leader": true, "version": "0.33.0"})
 	})
 	mux.HandleFunc("POST /api/v1/session", s.sessionCreate)
 	mux.HandleFunc("DELETE /api/v1/session", s.sessionDelete)
@@ -469,6 +469,8 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/v1/incident/bundle", s.auth(http.HandlerFunc(s.incidentBundle)))
 	mux.Handle("GET /api/v1/capacity/forecast", s.auth(http.HandlerFunc(s.capacityForecast)))
 	mux.Handle("GET /api/v1/security/floods", s.auth(http.HandlerFunc(s.floodFindings)))
+	mux.Handle("GET /api/v1/security/beacons", s.auth(http.HandlerFunc(s.securityBeacons)))
+	mux.Handle("GET /api/v1/insights/netpol-coverage", s.auth(http.HandlerFunc(s.netpolCoverage)))
 	mux.Handle("GET /api/v1/insights/tls-posture", s.auth(http.HandlerFunc(s.tlsPosture)))
 	mux.Handle("GET /api/v1/insights/dependency-drift", s.auth(http.HandlerFunc(s.dependencyDrift)))
 	mux.Handle("GET /api/v1/insights/volume-shift", s.auth(http.HandlerFunc(s.volumeShift)))
@@ -648,7 +650,7 @@ func (s *Server) status(w http.ResponseWriter, r *http.Request) {
 	baseline := s.store.Baseline()
 	rateBaseline := s.store.RateBaseline()
 	rateWindow := s.store.RateWindow(5*time.Minute, time.Now())
-	out := map[string]any{"version": "0.32.0", "datapath": "standalone-ebpf", "ciliumRequired": false, "ciliumEnabled": s.ciliumEnabled, "consoleEnabled": s.consoleEnabled, "fastPath": s.store.Config(), "agents": len(statuses), "staleAgents": stale, "requirePreflight": s.requirePreflight, "persistentState": s.store.Persistent(), "haEnabled": strings.EqualFold(strings.TrimSpace(os.Getenv("NETRA_HA_ENABLED")), "true"), "controllerIdentity": strings.TrimSpace(os.Getenv("NETRA_POD_NAME")), "baselineEntries": len(baseline.Entries), "rateBaselineEntries": len(rateBaseline.Entries), "rateWindowWarming": rateWindow.Warming}
+	out := map[string]any{"version": "0.33.0", "datapath": "standalone-ebpf", "ciliumRequired": false, "ciliumEnabled": s.ciliumEnabled, "consoleEnabled": s.consoleEnabled, "fastPath": s.store.Config(), "agents": len(statuses), "staleAgents": stale, "requirePreflight": s.requirePreflight, "persistentState": s.store.Persistent(), "haEnabled": strings.EqualFold(strings.TrimSpace(os.Getenv("NETRA_HA_ENABLED")), "true"), "controllerIdentity": strings.TrimSpace(os.Getenv("NETRA_POD_NAME")), "baselineEntries": len(baseline.Entries), "rateBaselineEntries": len(rateBaseline.Entries), "rateWindowWarming": rateWindow.Warming}
 	if !baseline.CapturedAt.IsZero() {
 		out["baselineCapturedAt"] = baseline.CapturedAt
 	}

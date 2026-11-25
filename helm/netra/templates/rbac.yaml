@@ -12,6 +12,10 @@ rules:
 - apiGroups: ["kubevirt.io"]
   resources: ["virtualmachines","virtualmachineinstances"]
   verbs: ["get","list"]
+# Read-only: NetworkPolicy coverage report. Netra never writes this resource.
+- apiGroups: ["networking.k8s.io"]
+  resources: ["networkpolicies"]
+  verbs: ["get","list"]
 {{- if .Values.workloadConsole.enabled }}
 - apiGroups: [""]
   resources: ["pods/log"]

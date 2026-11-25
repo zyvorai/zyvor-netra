@@ -129,5 +129,17 @@ func (s *Server) volumeShift(w http.ResponseWriter, r *http.Request) {
 		}
 		so.MinBytes = n
 	}
+	switch v := strings.TrimSpace(r.URL.Query().Get("baseline_mode")); v {
+	case "", flowdrift.ModeAverage:
+	case flowdrift.ModeSameTime:
+		if o.Recent > 24*time.Hour {
+			errorJSON(w, http.StatusBadRequest, "baseline_mode=same-time needs a recent window of at most 24h")
+			return
+		}
+		so.Mode = v
+	default:
+		errorJSON(w, http.StatusBadRequest, "baseline_mode must be average or same-time")
+		return
+	}
 	writeJSON(w, http.StatusOK, flowdrift.BuildShift(recs, so))
 }

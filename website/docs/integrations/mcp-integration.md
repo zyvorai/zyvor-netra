@@ -60,7 +60,7 @@ Client configuration (any stdio MCP client):
       "command": "docker",
       "args": ["run", "-i", "--rm",
                "-e", "NETRA_URL", "-e", "NETRA_API_KEY",
-               "ghcr.io/zyvorai/netra-mcp:0.32.0"],
+               "ghcr.io/zyvorai/netra-mcp:0.33.0"],
       "env": { "NETRA_URL": "https://netra.example:30870", "NETRA_API_KEY": "..." }
     }
   }
@@ -78,7 +78,7 @@ Claude Code:
 ```bash
 claude mcp add netra \
   -e NETRA_URL=https://<controller>:30870 -e NETRA_API_KEY=<key> \
-  -- docker run -i --rm -e NETRA_URL -e NETRA_API_KEY ghcr.io/zyvorai/netra-mcp:0.32.0
+  -- docker run -i --rm -e NETRA_URL -e NETRA_API_KEY ghcr.io/zyvorai/netra-mcp:0.33.0
 ```
 
 Claude Desktop and other stdio clients use the JSON above. Then ask in plain language ("Why are
@@ -350,7 +350,9 @@ All tool names are prefixed `netra_`. Every tool maps 1:1 to one Netra controlle
 | `netra_security_floods` | `GET /api/v1/security/floods` | `window` (default 30m, 10m-6h) | Inbound SYN/UDP/ICMP/fragment flood findings and a SUGGESTED deny for public sources (preview and lockout check attached). Applies nothing. See `docs/flood-detection.md` |
 | `netra_insights_tls_posture` | `GET /api/v1/insights/tls-posture` | none | TLS versions clients offer per workload and SNI from JA4; offered, not negotiated. See `docs/tls-posture.md` |
 | `netra_insights_dependency_drift` | `GET /api/v1/insights/dependency-drift` | `recent`, `baseline`, `min_baseline`, `namespace`, `node`, `public_only`, `limit` | New and vanished workload dependencies against retained flow history; not ready until the baseline is long enough. See `docs/flow-drift.md` |
-| `netra_insights_volume_shift` | `GET /api/v1/insights/volume-shift` | `recent`, `baseline`, `min_baseline`, `namespace`, `node`, `factor`, `min_bytes`, `limit` | Workload byte-rate surges and drops against their own baseline. See `docs/flow-drift.md` |
+| `netra_insights_volume_shift` | `GET /api/v1/insights/volume-shift` | `recent`, `baseline`, `min_baseline`, `namespace`, `node`, `factor`, `min_bytes`, `baseline_mode` (`average`, `same-time`), `limit` | Workload byte-rate surges and drops against their own baseline, optionally the same time of day on earlier days. See `docs/flow-drift.md` |
+| `netra_security_beacons` | `GET /api/v1/security/beacons` | `window` (default 24h), `namespace`, `node`, `min_events`, `min_period`, `min_score`, `include_private`, `limit` | Pod-to-peer egress repeating at a steady interval; a lead to identify, not a verdict. See `docs/egress-beacons.md` |
+| `netra_insights_netpol_coverage` | `GET /api/v1/insights/netpol-coverage` | `namespace`, `window`, `all`, `limit` | Workloads no Kubernetes NetworkPolicy restricts, flagged when seen with public peers. See `docs/netpol-coverage.md` |
 | `netra_incident_verify` | `POST /api/v1/incident/verify` | `bundle` (JSON text), `seal` (optional) | Fail-closed bundle verification; the seal is checked against the controller key, which is never sent. Read-only. See `docs/incident-bundle.md` |
 | `netra_incident_report` | `POST /api/v1/incident/report` | `bundle`, `format` (`json`, `markdown`) | Deterministic post-incident draft from a verified bundle. Read-only |
 | `netra_export_flow_summary` | `GET /api/v1/export/flow-summary` | `format` (json, jsonl, csv), `since`, `limit` (max 10000), `namespace`, `node`, `protocol` | Flow history as IPFIX-named summary records. See `docs/flow-summary-export.md` |

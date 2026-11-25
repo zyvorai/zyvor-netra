@@ -32,7 +32,7 @@ const PAGES = [
   'overview', 'connections', 'workloads', 'explain', 'pods', 'vms', 'investigate', 'flow-observe',
   'health', 'path', 'drops', 'congestion', 'sysctl-audit', 'node-resources', 'l7', 'deny-preview', 'deny-leases',
   'netlink', 'bpf-attachments', 'ebpf-maps', 'detect', 'surfaces', 'tls-fingerprints', 'features',
-  'insights', 'topology', 'incidents', 'incident-timeline', 'what-changed', 'incident-bundle', 'network-risk', 'flow-drift', 'security-review', 'policies', 'flows',
+  'insights', 'topology', 'incidents', 'incident-timeline', 'what-changed', 'incident-bundle', 'network-risk', 'flow-drift', 'security-review', 'policy-coverage', 'policies', 'flows',
   'ebpf', 'audit', 'report', 'scorecard', 'talkers', 'fleet', 'traffic', 'capture', 'metrics',
   'metric-anomalies', 'metric-alerts', 'ai', 'handoff', 'slo', 'drop-reasons', 'listen-queues',
   'process-integrity',
@@ -153,6 +153,7 @@ const check = (cond, msg, failures) => { if (!cond) { failures.push(msg); consol
     '/api/v1/policies': [409], '/api/v1/policies/gitops/status': [409],
     '/api/v1/ebpf/workloads': [502], '/api/v1/flows/summary': [502],
     '/api/v1/insights/dependencies': [502], '/api/v1/insights/exposure': [502], '/api/v1/insights/new-since-start': [502],
+    '/api/v1/insights/netpol-coverage': [502],
     '/api/v1/insights/recommendations': [502], '/api/v1/insights/remediations': [502], '/api/v1/insights/summary': [502],
     '/api/v1/pods': [502], '/api/v1/vms': [502],
   };

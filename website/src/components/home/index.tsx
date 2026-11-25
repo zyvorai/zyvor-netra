@@ -311,7 +311,7 @@ export function Receipts(): ReactNode {
 /* ------------------------------------------------------------ timeline */
 
 const SHIPPED = [
-  {v: 'main', d: '2026-11-13', t: 'Observe UX depth: Handoff, SLO, Surfaces, MCP', p: 'Handoff and SLO boards, drop-reasons and capture summaries, Surfaces catalog, SIEM export strip, and deeper AI/MCP/CLI observe paths — still never apply mode or policy from AI.'},
+  {v: '0.33.0', d: '2026-11-25', t: 'Incident bundles, flow drift, beacons and policy coverage', p: 'Incident flight recorder with seal and report, leased denyset files and safety rails, flood and capacity views, dependency drift, periodic egress and NetworkPolicy coverage — read-only unless you lease a deny.'},
   {v: '0.32.0', d: '2026-10-19', t: 'Per-node mTLS, scoped auth, SQLite flows, investigate', p: 'Optional node-bound agent mTLS and serial deny-list; namespace/cluster/tenant scopes and service credentials; SQLite flow history with fleet fan-out; failed-connection investigate timeline.'},
   {v: '0.31.0', d: '2026-10-17', t: 'Diagnose surfaces and leased exe-hash deny', p: 'Deny Preview, Netlink, BPF Attachments and Detect boards; auto-mitigate shadow preview; detector HA warm-start; stack histograms; Helm agent.server and Envoy Gateway.'},
   {v: '0.30.1', d: '2026-10-15', t: 'Listed in the MCP Registry', p: 'netra-mcp ships as an OCI image and as io.github.zyvorai/netra.'},

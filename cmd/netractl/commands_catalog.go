@@ -38,6 +38,12 @@ func allCLICommands() []cliCommand {
 		{Name: "security-incidents", Args: []string{"security", "incidents"}},
 		{Name: "security-floods", Args: []string{"security", "floods"}},
 		{Name: "security-floods-window", Args: []string{"security", "floods", "30m"}},
+		{Name: "security-beacons", Args: []string{"security", "beacons"}},
+		{Name: "security-beacons-flags", Args: []string{"security", "beacons", "--window", "6h", "--min-score", "0.9", "--include-private"}},
+		{Name: "insights-volume-shift-same-time", Args: []string{"insights", "volume-shift", "--baseline-mode", "same-time"}},
+		// Needs the Kubernetes API, which a local controller does not have.
+		{Name: "insights-netpol-coverage", Args: []string{"insights", "netpol-coverage"}, Optional: true},
+		{Name: "insights-netpol-coverage-flags", Args: []string{"insights", "netpol-coverage", "--namespace", "default", "--all", "--window", "1h"}, Optional: true},
 		{Name: "capacity-forecast", Args: []string{"capacity", "forecast", "--window", "1h"}, Optional: true},
 		{Name: "intel-history", Args: []string{"intel", "history"}},
 		{Name: "intel-rollback", Args: []string{"intel", "rollback", "1"}, Mutating: true},

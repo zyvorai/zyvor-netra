@@ -10,6 +10,8 @@ import {
   edgeLabel,
   humanBytes,
   shiftHeadline,
+  shiftQuery,
+  type BaselineMode,
   type DriftReport,
   type ShiftReport,
 } from '../lib/flowDrift';
@@ -20,13 +22,14 @@ export default function FlowDrift() {
   const [recent, setRecent] = useState('1h');
   const [baseline, setBaseline] = useState('144h');
   const [publicOnly, setPublicOnly] = useState(false);
+  const [mode, setMode] = useState<BaselineMode>('average');
   const [err, setErr] = useState('');
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
     const load = () => {
       const q = driftQuery(recent, baseline, publicOnly);
-      const qs = driftQuery(recent, baseline, false);
+      const qs = shiftQuery(recent, baseline, mode);
       Promise.allSettled([
         api<DriftReport>(`/api/v1/insights/dependency-drift${q}`),
         api<ShiftReport>(`/api/v1/insights/volume-shift${qs}`),
@@ -41,7 +44,7 @@ export default function FlowDrift() {
     load();
     const t = setInterval(load, 30000);
     return () => clearInterval(t);
-  }, [recent, baseline, publicOnly]);
+  }, [recent, baseline, publicOnly, mode]);
 
   const newEdges = drift?.newEdges || [];
   const gone = drift?.vanishedEdges || [];
@@ -80,6 +83,13 @@ export default function FlowDrift() {
           </label>
           <label>
             <input type="checkbox" checked={publicOnly} onChange={(e) => setPublicOnly(e.target.checked)} /> public peers only
+          </label>
+          <label>
+            Volume baseline{' '}
+            <select value={mode} onChange={(e) => setMode(e.target.value as BaselineMode)}>
+              <option value="average">average</option>
+              <option value="same-time">same time of day</option>
+            </select>
           </label>
         </div>
         {notReady && <p className="warning">{driftHeadline(drift)}. Nothing is listed as new until the baseline is long enough.</p>}
@@ -131,8 +141,8 @@ export default function FlowDrift() {
                 {s.namespace ? s.namespace + '/' : ''}
                 {s.workload} ({s.direction})
               </b>
-              <span className={`severity-badge ${s.kind === 'surge' ? 'warning' : 'info'}`}>
-                {s.kind} {s.ratio}x
+              <span className={`severity-badge ${s.kind === 'drop' ? 'info' : 'warning'}`}>
+                {s.kind === 'unusual-time' ? 'unusual time' : `${s.kind} ${s.ratio}x`}
               </span>
               <small>
                 {humanBytes(s.recentBytesPerHour)}/h now vs {humanBytes(s.baselineBytesPerHour)}/h before
@@ -140,7 +150,11 @@ export default function FlowDrift() {
             </div>
           ))}
         </div>
-        <p className="empty-state">The baseline is one average: a nightly or business-hours cycle can look like a shift.</p>
+        <p className="empty-state">
+          {mode === 'same-time'
+            ? 'Compared with the median of the same time on earlier days. There is no day-of-week model.'
+            : 'The baseline is one average: a nightly or business-hours cycle can look like a shift. Try the same-time-of-day baseline.'}
+        </p>
       </section>
     </div>
   );

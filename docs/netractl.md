@@ -136,6 +136,9 @@ netractl capacity forecast --window 1h         # conntrack / ephemeral-port exha
 netractl insights tls-posture                  # TLS versions clients offer (JA4 metadata)
 netractl insights dependency-drift --recent 1h # new / vanished dependencies vs flow history (docs/flow-drift.md)
 netractl insights volume-shift --factor 3      # workload byte-rate surges and drops vs baseline
+netractl insights volume-shift --baseline-mode same-time   # vs the same time of day on earlier days
+netractl security beacons --window 24h         # egress repeating at a steady interval (docs/egress-beacons.md)
+netractl insights netpol-coverage              # workloads no NetworkPolicy restricts (docs/netpol-coverage.md)
 netractl export flow-summary --format csv --since 1h --limit 1000 [--namespace NS]
 ```
 
