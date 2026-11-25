@@ -410,8 +410,8 @@ button:disabled,
   justify-content: center;
   padding: 0;
   background: var(--nav-bg);
-  backdrop-filter: var(--material-blur);
   -webkit-backdrop-filter: var(--material-blur);
+  backdrop-filter: var(--material-blur);
   border-bottom: 1px solid var(--hairline-1);
 }
 .nav-inner {
