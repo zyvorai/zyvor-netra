@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { bearerCandidates } from '../auth';
 import { openSession } from '../api';
+import ThemeMenu from './ThemeMenu';
 
 const WRONG = 'Wrong username or password.';
 
@@ -72,7 +73,10 @@ export default function Login({
   }
 
   return (
-    <div className="login-shell">
+    <main className="login-shell">
+      <div className="login-appearance">
+        <ThemeMenu />
+      </div>
       <div className="login-info">
         <img src="/zyvor-mark.svg" alt="Zyvor" className="login-logo" />
         <p className="eyebrow">Netra · Zyvor</p>
@@ -124,6 +128,6 @@ export default function Login({
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
-    </div>
+    </main>
   );
 }

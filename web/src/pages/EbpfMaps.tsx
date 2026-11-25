@@ -109,41 +109,43 @@ export default function EbpfMaps() {
         </div>
       </section>
       <section className="card span3">
-        <table className="metric-table">
-          <thead>
-            <tr>
-              <th>Group</th>
-              <th>Title</th>
-              <th>BPF map</th>
-              <th className="num">Count</th>
-              <th className="num">Limit</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((m) => (
-              <tr key={m.id || m.bpfMap}>
-                <td>{m.group}</td>
-                <td>{m.title || m.id}</td>
-                <td>
-                  <code>{m.bpfMap}</code>
-                </td>
-                <td className="num">{m.count ?? 0}</td>
-                <td className="num">{m.limit ?? '—'}</td>
-                <td>
-                  {(m.entries || []).length > 0 && (
-                    <button type="button" className="btn-secondary" onClick={() => setOpen(open === m.id ? null : m.id || m.bpfMap || null)}>
-                      {open === (m.id || m.bpfMap) ? 'Hide' : 'Entries'}
-                    </button>
-                  )}
-                </td>
+        <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
+          <table className="metric-table">
+            <thead>
+              <tr>
+                <th>Group</th>
+                <th>Title</th>
+                <th>BPF map</th>
+                <th className="num">Count</th>
+                <th className="num">Limit</th>
+                <th />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((m) => (
+                <tr key={m.id || m.bpfMap}>
+                  <td>{m.group}</td>
+                  <td>{m.title || m.id}</td>
+                  <td>
+                    <code>{m.bpfMap}</code>
+                  </td>
+                  <td className="num">{m.count ?? 0}</td>
+                  <td className="num">{m.limit ?? '—'}</td>
+                  <td>
+                    {(m.entries || []).length > 0 && (
+                      <button type="button" className="btn-secondary" onClick={() => setOpen(open === m.id ? null : m.id || m.bpfMap || null)}>
+                        {open === (m.id || m.bpfMap) ? 'Hide' : 'Entries'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {rows.length === 0 && <p className="empty-state">No maps in this group.</p>}
         {open && (
-          <pre style={{ marginTop: '1rem', maxHeight: '16rem', overflow: 'auto' }}>
+          <pre tabIndex={0} style={{ marginTop: '1rem', maxHeight: '16rem', overflow: 'auto' }}>
             {((data?.maps || []).find((m) => (m.id || m.bpfMap) === open)?.entries || []).join('\n') || '(empty)'}
           </pre>
         )}

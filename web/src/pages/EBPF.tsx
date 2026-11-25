@@ -386,7 +386,7 @@ export default function EBPF() {
       <p className="eyebrow">FIREWALL RULES</p>
       <h2 className="card-title">All configured rules</h2>
       {rules.length === 0 && <p className="empty-state">No firewall rules configured.</p>}
-      {rules.length > 0 && <div className="datatable-scroll">
+      {rules.length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead rules"><span>TYPE</span><span>VALUE</span><span>DETAIL</span><span>CREATED</span><span>ACTIONS</span></div>
         {rules.map((r, i) => (
           <div key={r.id || (r.type + r.value + i)}>
@@ -549,7 +549,7 @@ export default function EBPF() {
       <p className="eyebrow">STANDALONE EBPF EVENTS</p>
       <div className="eventtools"><span>Recent flow, DNS, socket and block events</span><select aria-label="Event type filter" value={eventType} onChange={e => setEventType(e.target.value)}><option value="all">all</option><option value="flow">flow</option><option value="dns">dns</option><option value="connect">connect</option><option value="block">block</option></select></div>
       {events.length === 0 && <p className="empty-state">No events observed yet.</p>}
-      {events.length > 0 && <div className="datatable-scroll">
+      {events.length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>TIME / NODE</span><span>TYPE</span><span>PROCESS</span><span>FLOW / DNS</span><span>ACTION</span></div>
         {events.map((e: any, i) => {
           const proc = e.namespace || e.pod ? `${e.namespace}/${e.pod} · ${e.comm || 'process?'} pid=${e.pid || 0}` : (e.comm ? `${e.comm} pid=${e.pid} uid=${e.uid}` : '—');
@@ -561,7 +561,7 @@ export default function EBPF() {
     <section className="card span3">
       <p className="eyebrow">EXACT FLOW COUNTERS</p>
       {stats.length === 0 && <p className="empty-state">No flow counters yet.</p>}
-      {stats.length > 0 && <div className="datatable-scroll">
+      {stats.length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>NODE / HOOK</span><span>DIR</span><span>FLOW</span><span>PROTO</span><span>PACKETS / BYTES / BLOCKED</span></div>
         {stats.map((s: any, i) => {
           const who = `${s.node} · ${s.hook}${s.namespace ? ` · ${s.namespace}/${s.pod}` : ''}`;
@@ -572,7 +572,7 @@ export default function EBPF() {
     <section className="card span3">
       <p className="eyebrow">WORKLOAD TOPOLOGY</p>
       {topology.length === 0 && <p className="empty-state">No workload network topology observed yet.</p>}
-      {topology.length > 0 && <div className="datatable-scroll">
+      {topology.length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>WORKLOAD</span><span>NODE</span><span>DESTINATION</span><span>PROTO</span><span>PACKETS / BYTES / BLOCKED</span></div>
         {topology.map((e:any, i:number) => {
           const who = `${e.namespace}/${e.pod}${e.workloadName ? ` · ${e.workloadKind}/${e.workloadName}` : ''}`;
@@ -585,7 +585,7 @@ export default function EBPF() {
       <h3>Extension-header &amp; fragmentation visibility</h3>
       {ipv6Diag?.summary && <p>{ipv6Diag.summary.packets||0} IPv6 packets · {ipv6Diag.summary.extHeaderPackets||0} with extension headers · {ipv6Diag.summary.fragmented||0} fragmented · {ipv6Diag.summary.nonFirstFragments||0} non-first fragments · {ipv6Diag.summary.chainTruncated||0} chain-truncated.</p>}
       {(!ipv6Diag?.nodes || ipv6Diag.nodes.length === 0) && <p className="empty-state">No IPv6 extension-header activity observed yet.</p>}
-      {ipv6Diag?.nodes?.length > 0 && <div className="datatable-scroll">
+      {ipv6Diag?.nodes?.length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>NODE</span><span>DIRECTION / HOOK</span><span>PACKETS</span><span>EXT-HDR PKTS</span><span>FRAGMENTED / NON-FIRST / TRUNCATED</span></div>
         {ipv6Diag.nodes.flatMap((n: any) => (n.extHeaders || []).map((h: any, i: number) =>
           <div className="datarow obs" key={n.node + i}><span>{n.node}</span><span>{h.direction} / {h.hook}</span><span>{h.packets}</span><span>{h.extHeaderPackets}</span><span>{h.fragmented} / {h.nonFirstFragments} / {h.chainTruncated}</span></div>
@@ -596,7 +596,7 @@ export default function EBPF() {
       <p className="eyebrow">INTERFACE FLOW ATTRIBUTION</p>
       <h3>Per-interface packet/byte/blocked counters</h3>
       {ifaceFlows.length === 0 && <p className="empty-state">No per-interface flow attribution observed yet.</p>}
-      {ifaceFlows.length > 0 && <div className="datatable-scroll">
+      {ifaceFlows.length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>NODE</span><span>INTERFACE</span><span>PACKETS / BYTES / BLOCKED</span><span>TOP DESTINATIONS</span></div>
         {ifaceFlows.flatMap((n: any) => (n.interfaces || []).map((ifc: any, i: number) =>
           <div className="datarow obs" key={n.node + i}><span>{n.node}</span><span>{ifc.interface}</span><span className={ifc.blocked ? 'blocked' : ''}>{ifc.packets} / {ifc.bytes} / {ifc.blocked}</span><span className="truncate">{(ifc.topDestinations || []).map((d: any) => `${d.name} (${d.count})`).join(', ') || '—'}</span></div>

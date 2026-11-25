@@ -223,7 +223,7 @@ export default function Surfaces() {
         <p className="eyebrow">OBSERVE-ONLY SURFACES</p>
         <h2 className="card-title">P1–P5 metadata boards</h2>
         <p>Encrypted traffic, fit maps, threat heuristics, and fleet rollups — review-only, no decrypt, no payload export.</p>
-        <div className="chips surfaces-groups" role="tablist" aria-label="Surface groups">
+        <div className="chips surfaces-groups" role="group" aria-label="Surface groups">
           {GROUPS.map((g) => (
             <button
               key={g}
@@ -236,7 +236,7 @@ export default function Surfaces() {
             </button>
           ))}
         </div>
-        <div className="chips" role="tablist" aria-label="Boards" style={{ marginTop: '0.75rem' }}>
+        <div className="chips" role="group" aria-label="Boards" style={{ marginTop: '0.75rem' }}>
           {boards.map((b) => (
             <button key={b.id} type="button" className={active?.id === b.id ? 'primary' : ''} aria-pressed={active?.id === b.id} onClick={() => setBoardId(b.id)}>
               {b.label}

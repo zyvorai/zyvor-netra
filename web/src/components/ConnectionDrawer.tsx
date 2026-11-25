@@ -18,6 +18,6 @@ export default function ConnectionDrawer({ event, close }: { event: EventRow; cl
     <h3>What the evidence says</h3><p>{explanation.evidence}</p><p>{explanation.limitation}</p>
     <p>Sampled events are not a complete connection history. A process name is not verified executable identity.</p>
     <div className="toolbar">{event.namespace && event.pod && <button className="primary" onClick={() => { navigate('workloads', { namespace: event.namespace, pod: event.pod, node: event.node, query: '' }); close(); }}>Open workload</button>}<button onClick={() => { navigate('ebpf'); close(); }}>Review current firewall</button></div>
-    <details><summary>Raw event</summary><pre className="mini">{JSON.stringify(event, null, 2)}</pre></details>
+    <details><summary>Raw event</summary><pre tabIndex={0} className="mini">{JSON.stringify(event, null, 2)}</pre></details>
   </dialog>;
 }

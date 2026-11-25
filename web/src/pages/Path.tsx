@@ -54,7 +54,7 @@ export default function Path(){
     <section className="card span3">
       <p className="eyebrow">TCP PRESSURE</p><h2 className="card-title">Exact sockops transport state</h2>
       {pressure.length===0 && <p className="empty-state">No TCP pressure samples yet.</p>}
-      {pressure.length>0 && <div className="datatable-scroll">
+      {pressure.length>0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>WORKLOAD</span><span>REMOTE</span><span>CWND / FLIGHT</span><span>LOSS</span><span>DELIVERY</span></div>
         {pressure.map((p:any,i:number)=>{
           const who = p.namespace?`${p.namespace}/${p.pod}`:`cgroup ${p.cgroupId||0}`;
@@ -65,7 +65,7 @@ export default function Path(){
     <section className="card span3">
       <p className="eyebrow">TCP CONNECT</p><h2 className="card-title">Establishment latency</h2>
       {connect.length===0 && <p className="empty-state">No TCP connect samples yet.</p>}
-      {connect.length>0 && <div className="datatable-scroll">
+      {connect.length>0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>WORKLOAD</span><span>REMOTE</span><span>ESTABLISHED</span><span>AVG</span><span>MAX</span></div>
         {connect.map((c:any,i:number)=>{
           const who = c.namespace?`${c.namespace}/${c.pod}`:`cgroup ${c.cgroupId||0}`;

@@ -99,7 +99,7 @@ export default function NetworkRisk() {
                   <summary>
                     Suggested deny: {f.suggestion.value} ({f.suggestion.direction}) — lockout {f.lockout?.risk || 'unchecked'}
                   </summary>
-                  <pre>{JSON.stringify(f.suggestion.previewRequest, null, 2)}</pre>
+                  <pre tabIndex={0}>{JSON.stringify(f.suggestion.previewRequest, null, 2)}</pre>
                   <ol>
                     {f.suggestion.steps.map((s, j) => (
                       <li key={j}>{s}</li>

@@ -173,7 +173,7 @@ export default function Insights() {
     <section className="card span3">
       <p className="eyebrow">DEPENDENCY GRAPH</p><h2 className="card-title">Workload → workload/service/external</h2>
       {(graph?.edges || []).length === 0 && <p className="empty-state">No dependency edges observed yet.</p>}
-      {(graph?.edges || []).length > 0 && <div className="datatable-scroll">
+      {(graph?.edges || []).length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead deps"><span>SOURCE</span><span>TARGET</span><span>NETWORK</span><span>PACKETS / BYTES</span></div>
         {(graph?.edges || []).slice(0, 100).map((e, i) => <div className="datarow deps" key={`${e.source}-${e.target}-${e.protocol}-${e.port}-${i}`}><span className="truncate" title={label(e.source)} aria-label={label(e.source)}>{label(e.source)}</span><span className="truncate" title={label(e.target)} aria-label={label(e.target)}>{label(e.target)} {e.external ? '↗' : ''}</span><span>{e.protocol}{e.port ? `/${e.port}` : ''}</span><span>{e.packets.toLocaleString()} / {e.bytes.toLocaleString()}</span></div>)}
       </div>}
@@ -210,7 +210,7 @@ export default function Insights() {
     <section className="card span3">
       <p className="eyebrow">REMEDIATION PROPOSALS</p><h2 className="card-title">Review-only containment and investigation drafts</h2>
       <p>Netra does not auto-execute these. A proposal is evidence plus a suggested next action, not authorization to block traffic.</p>
-      <div className="recommendations">{remediations.map(r => <details key={r.id} className="recommendation"><summary><b>{r.title}</b><span>{r.severity} · {r.source}</span></summary>{r.rationale.map(x => <p key={x}>• {x}</p>)}<pre>{JSON.stringify(r.action, null, 2)}</pre></details>)}{!remediations.length && <p className="empty-state">No remediation draft currently meets the thresholds.</p>}</div>
+      <div className="recommendations">{remediations.map(r => <details key={r.id} className="recommendation"><summary><b>{r.title}</b><span>{r.severity} · {r.source}</span></summary>{r.rationale.map(x => <p key={x}>• {x}</p>)}<pre tabIndex={0}>{JSON.stringify(r.action, null, 2)}</pre></details>)}{!remediations.length && <p className="empty-state">No remediation draft currently meets the thresholds.</p>}</div>
     </section>
 
     <Reveal className="card span3">
@@ -221,7 +221,7 @@ export default function Insights() {
         return <details key={r.id} className="recommendation">
           <summary><b>{r.namespace}/{r.workloadName}</b><span>{r.confidence} · {r.kind}</span></summary>
           {r.rationale.map(x => <p key={x}>• {x}</p>)}
-          <pre>{JSON.stringify(r.manifest, null, 2)}</pre>
+          <pre tabIndex={0}>{JSON.stringify(r.manifest, null, 2)}</pre>
           <button type="button" className="btn-secondary" onClick={() => reviewRecommendation(r.id)}>Review against live policy</button>
           {reviewErr[r.id] && <p className="warning">{reviewErr[r.id]}</p>}
           {review && <div className="list">

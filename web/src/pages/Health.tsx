@@ -188,7 +188,7 @@ export default function Health() {
       <p className="eyebrow">TCP HEALTH</p>
       <h2 className="card-title">Sockops exact state</h2>
       {(data?.tcp || []).length === 0 && <p className="empty-state">No TCP sockops samples yet.</p>}
-      {(data?.tcp || []).length > 0 && <div className="datatable-scroll">
+      {(data?.tcp || []).length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>WORKLOAD / PROCESS</span><span>REMOTE</span><span>RTT</span><span>LOSS SIGNALS</span><span>CONNECTION</span></div>
         {(data?.tcp || []).map((t:any, i:number) => {
           const who = `${t.namespace ? `${t.namespace}/${t.pod}` : (t.comm || `cgroup ${t.cgroupId || 0}`)}${t.pid ? ` · pid=${t.pid}` : ''}${t.exe ? ` · ${t.exe}` : ''}${t.ownershipStale ? ' · stale-owner' : ''}`;
@@ -207,7 +207,7 @@ export default function Health() {
       <p className="eyebrow">DNS HEALTH</p>
       <h2 className="card-title">Matched UDP/53 transactions</h2>
       {(data?.dns || []).length === 0 && <p className="empty-state">No DNS transactions matched yet.</p>}
-      {(data?.dns || []).length > 0 && <div className="datatable-scroll">
+      {(data?.dns || []).length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>WORKLOAD</span><span>NAME</span><span>QUERIES</span><span>FAILURES</span><span>LATENCY</span></div>
         {(data?.dns || []).map((d:any, i:number) => {
           const who = d.namespace ? `${d.namespace}/${d.pod}` : `cgroup ${d.cgroupId || 0}`;
@@ -226,7 +226,7 @@ export default function Health() {
       <p className="eyebrow">UDP FLOW HEALTH</p>
       <h2 className="card-title">Packets/bytes per remote endpoint</h2>
       {(data?.udp || []).length === 0 && <p className="empty-state">No cgroup-attributed UDP flows observed yet.</p>}
-      {(data?.udp || []).length > 0 && <div className="datatable-scroll">
+      {(data?.udp || []).length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>WORKLOAD</span><span>REMOTE</span><span>PACKETS</span><span>BYTES</span></div>
         {(data?.udp || []).map((u:any, i:number) => {
           const who = u.namespace ? `${u.namespace}/${u.pod}` : `cgroup ${u.cgroupId || 0}`;
@@ -244,7 +244,7 @@ export default function Health() {
       <p className="eyebrow">QUIC-OBSERVED FLOWS</p>
       <h2 className="card-title">UDP/443 long-header packets by remote endpoint</h2>
       {(data?.quic || []).length === 0 && <p className="empty-state">No QUIC-observed traffic yet.</p>}
-      {(data?.quic || []).length > 0 && <div className="datatable-scroll">
+      {(data?.quic || []).length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>WORKLOAD</span><span>REMOTE</span><span>LONG-HEADER</span><span>TOTAL UDP/443</span></div>
         {(data?.quic || []).map((q:any, i:number) => {
           const who = q.namespace ? `${q.namespace}/${q.pod}` : `cgroup ${q.cgroupId || 0}`;
@@ -262,7 +262,7 @@ export default function Health() {
       <p className="eyebrow">TCP RESET SIGNALS</p>
       <h2 className="card-title">Handshake / reset counters</h2>
       {resetRows.length === 0 && <p className="empty-state">No TCP reset signals in the latest reports.</p>}
-      {resetRows.length > 0 && <div className="datatable-scroll">
+      {resetRows.length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>WORKLOAD</span><span>SYN</span><span>SYN-ACK</span><span>FIN</span><span>RST / PACKETS</span></div>
         {resetRows.map((r:any, i:number) => {
           const who = r.namespace ? `${r.namespace}/${r.pod}` : `cgroup ${r.cgroupId || 0}`;

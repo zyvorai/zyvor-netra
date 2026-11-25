@@ -167,7 +167,7 @@ export default function IncidentBundle() {
           <p className="eyebrow">INCIDENT REPORT DRAFT</p>
           <h2 className="card-title">Derived from the bundle above</h2>
           <p className="empty-state">Temporal order is not proof of cause. The draft adds no data; it only restates the verified bundle.</p>
-          <pre style={{ whiteSpace: 'pre-wrap', overflowX: 'auto' }}>{reportMd}</pre>
+          <pre tabIndex={0} style={{ whiteSpace: 'pre-wrap', overflowX: 'auto' }}>{reportMd}</pre>
         </section>
       )}
 

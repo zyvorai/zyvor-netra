@@ -44,7 +44,7 @@ export default function NodeResources() {
       <p className="eyebrow">PER-NODE</p>
       <h2 className="card-title">Host CPU, memory, and load</h2>
       {nodes.length === 0 && <p className="empty-state">No agent reports yet.</p>}
-      {nodes.length > 0 && <div className="datatable-scroll">
+      {nodes.length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>NODE</span><span>CPU</span><span>LOAD 1 / 5 / 15</span><span>MEMORY</span><span>UPTIME</span></div>
         {nodes.map((n: any) => (
           <div className="datarow obs" key={n.node}>
@@ -64,7 +64,7 @@ export default function NodeResources() {
       <p className="eyebrow">TOP WORKLOADS</p>
       <h2 className="card-title">Highest CPU usage, cgroup v2-attributed</h2>
       {topWorkloads.length === 0 && <p className="empty-state">No workload resource samples yet.</p>}
-      {topWorkloads.length > 0 && <div className="datatable-scroll">
+      {topWorkloads.length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>WORKLOAD</span><span>NODE</span><span>CPU</span><span>MEMORY</span></div>
         {topWorkloads.map((w: any, i: number) => {
           const who = w.namespace ? `${w.namespace}/${w.pod}` : (w.workloadName || `cgroup ${w.cgroupId || 0}`);

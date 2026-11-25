@@ -133,7 +133,7 @@ export default function BpfAttachments() {
         <h2 className="card-title">Programs by interface / hook</h2>
         {rows.length === 0 && <p className="empty-state">No attachment rows yet — agents may still be reporting.</p>}
         {rows.length > 0 && (
-          <div className="datatable-scroll">
+          <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
             <div className="datahead obs">
               <span>NODE</span>
               <span>NAME</span>

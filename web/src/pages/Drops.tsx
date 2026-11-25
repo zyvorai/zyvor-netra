@@ -289,7 +289,7 @@ export default function Drops() {
             <p className="empty-state">No kfree_skb tracepoint data. The hook may be unavailable on this kernel.</p>
           )}
           {(n.kernelDrops || []).length > 0 && (
-            <div className="datatable-scroll">
+            <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
               <div className="datahead">
                 <span>REASON</span>
                 <span>PROTOCOL</span>
@@ -313,7 +313,7 @@ export default function Drops() {
           <p className="eyebrow">QDISC DROPS · {n.node}</p>
           {!(n.qdiscStats || []).length && <p className="empty-state">No qdisc stats available (netlink read failed or empty).</p>}
           {(n.qdiscStats || []).length > 0 && (
-            <div className="datatable-scroll">
+            <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
               <div className="datahead">
                 <span>INTERFACE</span>
                 <span>KIND</span>

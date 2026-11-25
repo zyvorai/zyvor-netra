@@ -123,7 +123,7 @@ export default function Handoff() {
       </section>
       <section className="card span3">
         <p className="eyebrow">MARKDOWN</p>
-        <pre className="kit-pre" style={{ whiteSpace: 'pre-wrap', maxHeight: '70vh', overflow: 'auto' }}>
+        <pre tabIndex={0} className="kit-pre" style={{ whiteSpace: 'pre-wrap', maxHeight: '70vh', overflow: 'auto' }}>
           {md || (err ? '' : 'Loading…')}
         </pre>
       </section>

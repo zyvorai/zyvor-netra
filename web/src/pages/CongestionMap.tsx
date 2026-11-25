@@ -523,7 +523,7 @@ export default function CongestionMap() {
         </label>
         {!nodes.length && !err && <p className="empty-state">No kernel-network reports yet.</p>}
         {Boolean(nodes.length) && (
-          <div className="congestion-grid">
+          <div className="congestion-grid" tabIndex={0} role="group" aria-label="Network stack stages">
             <span className="congestion-col-label" style={{ gridColumn: 1 }}>
               INGRESS
             </span>

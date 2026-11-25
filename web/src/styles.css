@@ -1,157 +1,152 @@
 :root {
   color-scheme: light;
-  --bg-page: #ffffff;
+  /* Surfaces: page < card; bg-elevated-2 is the inset fill inside a card. */
+  --bg-page: #f5f5f7;
   --bg-elevated: #ffffff;
-  /* Sub-card/toolbar-input fill, nested inside a --bg-elevated .card — in
-     light mode this is the same value as --bg-page, which is fine (and not
-     mergeable with it): the two are never adjacent to each other, so what
-     matters is contrast against --bg-elevated, which this has. */
   --bg-elevated-2: #f5f5f7;
   --bg-glass: rgba(251, 251, 253, 0.8);
+  /* Text: all three meet WCAG AA on every surface and tint above.
+     --text-secondary and --text-tertiary are separate roles (copy / captions). */
   --text-primary: #1d1d1f;
-  /* --text-secondary/--text-tertiary/--btn-secondary look like three near-
-     duplicate grays but serve three different jobs that happen to share a
-     value in light mode and deliberately diverge in dark mode: secondary
-     copy (readable but de-emphasized text), tertiary copy (the dimmest
-     legible label/caption tier), and a button FILL color (needs enough
-     contrast against --bg-elevated as a solid pill, a stricter bar than
-     either text color needs) — see --btn-secondary below. Not merged on
-     purpose; keep them distinct rather than collapsing to one token. */
-  --text-secondary: #6e6e73;
-  --text-tertiary: #86868b;
-  --border: #d2d2d7;
-  --border-strong: #c7c7cc;
+  --text-secondary: #515154;
+  --text-tertiary: #636368;
+  --text-faint: #636368;
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.16);
+  --border-input: #86868b;
   --hover-fill: rgba(0, 0, 0, 0.04);
-  --hover-fill-strong: rgba(0, 0, 0, 0.08);
+  --hover-fill-strong: rgba(0, 0, 0, 0.07);
   --nav-bg: rgba(251, 251, 253, 0.8);
-  --nav-link: rgba(0, 0, 0, 0.8);
+  --nav-link: #424245;
   --nav-link-active: #1d1d1f;
+  --material-bg: #ffffff;
+  --material-blur: saturate(180%) blur(20px);
+  --scrim: rgba(0, 0, 0, 0.32);
+  /* One blue accent. --apple-blue is a fill that carries white text (and the
+     focus ring); --apple-link is blue text, icons and tints. */
   --apple-blue: #0071e3;
-  --apple-blue-hover: #0077ed;
-  --apple-link: #0066cc;
-  --danger: #ff3b30;
-  --danger-bg: #fff1f0;
-  --accent-cyan: #32ade6;
-  --accent-cyan-hover: #28a0d8;
-  --accent-green: #34c759;
-  --accent-green-hover: #30b753;
+  --apple-blue-hover: #0062c4;
+  --apple-link: #005cb9;
+  /* Status: --danger is text and graphics; --danger-fill carries white text. */
+  --danger: #bf001a;
+  --danger-fill: #bf001a;
+  --danger-bg: #fdeeee;
+  /* Bright accents are graphics only (dots, strokes, tints) ... */
+  --accent-cyan: #0a8fc2;
+  --accent-cyan-hover: #087ba7;
+  --accent-green: #248a3d;
+  --accent-green-hover: #1f7a35;
   --accent-amber: #ff9f0a;
   --accent-amber-hover: #f09400;
-  --accent-purple: #af52de;
-  --accent-purple-hover: #a246d4;
-  /* Same value as --text-secondary in light mode, diverges in dark mode —
-     see the note on --text-secondary above for why this stays separate. */
+  --accent-purple: #8944ab;
+  --accent-purple-hover: #7a3b99;
   --btn-secondary: #6e6e73;
   --btn-secondary-hover: #5a5a5e;
-  --disabled-bg: #dcdce1;
-  --disabled-text: #86868b;
-  --warning-bg: #fff6ed;
-  --warning-border: #ffd8ba;
+  --disabled-bg: #e8e8ed;
+  --disabled-text: #6e6e73;
+  --warning-bg: #fdf3e7;
+  --warning-border: #f2d3ad;
   --warning-text: #8b3d00;
-  --success-bg: #e8f8ec;
-  --success-border: #b8ecc4;
-  --success-text: #1e7b34;
-  /* Text-safe accents: the bright --accent-* values are fills/strokes (~2:1 as
-     text on white). These reach >=4.5:1 on light surfaces; dark theme keeps the
-     bright originals. */
-  --accent-cyan-text: #0a6b99;
-  --accent-green-text: #1e7b34;
-  --accent-amber-text: #8b4b00;
-  --accent-purple-text: #8a3fb5;
-  --info-bg: #eaf6fc;
-  --info-border: #bfe6f5;
-  --terminal-bg: #0d0d0f;
-  --terminal-bar: #1b1b1e;
+  --success-bg: #eaf6ed;
+  --success-border: #bfe3c8;
+  --success-text: #17662a;
+  /* ... and these are their text-safe variants (>= 4.5:1). */
+  --accent-cyan-text: #0a5f82;
+  --accent-green-text: #17662a;
+  --accent-amber-text: #8b4500;
+  --accent-purple-text: #7a329c;
+  --info-bg: #eaf4fb;
+  --info-border: #c3e0f2;
+  /* Terminals stay dark in both themes (see the .terminal scope below). */
+  --terminal-bg: #161617;
+  --terminal-bar: #1d1d1f;
   --terminal-text: #f5f5f7;
-  --terminal-text-dim: #86868b;
+  --terminal-text-dim: #9d9da2;
+  /* Elevation: flat cards, one soft shadow. */
   --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --hero-glow-a: rgba(0, 113, 227, 0.18);
-  --hero-glow-b: rgba(50, 173, 230, 0.16);
-  --hero-glow-c: rgba(175, 82, 222, 0.14);
-  --hero-glow-d: rgba(255, 55, 95, 0.10);
-  /* Product-color chart series (Apple system hues) — graphics only. */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.12), 0 32px 64px rgba(0, 0, 0, 0.14);
+  /* Chart series — graphics only, >= 3:1 on the card surface where possible. */
   --chart-1: #0071e3;
-  --chart-2: #34c759;
-  --chart-3: #ff9f0a;
-  --chart-4: #ff375f;
-  --chart-5: #af52de;
-  --chart-6: #32ade6;
-  --chart-7: #ff6482;
-  --chart-8: #30b0c7;
-  --chart-9: #ffd60a;
-  --chart-10: #5856d6;
-  --chart-11: #64d2ff;
-  --chart-12: #bf5af2;
-  --theme-color: #ffffff;
-  /* apple.com contract tokens (docs/design/APPLE-UX-CONTRACT.md). Semantic
-     surface/hairline/shadow/text-faint/focus names shared with the docs site
-     so the two never drift. Existing --bg-* / --border tokens stay the
-     source for legacy rules; new code should prefer these. */
+  --chart-2: #248a3d;
+  --chart-3: #c97700;
+  --chart-4: #d41c49;
+  --chart-5: #8944ab;
+  --chart-6: #0a8fc2;
+  --chart-7: #e0567a;
+  --chart-8: #0a7d75;
+  --chart-9: #a98a00;
+  --chart-10: #4a48c4;
+  --chart-11: #3a9fd6;
+  --chart-12: #a05cd0;
+  --theme-color: #f5f5f7;
+  /* Contract aliases (docs/design/APPLE-UX-CONTRACT.md). */
   --surface-1: #ffffff;
   --surface-hover: #f5f5f7;
-  --hairline-1: rgba(0, 0, 0, 0.1);
+  --hairline-1: rgba(0, 0, 0, 0.08);
   --fill-tertiary: rgba(0, 0, 0, 0.04);
-  --text-faint: #a1a1a6;
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.08);
-  --shadow-3: 0 12px 40px rgba(0, 0, 0, 0.14);
   --focus-ring: 0 0 0 4px rgba(0, 113, 227, 0.3);
   --hit-min: 44px;
-  /* Type scale (docs/design/APPLE-UX-CONTRACT.md). Headings and figures read
-     from these instead of raw px so every page shrinks or grows together. */
+  --nav-h: 52px;
+  --content-max: 1320px;
+  /* Type scale. Headings and figures read from these so every page shrinks or
+     grows together. System fonts only: nothing is downloaded. */
   --fs-body: 15px;
-  --fs-lede: 16px;
+  --fs-lede: clamp(16px, 1.4vw, 19px);
   --fs-link: 15px;
-  --fs-h1: clamp(24px, 2.6vw, 34px);
-  --fs-h2: clamp(20px, 1.8vw, 24px);
-  --fs-h3: 17px;
-  --fs-figure: clamp(18px, 1.6vw, 24px);
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  /* Border-radius scale — theme-independent (not a color), defined once
-     here rather than repeated in [data-theme="dark"]. Every radius value
-     used anywhere in this file is one of these steps, plus the 50%/0
-     one-offs (circular icon buttons, square nav links) that aren't part
-     of a "rounded corner" scale at all. */
+  --fs-h1: clamp(34px, 4.4vw, 52px);
+  --fs-h2: clamp(21px, 1.9vw, 26px);
+  --fs-h3: 18px;
+  --fs-figure: clamp(21px, 2vw, 30px);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter Display", "Inter", "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --radius-xs: 6px;
   --radius-sm: 10px;
   --radius-md: 12px;
   --radius-base: 14px;
   --radius-lg: 16px;
   --radius-xl: 18px;
-  --radius-2xl: 24px;
+  --radius-2xl: 20px;
   --radius-3xl: 28px;
   --radius-pill: 980px;
-  /* Apple's signature interaction curve — a fast, slightly overshooting
-     ease-out. Used in place of generic `ease` on interactive transitions
-     app-wide so motion reads as deliberately "Apple" rather than default
-     browser easing. Purely cosmetic; never affects layout or timing enough
-     to change when something becomes interactive. */
   --ease-apple: cubic-bezier(0.28, 0.11, 0.32, 1);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   color: var(--text-primary);
   background: var(--bg-page);
   font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
 }
 
-[data-theme="dark"] {
+/* Dark tokens. Terminal surfaces are dark in both themes, so they take the
+   same set: every status and accent colour inside them stays readable. */
+:root[data-theme="dark"],
+.terminal {
   color-scheme: dark;
   --bg-page: #000000;
   --bg-elevated: #1d1d1f;
-  --bg-elevated-2: #2c2c2e;
+  --bg-elevated-2: #2a2a2c;
   --bg-glass: rgba(22, 22, 23, 0.8);
   --text-primary: #f5f5f7;
-  --text-secondary: #a1a1a6;
-  --text-tertiary: #86868b;
-  --border: rgba(255, 255, 255, 0.16);
-  --border-strong: rgba(255, 255, 255, 0.24);
-  --hover-fill: rgba(255, 255, 255, 0.06);
-  --hover-fill-strong: rgba(255, 255, 255, 0.1);
+  --text-secondary: #b4b4b9;
+  --text-tertiary: #a1a1a6;
+  --text-faint: #98989d;
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --border-input: #707075;
+  --hover-fill: rgba(255, 255, 255, 0.07);
+  --hover-fill-strong: rgba(255, 255, 255, 0.11);
   --nav-bg: rgba(22, 22, 23, 0.8);
-  --nav-link: rgba(255, 255, 255, 0.8);
+  --nav-link: #d2d2d7;
   --nav-link-active: #f5f5f7;
-  --apple-link: #2997ff;
-  --danger: #ff453a;
+  --material-bg: #242426;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --apple-blue: #0071e3;
+  --apple-blue-hover: #0066cc;
+  --apple-link: #4da3ff;
+  --danger: #ff7a73;
+  --danger-fill: #c4001a;
   --danger-bg: rgba(255, 69, 58, 0.14);
   --accent-cyan: #64d2ff;
   --accent-cyan-hover: #70d7ff;
@@ -159,34 +154,30 @@
   --accent-green-hover: #3ad463;
   --accent-amber: #ff9f0a;
   --accent-amber-hover: #ffb340;
-  --accent-purple: #bf5af2;
-  --accent-purple-hover: #c767f3;
+  --accent-purple: #c37cf5;
+  --accent-purple-hover: #cf94f7;
   --btn-secondary: #737378;
   --btn-secondary-hover: #7e7e84;
-  --disabled-bg: #3a3a3d;
-  --disabled-text: #9a9aa0;
+  --disabled-bg: #2f2f32;
+  --disabled-text: #9d9da2;
   --warning-bg: rgba(255, 159, 10, 0.12);
-  --warning-border: rgba(255, 159, 10, 0.35);
-  --warning-text: #ffd60a;
-  --success-bg: rgba(48, 209, 88, 0.14);
-  --success-border: rgba(48, 209, 88, 0.35);
+  --warning-border: rgba(255, 159, 10, 0.32);
+  --warning-text: #ffc04d;
+  --success-bg: rgba(48, 209, 88, 0.12);
+  --success-border: rgba(48, 209, 88, 0.32);
   --success-text: #30d158;
   --accent-cyan-text: #64d2ff;
   --accent-green-text: #30d158;
   --accent-amber-text: #ff9f0a;
-  --accent-purple-text: #bf5af2;
-  --info-bg: rgba(100, 210, 255, 0.14);
-  --info-border: rgba(100, 210, 255, 0.35);
-  --terminal-bg: #000000;
-  --terminal-bar: #1d1d1f;
-  --terminal-text: #f5f5f7;
-  --terminal-text-dim: #86868b;
+  --accent-purple-text: #d19cf7;
+  --info-bg: rgba(41, 151, 255, 0.13);
+  --info-border: rgba(41, 151, 255, 0.32);
+  --terminal-bg: #111112;
   --card-shadow: none;
-  --hero-glow-a: rgba(10, 132, 255, 0.28);
-  --hero-glow-b: rgba(100, 210, 255, 0.22);
-  --hero-glow-c: rgba(191, 90, 242, 0.22);
-  --hero-glow-d: rgba(255, 55, 95, 0.16);
-  --chart-1: #0a84ff;
+  --shadow-1: none;
+  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 24px 64px rgba(0, 0, 0, 0.7);
+  --chart-1: #2997ff;
   --chart-2: #30d158;
   --chart-3: #ff9f0a;
   --chart-4: #ff375f;
@@ -195,18 +186,14 @@
   --chart-7: #ff6482;
   --chart-8: #40c8e0;
   --chart-9: #ffd60a;
-  --chart-10: #5e5ce6;
+  --chart-10: #7d7aff;
   --chart-11: #70d7ff;
   --chart-12: #da8fff;
   --theme-color: #000000;
   --surface-1: #1d1d1f;
-  --surface-hover: #2c2c2e;
-  --hairline-1: rgba(255, 255, 255, 0.12);
+  --surface-hover: #2a2a2c;
+  --hairline-1: rgba(255, 255, 255, 0.1);
   --fill-tertiary: rgba(255, 255, 255, 0.08);
-  --text-faint: #6e6e73;
-  --shadow-1: none;
-  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-3: 0 12px 40px rgba(0, 0, 0, 0.6);
   --focus-ring: 0 0 0 4px rgba(41, 151, 255, 0.4);
 }
 
@@ -228,6 +215,17 @@ body {
   color: var(--text-primary);
   font-size: var(--fs-body);
   line-height: 1.5;
+  letter-spacing: -0.005em;
+}
+
+/* Focus is always visible, on every control, in both themes. */
+:root :focus-visible {
+  outline: 2px solid var(--apple-blue);
+  outline-offset: 2px;
+}
+:root[data-theme="dark"] :focus-visible,
+:root .terminal :focus-visible {
+  outline-color: #2997ff;
 }
 
 /* —— Apple.com button system —— */
@@ -260,25 +258,6 @@ button:active,
 .buildbutton:active {
   transform: scale(0.98);
 }
-button:focus-visible,
-.buttonlike:focus-visible,
-.buildbutton:focus-visible {
-  outline: 2px solid var(--apple-blue);
-  outline-offset: 2px;
-}
-
-/* Same Apple-blue focus ring for form controls and nav links — the
-   browser default outline reads inconsistently against a black
-   dark-mode background. */
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-.navlinks button:focus-visible,
-.brand:focus-visible {
-  outline: 2px solid var(--apple-blue);
-  outline-offset: 2px;
-}
-
 /* Button variants — apple.com contract ("color is deviation").
    Blue fill = the one primary action. Everything else is a quiet tinted or
    neutral pill; solid red is reserved for destructive actions. The semantic
@@ -301,14 +280,6 @@ button.primary:hover,
 button.btn-next:hover,
 .btn-next:hover {
   background: var(--apple-blue-hover);
-  filter: brightness(1.06);
-}
-/* The glow is reserved for dark mode, where --card-shadow is off app-wide
-   and a bit of light around the primary action marks it as the one thing on
-   a black page that is meant to be touched. */
-[data-theme="dark"] button.primary:hover,
-[data-theme="dark"] .primary:hover {
-  box-shadow: 0 8px 24px rgba(0, 113, 227, 0.35);
 }
 
 /* Neutral: secondary actions, refresh. */
@@ -366,13 +337,14 @@ button.btn-warn:hover,
 button.danger,
 .danger,
 .policydelete {
-  background: var(--danger);
+  background: var(--danger-fill);
   color: #fff;
   border-color: transparent;
 }
 button.danger:hover,
 .danger:hover,
 .policydelete:hover {
+  background: var(--danger-fill);
   filter: brightness(1.08);
 }
 
@@ -397,6 +369,11 @@ button:disabled,
 /* Chip remove controls — compact Apple red. Scoped to buttons labelled
    "Remove …": other buttons inside .chips (tabs, filters) are navigation, and
    red is reserved for deviation. */
+.chips button.primary {
+  background: var(--apple-blue);
+  border-color: transparent;
+  color: #fff;
+}
 .chips button[aria-label^="Remove"] {
   background: var(--danger-bg) !important;
   color: var(--danger) !important;
@@ -422,31 +399,28 @@ button:disabled,
 }
 .buttonlike:hover { background: var(--hover-fill); }
 
-/* —— Apple global nav —— */
+/* —— Global navigation: translucent, blurred, pill links —— */
 .nav {
   position: sticky;
   top: 0;
   z-index: 50;
-  height: 48px;
+  height: var(--nav-h);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   background: var(--nav-bg);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: var(--material-blur);
+  -webkit-backdrop-filter: var(--material-blur);
   border-bottom: 1px solid var(--hairline-1);
 }
 .nav-inner {
   width: 100%;
-  /* Matches main's own max-width so the brand mark sits at the page's
-     true left edge (and nav-actions at its true right edge) instead of
-     being centered as a narrower column — was max-width: 1024px, which
-     pushed "Z Netra" ~245px in from the left on any wide viewport. */
-  max-width: 1800px;
+  /* Matches main's own max-width so the brand mark lines up with page content. */
+  max-width: var(--content-max);
   height: 100%;
   margin: 0 auto;
-  padding: 0 clamp(20px, 3.5vw, 64px);
+  padding: 0 clamp(16px, 3vw, 40px);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -458,24 +432,23 @@ button:disabled,
   letter-spacing: -0.02em;
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   color: var(--text-primary);
   text-decoration: none;
   border: 0;
   background: transparent;
   padding: 0 6px;
   margin-left: -6px;
-  /* 44px hit area (the bar is 48px tall) — the mark itself stays 22px. */
   min-height: var(--hit-min);
   cursor: pointer;
 }
-.brand:hover { background: transparent; opacity: 0.8; }
+.brand:hover { background: transparent; opacity: 0.75; }
 .brand small {
   display: none;
 }
 .brand-mark {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: var(--radius-xs);
   display: block;
 }
@@ -484,7 +457,7 @@ button:disabled,
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0;
+  gap: 2px;
   /* Not overflow-x: auto here — that forces the UA to also treat
      overflow-y as auto (CSS overflow computed-value coupling), which
      clips any .mega-panel poking out below this row before it can
@@ -499,51 +472,30 @@ button:disabled,
 .navlinks::-webkit-scrollbar { display: none; }
 .navlinks button,
 .nav .navlinks > button {
-  position: relative;
   border: 0;
   background: transparent;
-  padding: 0 10px;
-  min-height: 48px;
-  height: 48px;
-  border-radius: 0;
+  padding: 0 13px;
+  min-height: 34px;
+  height: 34px;
+  border-radius: var(--radius-pill);
   display: inline-flex;
   align-items: center;
   color: var(--nav-link);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.005em;
   white-space: nowrap;
-  opacity: 0.88;
-  transition: opacity 0.2s var(--ease-apple), color 0.2s var(--ease-apple);
-}
-/* Animated underline sweep in from center, rather than a static bar —
-   the small bit of motion Apple's own nav uses to mark the active
-   section instead of just a color change. */
-.navlinks button::after {
-  content: "";
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 6px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--apple-blue);
-  transform: scaleX(0);
-  transition: transform 0.25s var(--ease-apple);
+  transition: background 0.2s var(--ease-apple), color 0.2s var(--ease-apple);
 }
 .navlinks button:hover {
-  background: transparent;
-  opacity: 1;
+  background: var(--hover-fill);
   color: var(--nav-link-active);
 }
-.navlinks button.active {
-  background: transparent;
+.navlinks button.active,
+.navlinks button[aria-expanded="true"] {
+  background: var(--hover-fill-strong);
   color: var(--nav-link-active);
-  opacity: 1;
   font-weight: 500;
-}
-.navlinks button.active::after {
-  transform: scaleX(1);
 }
 .navgroup {
   position: relative;
@@ -551,21 +503,20 @@ button:disabled,
 }
 .mega-panel {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%) translateY(-6px);
   min-width: 480px;
   max-width: 720px;
   /* The panel sits inside a sticky nav, so page scroll can't reach what falls
      below the fold: cap it to the viewport and scroll inside it. */
-  max-height: calc(100vh - 64px);
+  max-height: calc(100vh - var(--nav-h) - 24px);
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: var(--surface-1);
+  background: var(--material-bg);
   border: 1px solid var(--hairline-1);
-  border-top: none;
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  padding: 28px 32px;
+  border-radius: var(--radius-xl);
+  padding: 20px;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -580,27 +531,35 @@ button:disabled,
 }
 .mega-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 20px 28px;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 4px 8px;
 }
-.mega-grid button {
+/* The hover bridge between the trigger and the offset panel. */
+.mega-panel.open::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -12px;
+  height: 12px;
+}
+.nav .mega-grid button {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: 3px;
   height: auto;
   min-height: 0;
-  padding: 8px;
-  border-radius: var(--radius-xs, 6px);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
   text-align: left;
   white-space: normal;
-  opacity: 1;
 }
-.mega-grid button:hover {
+.nav .mega-grid button:hover {
   background: var(--hover-fill);
 }
-.mega-grid button::after {
-  content: none;
+.nav .mega-grid button.active {
+  background: var(--hover-fill-strong);
 }
 .mega-link-label {
   font-size: 14px;
@@ -613,7 +572,7 @@ button:disabled,
   line-height: 1.4;
 }
 .mega-grid button.active .mega-link-label {
-  color: var(--apple-blue);
+  color: var(--apple-link);
 }
 .nav-actions {
   flex: 0 0 auto;
@@ -634,161 +593,100 @@ button:disabled,
   align-items: center;
   justify-content: center;
 }
-.theme-toggle:hover {
+.theme-toggle:hover,
+.theme-toggle[aria-expanded="true"] {
   background: var(--hover-fill);
   color: var(--nav-link-active);
 }
 
+/* Appearance menu (Light / Dark / System). */
+.theme-menu { position: relative; display: inline-flex; }
+.theme-menu__panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  width: 184px;
+  padding: 6px;
+  display: grid;
+  gap: 2px;
+  background: var(--material-bg);
+  border: 1px solid var(--hairline-1);
+  border-radius: var(--radius-base);
+  box-shadow: var(--shadow-3);
+}
+.theme-menu__panel button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-primary);
+  text-align: left;
+}
+.theme-menu__panel button:hover,
+.theme-menu__panel button:focus-visible { background: var(--hover-fill); }
+.theme-menu__panel button span { flex: 1; }
+.theme-menu__panel button svg { color: var(--text-secondary); }
+.theme-menu__panel button[aria-checked="true"] svg:last-child { color: var(--apple-link); }
+
 main {
-  max-width: 1800px;
+  max-width: var(--content-max);
   margin: auto;
-  padding: 28px clamp(20px, 3.5vw, 64px) 96px;
-  /* The hero glow is inset -8% past the hero box, so it ends beyond main's edge
-     (about 57px at 1440px wide) and would give the page a sideways scrollbar.
-     clip, unlike hidden, makes no scroll container, so sticky children still work. */
+  padding: 24px clamp(16px, 3vw, 40px) 112px;
   overflow-x: clip;
 }
 
-/* Overview hero: same compact scale as .page-hero; the live datapath visual
-   below it, not the headline, is the landing page's big moment. */
-.hero {
+/* Page titles: large, tight, quiet; the data starts in the first screen. */
+.hero,
+.page-hero {
   position: relative;
-  margin: 8px 0 20px;
-  padding: 12px 0 4px;
-  max-width: 900px;
+  margin: 24px 0 32px;
 }
-.hero::before,
-.page-hero::before {
-  content: "";
-  position: absolute;
-  inset: -20px -8% auto;
-  height: 140px;
-  background:
-    radial-gradient(ellipse at 30% 40%, var(--hero-glow-a), transparent 60%),
-    radial-gradient(ellipse at 80% 20%, var(--hero-glow-b), transparent 55%);
-  pointer-events: none;
-  z-index: -1;
-  animation: heroDrift 22s ease-in-out infinite alternate;
-}
+.hero { max-width: 900px; }
+.page-hero { animation: fadeRise 0.45s var(--ease-apple) both; }
 .hero h1,
 .page-hero h1 {
+  text-wrap: balance;
+  font-family: var(--font-display);
   font-size: var(--fs-h1);
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  line-height: 1.07;
+  letter-spacing: -0.028em;
   font-weight: 600;
-  margin: 6px 0 8px;
+  margin: 6px 0 12px;
+  max-width: 22ch;
   color: var(--text-primary);
 }
+.hero p.eyebrow { margin: 0; }
 .hero p,
 .page-hero p {
   color: var(--text-secondary);
   font-size: var(--fs-lede);
   line-height: 1.45;
   margin: 0;
-  max-width: 70ch;
+  max-width: 68ch;
 }
-
-/* The glow layer is clipped to its hero's box (max-width 900px on page heroes),
-   which left a hard vertical edge in dark mode; fade the trailing edge instead. */
-.hero::before,
-.page-hero::before {
-  -webkit-mask-image: linear-gradient(to right, #000 45%, transparent 100%);
-  mask-image: linear-gradient(to right, #000 45%, transparent 100%);
-}
-
-/* Light theme keeps a soft product glow on heroes (graphics, not chrome).
-   Untinted pages stay nearly invisible; tinted pages carry Apple product color. */
-:root:not([data-theme="dark"]) .hero::before,
-:root:not([data-theme="dark"]) .page-hero::before {
-  opacity: 0.85;
-}
-
-/* Slow, GPU-cheap drift of the hero glow's radial-gradient position — a
-   "living" background rather than a static one. Subtle on purpose: this
-   runs continuously behind data-dense pages, so it must never be
-   distracting. Silenced under prefers-reduced-motion (see media query
-   near the bottom of this file). */
-@keyframes heroDrift {
-  from { background-position: 0% 0%, 0% 0%; }
-  to { background-position: 6% 4%, -5% -3%; }
-}
-
-/* Page heroes are compact page titles, not posters: the data should start
-   within the first screen. Scale comes from --fs-h1 / --fs-lede. */
-.page-hero {
-  position: relative;
-  margin: 8px 0 20px;
-  padding: 12px 0 4px;
-  max-width: 900px;
-  animation: fadeRise 0.45s var(--ease-apple) both;
-}
-
-/* Per-page tinted ambient glow — the app's stand-in for the imagery/photo
-   treatment apple.com uses per product page. Reuses the same accent colors
-   already defined for status/severity elsewhere (no new palette), just
-   applied as a soft two-ellipse glow behind that page's hero. Default
-   (untinted) pages keep the blue/cyan --hero-glow-a/-b from the root theme
-   tokens above. */
-.hero-tint-green { --hero-glow-a: rgba(52, 199, 89, 0.22); --hero-glow-b: rgba(50, 173, 230, 0.12); --page-accent: var(--accent-green); --page-accent-text: var(--accent-green-text); --page-accent-bg: var(--success-bg); --page-accent-border: var(--success-border); }
-.hero-tint-amber { --hero-glow-a: rgba(255, 159, 10, 0.22); --hero-glow-b: rgba(255, 55, 95, 0.10); --page-accent: var(--accent-amber); --page-accent-text: var(--accent-amber-text); --page-accent-bg: var(--warning-bg); --page-accent-border: var(--warning-border); }
-.hero-tint-purple { --hero-glow-a: rgba(175, 82, 222, 0.22); --hero-glow-b: rgba(0, 113, 227, 0.12); --page-accent: var(--accent-purple); --page-accent-text: var(--accent-purple-text); --page-accent-bg: color-mix(in srgb, var(--accent-purple) 12%, var(--surface-1)); --page-accent-border: color-mix(in srgb, var(--accent-purple) 35%, var(--hairline-1)); }
-.hero-tint-red { --hero-glow-a: rgba(255, 59, 48, 0.20); --hero-glow-b: rgba(255, 159, 10, 0.10); --page-accent: var(--danger); --page-accent-text: var(--danger); --page-accent-bg: var(--danger-bg); --page-accent-border: color-mix(in srgb, var(--danger) 40%, var(--hairline-1)); }
-.hero-tint-cyan { --hero-glow-a: rgba(50, 173, 230, 0.24); --hero-glow-b: rgba(0, 113, 227, 0.14); --page-accent: var(--accent-cyan); --page-accent-text: var(--accent-cyan-text); --page-accent-bg: var(--info-bg); --page-accent-border: var(--info-border); }
-[data-theme="dark"] .hero-tint-green { --hero-glow-a: rgba(48, 209, 88, 0.28); --hero-glow-b: rgba(100, 210, 255, 0.16); }
-[data-theme="dark"] .hero-tint-amber { --hero-glow-a: rgba(255, 159, 10, 0.28); --hero-glow-b: rgba(255, 55, 95, 0.14); }
-[data-theme="dark"] .hero-tint-purple { --hero-glow-a: rgba(191, 90, 242, 0.28); --hero-glow-b: rgba(10, 132, 255, 0.16); }
-[data-theme="dark"] .hero-tint-red { --hero-glow-a: rgba(255, 69, 58, 0.26); --hero-glow-b: rgba(255, 159, 10, 0.14); }
-[data-theme="dark"] .hero-tint-cyan { --hero-glow-a: rgba(100, 210, 255, 0.30); --hero-glow-b: rgba(10, 132, 255, 0.18); }
 
 .eyebrow {
   font-size: 12px !important;
-  letter-spacing: 0.14em;
-  font-weight: 700;
-  color: var(--page-accent-text, var(--apple-blue)) !important;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--text-tertiary) !important;
   text-transform: uppercase;
 }
-.page-hero .eyebrow { color: var(--page-accent-text, var(--apple-link)) !important; }
+.page-hero p.eyebrow {
+  margin: 0;
+  font-size: 15px !important;
+  letter-spacing: -0.005em;
+  text-transform: none;
+  color: var(--text-secondary) !important;
+}
 
-/* Page body inherits the hero tint so cards, pulses and chips share one product color. */
-.page-tint {
-  --page-accent: var(--apple-blue);
-  --page-accent-text: var(--apple-link);
-  --page-accent-bg: var(--info-bg);
-  --page-accent-border: var(--info-border);
-}
-.page-tint-green { --page-accent: var(--accent-green); --page-accent-text: var(--accent-green-text); --page-accent-bg: var(--success-bg); --page-accent-border: var(--success-border); }
-.page-tint-amber { --page-accent: var(--accent-amber); --page-accent-text: var(--accent-amber-text); --page-accent-bg: var(--warning-bg); --page-accent-border: var(--warning-border); }
-.page-tint-purple { --page-accent: var(--accent-purple); --page-accent-text: var(--accent-purple-text); --page-accent-bg: color-mix(in srgb, var(--accent-purple) 12%, var(--surface-1)); --page-accent-border: color-mix(in srgb, var(--accent-purple) 35%, var(--hairline-1)); }
-.page-tint-red { --page-accent: var(--danger); --page-accent-text: var(--danger); --page-accent-bg: var(--danger-bg); --page-accent-border: color-mix(in srgb, var(--danger) 40%, var(--hairline-1)); }
-.page-tint-cyan { --page-accent: var(--accent-cyan); --page-accent-text: var(--accent-cyan-text); --page-accent-bg: var(--info-bg); --page-accent-border: var(--info-border); }
-
-.page-tint .card {
-  border-color: color-mix(in srgb, var(--page-accent) 22%, var(--hairline-1));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--page-accent) 7%, var(--bg-elevated)) 0%, var(--bg-elevated) 48px),
-    var(--bg-elevated);
-  box-shadow: var(--shadow-1);
-}
-.page-tint .card > .eyebrow,
-.page-tint .card > p.eyebrow {
-  color: var(--page-accent-text) !important;
-}
-.page-tint .chips button.primary,
-.page-tint button.primary {
-  background: var(--page-accent);
-  border-color: var(--page-accent);
-}
-.page-tint .chips button.primary:hover,
-.page-tint button.primary:hover {
-  filter: brightness(1.06);
-}
-.page-tint .kit-pulse {
-  border-color: color-mix(in srgb, var(--page-accent) 28%, var(--hairline-1));
-  background:
-    radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--page-accent) 14%, transparent), transparent 48%),
-    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--chart-5) 8%, transparent), transparent 40%),
-    var(--surface-1);
-}
 .login-shell {
   min-height: 100vh;
   display: flex;
@@ -796,40 +694,33 @@ main {
   align-items: center;
   justify-content: center;
   gap: 40px;
-  padding: 64px 24px;
+  padding: 72px 20px 48px;
   position: relative;
-  overflow: hidden;
   text-align: center;
 }
-/* Single Account-style composition (apple.com contract): no ambient glow in
-   the light theme. */
-:root:not([data-theme="dark"]) .login-shell::before { display: none; }
-.login-shell::before {
-  content: "";
+.login-appearance {
   position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 18% 22%, var(--hero-glow-a), transparent 55%),
-    radial-gradient(ellipse at 85% 78%, var(--hero-glow-b), transparent 55%);
-  pointer-events: none;
-  z-index: -1;
+  top: 14px;
+  right: 16px;
 }
 .login-info {
   max-width: 640px;
 }
 .login-logo {
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
   border-radius: var(--radius-sm);
   margin: 0 auto 18px;
   display: block;
 }
 .login-info h1 {
+  text-wrap: balance;
+  font-family: var(--font-display);
   font-size: var(--fs-h1);
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  line-height: 1.07;
+  letter-spacing: -0.028em;
   font-weight: 600;
-  margin: 8px 0 14px;
+  margin: 8px 0 16px;
   color: var(--text-primary);
 }
 .login-info p {
@@ -845,12 +736,12 @@ main {
   color: var(--text-tertiary) !important;
 }
 .login-host code {
-  color: var(--apple-blue);
+  color: var(--apple-link);
   font-weight: 600;
 }
 .login-card {
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -894,9 +785,9 @@ main {
   width: 100%;
   margin-top: 6px;
   padding: 11px 14px;
-  border: 1px solid var(--hairline-1);
+  border: 1px solid var(--border-input);
   border-radius: var(--radius-md);
-  background: var(--fill-tertiary);
+  background: var(--bg-elevated);
   color: var(--text-primary);
 }
 .tokenbox input::placeholder,
@@ -906,6 +797,7 @@ main {
 
 .grid {
   display: grid;
+  align-content: start;
   /* minmax(0, 1fr), not 1fr: a bare 1fr is minmax(auto, 1fr), so one wide child
      (a nowrap toolbar, a 640px data row) stretched the track past the viewport
      and the overflow was then clipped, hiding the card's right edge on phones. */
@@ -929,11 +821,10 @@ main {
   border-top: 1px solid var(--border);
 }
 .section-divider h2 {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+  color: var(--text-primary);
   margin: 0 0 4px;
 }
 .section-divider p {
@@ -946,20 +837,15 @@ main {
   background: var(--bg-elevated);
   border: 1px solid var(--hairline-1);
   border-radius: var(--radius-xl);
-  padding: 24px;
+  padding: 28px;
   box-shadow: var(--card-shadow);
   position: relative;
   /* visible so metric/toolbar labels are not clipped at the card edge */
   overflow: visible;
 }
-/* Flat hairline card (apple.com contract): no hover lift, no gradient edge.
-   Dark mode has no shadow, so a faint inset top highlight stands in for it. */
-[data-theme="dark"] .card {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
 .card h2 {
   font-size: var(--fs-h2);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.018em;
   margin: 6px 0 12px;
   font-weight: 600;
   color: var(--text-primary);
@@ -1021,6 +907,7 @@ main {
 }
 
 .warning {
+  overflow-wrap: anywhere;
   background: var(--warning-bg) !important;
   border: 1px solid var(--warning-border);
   padding: 12px 14px;
@@ -1033,7 +920,7 @@ main {
   border-radius: var(--radius-2xl);
   overflow: hidden;
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--card-shadow);
   min-height: 280px;
   color: var(--terminal-text);
 }
@@ -1096,10 +983,9 @@ main {
   min-height: 460px;
   background: var(--bg-elevated-2);
   color: var(--text-primary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-input);
   border-radius: var(--radius-lg);
   padding: 16px;
-  outline: 0;
   resize: vertical;
   font: 12px ui-monospace, monospace;
   margin-top: 12px;
@@ -1116,8 +1002,8 @@ main {
   min-height: var(--hit-min);
   padding: 10px 14px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--hairline-1);
-  background: var(--fill-tertiary);
+  border: 1px solid var(--border-input);
+  background: var(--bg-elevated);
   color: var(--text-primary);
   font-size: 15px;
 }
@@ -1274,7 +1160,7 @@ code {
    ".packetdetail .layer > b" above (same two-class-beats-one lesson as
    .flowrow .proto-*: a bare ".layer-tcp > b" would lose that cascade). */
 .packetdetail .layer.layer-eth > b { color: var(--accent-purple); }
-.packetdetail .layer.layer-ip > b { color: var(--apple-blue); }
+.packetdetail .layer.layer-ip > b { color: var(--apple-link); }
 .packetdetail .layer.layer-tcp > b { color: var(--accent-green); }
 .packetdetail .layer.layer-udp > b { color: var(--accent-cyan); }
 .packetdetail .layer.layer-icmp > b { color: var(--accent-amber); }
@@ -1432,35 +1318,32 @@ code {
 }
 .severity-badge.critical {
   color: #fff;
-  background: linear-gradient(135deg, var(--danger), #ff6482);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 18%, transparent);
+  background: var(--danger-fill);
 }
 .severity-badge.high {
   color: #1d1d1f;
-  background: linear-gradient(135deg, var(--accent-amber), #ffd60a);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-amber) 18%, transparent);
+  background: var(--accent-amber);
 }
 .severity-badge.medium,
 .severity-badge.warning {
   color: var(--warning-text);
-  background: linear-gradient(135deg, var(--warning-bg), color-mix(in srgb, var(--accent-amber) 18%, var(--warning-bg)));
+  background: var(--warning-bg);
   border: 1px solid var(--warning-border);
 }
 .severity-badge.low {
   color: var(--accent-cyan-text);
-  background: linear-gradient(135deg, rgba(50, 173, 230, 0.12), rgba(0, 113, 227, 0.10));
-  border: 1px solid rgba(50, 173, 230, 0.35);
+  background: var(--info-bg);
+  border: 1px solid var(--info-border);
 }
 .severity-badge.info {
-  color: var(--accent-purple-text);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-purple) 12%, var(--bg-elevated-2)), var(--bg-elevated-2));
-  border: 1px solid color-mix(in srgb, var(--accent-purple) 28%, var(--border));
+  color: var(--text-secondary);
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
 }
 .severity-badge.ok {
   color: var(--accent-green-text);
-  background: linear-gradient(135deg, rgba(52, 199, 89, 0.16), rgba(50, 173, 230, 0.10));
+  background: var(--success-bg);
   border: 1px solid var(--success-border);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-green) 14%, transparent);
 }
 
 /* Process/workload identity for an attributed policy-drop finding
@@ -1489,7 +1372,9 @@ code {
    colors. */
 .congestion-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  overflow-x: auto;
+  padding: 2px;
   gap: 12px;
   margin: 16px 0;
 }
@@ -1506,6 +1391,8 @@ code {
    — nesting a button in a button is invalid HTML and would double-fire
    both click handlers. */
 .stage-cell {
+  min-width: 0;
+  overflow-wrap: anywhere;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -1526,22 +1413,24 @@ code {
    almost every cell is "ok", and a border-only treatment left the whole
    grid reading as flat/monochrome gray. */
 .stage-cell.ok {
-  background: linear-gradient(165deg, color-mix(in srgb, var(--accent-green) 18%, var(--success-bg)), var(--success-bg));
+  background: var(--success-bg);
   border-color: var(--success-border);
 }
 .stage-cell.warming {
-  background: linear-gradient(165deg, color-mix(in srgb, var(--accent-cyan) 16%, var(--info-bg)), var(--info-bg));
+  background: var(--info-bg);
   border-color: var(--info-border);
 }
 .stage-cell.warning {
-  background: linear-gradient(165deg, color-mix(in srgb, var(--accent-amber) 16%, var(--warning-bg)), var(--warning-bg));
+  background: var(--warning-bg);
   border-color: var(--warning-border);
 }
 .stage-cell.critical {
-  background: linear-gradient(165deg, color-mix(in srgb, var(--danger) 18%, var(--danger-bg)), var(--danger-bg));
+  background: var(--danger-bg);
   border-color: var(--danger);
 }
 .stage-cell-body {
+  white-space: normal;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1609,7 +1498,6 @@ code {
   text-transform: uppercase;
   color: var(--text-tertiary);
   font-style: italic;
-  opacity: 0.7;
 }
 .stage-cell.blank {
   cursor: default;
@@ -1629,29 +1517,6 @@ code {
   gap: 8px;
   flex-wrap: wrap;
   margin-top: 14px;
-}
-.surfaces-group--encrypted:not(.primary) { color: var(--accent-cyan-text); border-color: color-mix(in srgb, var(--accent-cyan) 40%, var(--border)); }
-.surfaces-group--fit:not(.primary) { color: var(--accent-green-text); border-color: color-mix(in srgb, var(--accent-green) 40%, var(--border)); }
-.surfaces-group--threat:not(.primary) { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
-.surfaces-group--ops:not(.primary) { color: var(--accent-amber-text); border-color: color-mix(in srgb, var(--accent-amber) 40%, var(--border)); }
-.surfaces-group--fleet:not(.primary) { color: var(--accent-purple-text); border-color: color-mix(in srgb, var(--accent-purple) 40%, var(--border)); }
-.page-tint .surfaces-group--encrypted.primary { background: var(--accent-cyan) !important; border-color: var(--accent-cyan) !important; color: #fff; }
-.page-tint .surfaces-group--fit.primary { background: var(--accent-green) !important; border-color: var(--accent-green) !important; color: #fff; }
-.page-tint .surfaces-group--threat.primary { background: var(--danger) !important; border-color: var(--danger) !important; color: #fff; }
-.page-tint .surfaces-group--ops.primary { background: var(--accent-amber) !important; border-color: var(--accent-amber) !important; color: #1d1d1f; }
-.page-tint .surfaces-group--fleet.primary { background: var(--accent-purple) !important; border-color: var(--accent-purple) !important; color: #fff; }
-
-.page-tint .list .agent.wide,
-.page-tint .list > div {
-  border-left: 3px solid color-mix(in srgb, var(--page-accent) 40%, transparent);
-  padding-left: 12px;
-  border-radius: 0 8px 8px 0;
-  transition: background 0.15s var(--ease-apple), border-color 0.15s var(--ease-apple);
-}
-.page-tint .list .agent.wide:hover,
-.page-tint .list > div:hover {
-  background: color-mix(in srgb, var(--page-accent) 6%, transparent);
-  border-left-color: var(--page-accent);
 }
 /* Read-only display chip (e.g. "name · count" tags) — .chips previously
    only styled <button> remove-chips, leaving plain <span> children
@@ -1767,14 +1632,14 @@ code {
   border: 1px solid var(--border);
 }
 .risk span { font-size: 12px; color: var(--text-secondary); }
-.risk-low { border-color: rgba(48, 209, 88, 0.45); }
+.risk-low { border-color: var(--success-border); }
 .risk-medium {
-  border-color: rgba(255, 214, 10, 0.45);
-  background: rgba(255, 214, 10, 0.08);
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
 }
 .risk-high,
 .risk-critical {
-  border-color: rgba(255, 69, 58, 0.45);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
   background: var(--danger-bg);
 }
 .risk-critical b,
@@ -1880,21 +1745,18 @@ code {
   white-space: normal;
 }
 .insightrow.critical {
-  border-color: rgba(255, 59, 48, 0.4);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
   background: var(--danger-bg);
 }
-.insightrow.high {
-  border-color: rgba(255, 159, 10, 0.5);
-  background: rgba(255, 159, 10, 0.12);
-}
+.insightrow.high,
 .insightrow.medium,
 .insightrow.warning {
-  border-color: rgba(255, 214, 10, 0.4);
-  background: rgba(255, 214, 10, 0.08);
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
 }
 .insightrow.low {
-  border-color: rgba(50, 173, 230, 0.35);
-  background: rgba(50, 173, 230, 0.06);
+  border-color: var(--info-border);
+  background: var(--info-bg);
 }
 .insightrow.info {
   border-color: var(--border);
@@ -1955,9 +1817,9 @@ code {
   flex: 1;
   min-width: 140px;
   padding: 11px 14px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-input);
   border-radius: var(--radius-md);
-  background: var(--bg-elevated-2);
+  background: var(--bg-elevated);
   color: var(--text-primary);
   font-size: 15px;
 }
@@ -1967,7 +1829,7 @@ code {
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
-  color: var(--terminal-text-dim);
+  color: var(--text-tertiary);
   font-size: 13px;
 }
 .eventtools select {
@@ -2030,42 +1892,71 @@ code {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Narrow screens: brand and actions on the first row, the sections as a
+   scrollable strip of pills on the second. */
 @media (max-width: 900px) {
+  :root {
+    --nav-h: 96px;
+  }
   .nav {
-    height: 48px;
+    height: var(--nav-h);
     align-items: center;
     overflow: visible;
   }
   .nav-inner {
     padding: 0 12px;
-    gap: 8px;
+    gap: 0 8px;
+    flex-wrap: wrap;
+    align-content: center;
   }
+  .brand { margin-left: 0; }
+  .nav-actions { margin-left: auto; }
   .navlinks {
+    order: 3;
+    flex-basis: 100%;
+    height: 44px;
     justify-content: flex-start;
     overflow-x: auto;
     min-width: 0;
     scrollbar-width: none;
-    /* Six groups don't fit in ~200px; fade the right edge so the strip reads
-       as scrollable instead of as a two-item menu. */
-    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    /* No mask-image here: it would also clip the fixed menu panel, which is a
+       descendant of this strip. */
   }
   .navlinks button,
   .nav .navlinks > button {
-    padding: 0 8px;
+    flex: 0 0 auto;
+    padding: 0 12px;
   }
+  .navlinks button:focus-visible { outline-offset: -2px; }
   .mega-panel {
     position: fixed;
     left: 12px;
     right: 12px;
-    top: 48px;
+    top: calc(var(--nav-h) + 8px);
     transform: translateY(-6px);
     min-width: 0;
     max-width: none;
-    max-height: calc(100vh - 64px);
+    padding: 10px;
+    max-height: calc(100vh - var(--nav-h) - 24px);
     overflow-y: auto;
   }
   .mega-panel.open { transform: translateY(0); }
+  .mega-panel.open::before { content: none; }
+  .card { padding: 20px; }
+  .hero,
+  .page-hero { margin: 8px 0 24px; }
   .mega-grid { grid-template-columns: 1fr; }
   .brand small { display: none; }
   .tokenbox { display: block; margin-top: 20px; }
@@ -2143,8 +2034,8 @@ code {
 .attention-row { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
 .workload-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 16px; }
 .workload-card { border: 1px solid var(--border); padding: 20px; border-radius: 14px; overflow-wrap: anywhere; }
-.connection-drawer { margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(620px, 100vw); max-width: 100vw; padding: 28px; border: 0; border-left: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); overflow-y: auto; }
-.connection-drawer::backdrop { background: rgba(0, 0, 0, .4); }
+.connection-drawer { margin: 0 0 0 auto; height: 100dvh; max-height: 100dvh; width: min(620px, 100vw); max-width: 100vw; padding: 32px; border: 0; border-left: 1px solid var(--border); border-radius: var(--radius-2xl) 0 0 var(--radius-2xl); box-shadow: var(--shadow-3); background: var(--bg-elevated); color: var(--text-primary); overflow-y: auto; }
+.connection-drawer::backdrop { background: var(--scrim); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
 .connection-drawer .toolbar { justify-content: space-between; }
 .connection-drawer p, .connection-drawer dd { overflow-wrap: anywhere; }
 .connection-tuple { font-family: ui-monospace, monospace; font-size: 14px; padding: 16px; background: var(--bg-elevated-2); border-radius: 12px; }
@@ -2173,7 +2064,7 @@ code {
   line-height: 1.25;
 }
 .ask-chip:hover { background: var(--hover-fill); }
-.ask-chip:disabled { opacity: 0.55; }
+.ask-chip:disabled { color: var(--disabled-text); }
 .ask-netra-meta {
   margin-top: 12px;
   font-size: 13px;
@@ -2217,6 +2108,11 @@ code {
   border-radius: var(--radius-base);
   background: var(--bg-elevated-2);
 }
+.nav .digest-chip {
+  min-height: 30px;
+  height: 30px;
+  padding: 0 12px;
+}
 .digest-chip {
   border: 1px solid var(--border);
   background: var(--bg-elevated-2);
@@ -2226,6 +2122,6 @@ code {
   font-size: 12px;
   letter-spacing: 0.02em;
 }
-.digest-chip.warning { border-color: var(--accent-amber); }
+.digest-chip.warning { border-color: var(--accent-amber); color: var(--accent-amber-text); }
 .digest-chip.critical { border-color: var(--danger); color: var(--danger); }
 .digest-chip.changed { font-weight: 600; }

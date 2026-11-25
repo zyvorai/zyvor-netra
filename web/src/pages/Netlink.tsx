@@ -177,30 +177,32 @@ export default function Netlink() {
           <p className="eyebrow">STATE</p>
           <h2 className="card-title">Per-node RTNL snapshot</h2>
           {stateNodes.length === 0 && <p className="empty-state">No state snapshots yet.</p>}
-          <table className="metric-table">
-            <thead>
-              <tr>
-                <th>Node</th>
-                <th className="num">Links</th>
-                <th className="num">Addresses</th>
-                <th className="num">Routes</th>
-                <th className="num">Neighbors</th>
-                <th>Actor sensor</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stateNodes.map((n) => (
-                <tr key={n.node}>
-                  <td>{n.node}</td>
-                  <td className="num">{n.links ?? '—'}</td>
-                  <td className="num">{n.addresses ?? '—'}</td>
-                  <td className="num">{n.routes ?? '—'}</td>
-                  <td className="num">{n.neighbors ?? '—'}</td>
-                  <td>{n.actor?.available === false ? n.actor?.note || 'unavailable' : n.actor?.note || 'ok'}</td>
+          <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
+            <table className="metric-table">
+              <thead>
+                <tr>
+                  <th>Node</th>
+                  <th className="num">Links</th>
+                  <th className="num">Addresses</th>
+                  <th className="num">Routes</th>
+                  <th className="num">Neighbors</th>
+                  <th>Actor sensor</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {stateNodes.map((n) => (
+                  <tr key={n.node}>
+                    <td>{n.node}</td>
+                    <td className="num">{n.links ?? '—'}</td>
+                    <td className="num">{n.addresses ?? '—'}</td>
+                    <td className="num">{n.routes ?? '—'}</td>
+                    <td className="num">{n.neighbors ?? '—'}</td>
+                    <td>{n.actor?.available === false ? n.actor?.note || 'unavailable' : n.actor?.note || 'ok'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       ) : (
         <section className="card span3">
@@ -208,7 +210,7 @@ export default function Netlink() {
           <h2 className="card-title">Recent RTNL changes</h2>
           {events.length === 0 && <p className="empty-state">No events in the last hour.</p>}
           {events.length > 0 && (
-            <div className="datatable-scroll">
+            <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
               <div className="datahead obs">
                 <span>WHEN</span>
                 <span>NODE</span>

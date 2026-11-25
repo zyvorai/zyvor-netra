@@ -238,7 +238,7 @@ export default function DenyPreview() {
           <h2 className="card-title">Observed counter groups</h2>
           {hits.length === 0 && <p className="empty-state">No live matches.</p>}
           {hits.length > 0 && (
-            <div className="datatable-scroll">
+            <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
               <div className="datahead obs">
                 <span>SOURCE</span>
                 <span>NODE</span>
@@ -277,7 +277,7 @@ export default function DenyPreview() {
           <h2 className="card-title">Flowlog matches in window</h2>
           {denials.length === 0 && <p className="empty-state">No historical matches in this window.</p>}
           {denials.length > 0 && (
-            <div className="datatable-scroll">
+            <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
               <div className="datahead obs">
                 <span>SOURCE</span>
                 <span>DESTINATION</span>
