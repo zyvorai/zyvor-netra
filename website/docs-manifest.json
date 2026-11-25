@@ -119,6 +119,16 @@
       "position": 8
     },
     {
+      "src": "egress-beacons.md",
+      "dest": "diagnose/egress-beacons",
+      "position": 9
+    },
+    {
+      "src": "netpol-coverage.md",
+      "dest": "diagnose/netpol-coverage",
+      "position": 10
+    },
+    {
       "src": "bpf-attachments.md",
       "dest": "diagnose/bpf-attachments",
       "position": 6

@@ -192,12 +192,15 @@ func run(args []string) error {
 	case "playbooks", "playbook":
 		return playbooksCmd(args[1:])
 	case "security":
+		if len(args) >= 2 && args[1] == "beacons" {
+			return beaconsCmd(args[2:])
+		}
 		if len(args) == 3 && args[1] == "floods" {
 			// security floods [WINDOW]: inbound volumetric flood findings (detection and suggestion only)
 			return request("GET", "/api/v1/security/floods?window="+url.QueryEscape(args[2]), nil)
 		}
 		if len(args) != 2 || (args[1] != "optimizer" && args[1] != "incidents" && args[1] != "floods") {
-			return fmt.Errorf("security optimizer|incidents|floods [WINDOW]")
+			return fmt.Errorf("security optimizer|incidents|floods [WINDOW]|beacons [flags]")
 		}
 		return request("GET", "/api/v1/security/"+args[1], nil)
 	case "capacity":
@@ -1710,6 +1713,10 @@ func insightCmd() error {
 		return historyShiftCmd("/api/v1/insights/dependency-drift", os.Args[3:], false)
 	case "volume-shift":
 		return historyShiftCmd("/api/v1/insights/volume-shift", os.Args[3:], true)
+	case "netpol-coverage":
+		return flagQueryCmd("/api/v1/insights/netpol-coverage", os.Args[3:],
+			map[string]string{"--namespace": "namespace", "--window": "window", "--limit": "limit"},
+			map[string]string{"--all": "all"})
 	case "policy-review":
 		if len(os.Args) < 4 {
 			return fmt.Errorf("policy-review requires a recommendation ID (see insights recommendations for ids)")
@@ -2091,7 +2098,8 @@ func capacityCmd(args []string) error {
 //
 //	insights dependency-drift [--recent 1h] [--baseline 144h] [--min-baseline 1h]
 //	    [--namespace NS] [--node NODE] [--public-only] [--limit N]
-//	insights volume-shift     [the same, plus --factor 3 --min-bytes N]
+//	insights volume-shift     [the same, plus --factor 3 --min-bytes N
+//	    --baseline-mode average|same-time]
 //
 // Read-only: both only read the retained flow history.
 func historyShiftCmd(path string, args []string, shift bool) error {
@@ -2099,16 +2107,38 @@ func historyShiftCmd(path string, args []string, shift bool) error {
 		"--namespace": "namespace", "--node": "node", "--limit": "limit"}
 	if shift {
 		valued["--factor"], valued["--min-bytes"] = "factor", "min_bytes"
+		valued["--baseline-mode"] = "baseline_mode"
+		return flagQueryCmd(path, args, valued, nil)
 	}
+	return flagQueryCmd(path, args, valued, map[string]string{"--public-only": "public_only"})
+}
+
+// beaconsCmd runs the periodic egress report:
+//
+//	security beacons [--window 24h] [--namespace NS] [--node NODE]
+//	    [--min-events 10] [--min-period 30s] [--min-score 0.8]
+//	    [--include-private] [--limit N]
+//
+// Read-only: it only reads the retained flow history.
+func beaconsCmd(args []string) error {
+	return flagQueryCmd("/api/v1/security/beacons", args,
+		map[string]string{"--window": "window", "--namespace": "namespace", "--node": "node", "--min-events": "min_events",
+			"--min-period": "min_period", "--min-score": "min_score", "--limit": "limit"},
+		map[string]string{"--include-private": "include_private"})
+}
+
+// flagQueryCmd turns flags into query parameters of one GET: valued flags take
+// the next argument, switches set their parameter to true.
+func flagQueryCmd(path string, args []string, valued, switches map[string]string) error {
 	q := url.Values{}
 	for i := 0; i < len(args); i++ {
-		if args[i] == "--public-only" && !shift {
-			q.Set("public_only", "true")
+		if param, ok := switches[args[i]]; ok {
+			q.Set(param, "true")
 			continue
 		}
 		param, ok := valued[args[i]]
 		if !ok {
-			return fmt.Errorf("unknown flag %s (see netractl help insights)", args[i])
+			return fmt.Errorf("unknown flag %s (see netractl help)", args[i])
 		}
 		if i+1 >= len(args) {
 			return fmt.Errorf("%s requires a value", args[i])

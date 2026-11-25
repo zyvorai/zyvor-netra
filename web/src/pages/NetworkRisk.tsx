@@ -4,12 +4,17 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import PagePulse from '../components/kit/PagePulse';
+import { humanBytes } from '../lib/flowDrift';
 import {
+  beaconHeadline,
+  beaconLabel,
   floodHeadline,
   humanEta,
+  humanPeriod,
   severityTone,
   versionShare,
   worstCapacity,
+  type BeaconResult,
   type CapacityResult,
   type FloodResult,
   type TlsPostureResult,
@@ -19,6 +24,7 @@ export default function NetworkRisk() {
   const [floods, setFloods] = useState<FloodResult>();
   const [capacity, setCapacity] = useState<CapacityResult>();
   const [tls, setTls] = useState<TlsPostureResult>();
+  const [beacons, setBeacons] = useState<BeaconResult>();
   const [err, setErr] = useState('');
   const [tick, setTick] = useState(0);
 
@@ -28,11 +34,13 @@ export default function NetworkRisk() {
         api<FloodResult>('/api/v1/security/floods'),
         api<CapacityResult>('/api/v1/capacity/forecast'),
         api<TlsPostureResult>('/api/v1/insights/tls-posture'),
-      ]).then(([f, c, t]) => {
+        api<BeaconResult>('/api/v1/security/beacons?limit=50'),
+      ]).then(([f, c, t, b]) => {
         if (f.status === 'fulfilled') setFloods(f.value);
         if (c.status === 'fulfilled') setCapacity(c.value);
         if (t.status === 'fulfilled') setTls(t.value);
-        const failed = [f, c, t].filter((x) => x.status === 'rejected') as PromiseRejectedResult[];
+        if (b.status === 'fulfilled') setBeacons(b.value);
+        const failed = [f, c, t, b].filter((x) => x.status === 'rejected') as PromiseRejectedResult[];
         setErr(failed.map((x) => String(x.reason?.message || x.reason)).join('; '));
         setTick(Date.now());
       });
@@ -149,6 +157,30 @@ export default function NetworkRisk() {
               <b>{f.message}</b>
               <span className={`severity-badge ${severityTone(f.severity)}`}>{f.kind}</span>
               <small>{[f.namespace, f.workload, f.sni].filter(Boolean).join(' · ')}</small>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card span3">
+        <p className="eyebrow">PERIODIC EGRESS</p>
+        <h2 className="card-title">{beacons ? beaconHeadline(beacons) : 'Destinations contacted at a steady interval'}</h2>
+        <p>
+          From the last 24 hours of flow history: a pod reaching the same public peer and port at a regular interval. Health checks, telemetry and update pollers look the
+          same as command-and-control check-ins, so identify the destination before acting. Periods under 20 seconds and widely randomised timing are not seen. Read-only.
+        </p>
+        {beacons?.truncated && <p className="warning">The flow history was cut to its row bound; older check-ins are missing.</p>}
+        {beacons?.ready && (beacons.candidates || []).length === 0 && <p className="empty-state">Nothing periodic passed the threshold.</p>}
+        <div className="list">
+          {(beacons?.candidates || []).map((c) => (
+            <div className="agent wide" key={`${c.node}/${c.namespace}/${c.pod}/${c.peer}/${c.port}/${c.protocol}`}>
+              <b>{beaconLabel(c)}</b>
+              <span className={`severity-badge ${c.hint ? 'info' : 'warning'}`}>every {humanPeriod(c.periodSeconds)}</span>
+              <small>
+                {c.events} events · jitter {c.jitterSeconds}s · about {humanBytes(c.medianBytes)} each · score {c.score}
+                {c.comm ? ` · process ${c.comm}` : ''}
+                {c.hint ? ` · ${c.hint}` : ''}
+              </small>
             </div>
           ))}
         </div>

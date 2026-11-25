@@ -20,7 +20,7 @@ import (
 
 // controllerVersion is the version recorded in an incident bundle. It must
 // move with the release (scripts/check-version-sync.sh reads it).
-const controllerVersion = "0.32.0"
+const controllerVersion = "0.33.0"
 
 // bundleSignals are the metric contexts a bundle carries. Key signals only.
 var bundleSignals = []string{

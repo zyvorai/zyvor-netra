@@ -1,7 +1,7 @@
 // Copyright 2026 Zyvor AI Labs · https://zyvor.dev
 // SPDX-License-Identifier: LicenseRef-Zyvor-Production-2.0
 import { describe, expect, it } from 'vitest';
-import { floodHeadline, humanEta, severityTone, versionShare, worstCapacity } from './netrisk';
+import { floodHeadline, humanEta, severityTone, versionShare, worstCapacity, beaconHeadline, beaconLabel, humanPeriod } from './netrisk';
 
 describe('network risk helpers', () => {
   it('formats time to exhaustion and tolerates hostile numbers', () => {
@@ -49,5 +49,31 @@ describe('network risk helpers', () => {
     expect(versionShare({})).toBe('none sampled');
     expect(versionShare({ '1.3': 9, '1.2': 1, '1.0': 0 })).toBe('1.3 90%, 1.2 10%');
     expect(versionShare({ '1.2': 1, '1.3': 1 })).toBe('1.2 50%, 1.3 50%');
+  });
+});
+
+describe('beacon helpers', () => {
+  it('formats periods with seconds', () => {
+    expect(humanPeriod(undefined)).toBe('unknown');
+    expect(humanPeriod(-1)).toBe('unknown');
+    expect(humanPeriod(45)).toBe('45s');
+    expect(humanPeriod(90)).toBe('1m 30s');
+    expect(humanPeriod(300)).toBe('5m');
+    expect(humanPeriod(3600)).toBe('1h');
+    expect(humanPeriod(5400)).toBe('1h 30m');
+  });
+
+  it('says not ready, none, or how many', () => {
+    expect(beaconHeadline(undefined)).toBe('');
+    expect(beaconHeadline({ ready: false, notReadyReason: 'history spans 2m' })).toBe('not ready: history spans 2m');
+    expect(beaconHeadline({ ready: true })).toBe('no periodic egress found in the window');
+    expect(beaconHeadline({ ready: true, total: 1 })).toBe('1 periodic destination to identify');
+    expect(beaconHeadline({ ready: true, total: 3 })).toBe('3 periodic destinations to identify');
+  });
+
+  it('labels a candidate by pod, name and peer', () => {
+    const c = { namespace: 'shop', workload: 'api', pod: 'api-1', peer: '203.0.113.7', peerClass: 'public', port: 443, protocol: 'TCP', name: 'c.example', events: 30, periodSeconds: 60, jitterSeconds: 0, score: 1, medianBytes: 600 };
+    expect(beaconLabel(c)).toBe('shop/api-1 -> c.example (203.0.113.7):443/tcp');
+    expect(beaconLabel({ ...c, namespace: undefined, pod: undefined, name: undefined, protocol: undefined })).toBe('api -> 203.0.113.7:443');
   });
 });

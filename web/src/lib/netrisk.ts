@@ -101,6 +101,60 @@ export function worstCapacity(r: CapacityResult | undefined): CapacityForecast |
   return worst && worst.severity !== 'ok' ? worst : undefined;
 }
 
+export type BeaconCandidate = {
+  namespace?: string;
+  workload: string;
+  pod?: string;
+  node?: string;
+  peer: string;
+  peerClass: string;
+  port: number;
+  protocol?: string;
+  name?: string;
+  comm?: string;
+  events: number;
+  periodSeconds: number;
+  jitterSeconds: number;
+  score: number;
+  medianBytes: number;
+  hint?: string;
+};
+
+export type BeaconResult = {
+  ready?: boolean;
+  notReadyReason?: string;
+  series?: number;
+  candidates?: BeaconCandidate[];
+  total?: number;
+  truncated?: boolean;
+  listTruncated?: boolean;
+  limitations?: string[];
+};
+
+// humanPeriod keeps seconds visible, unlike humanEta: "45s", "5m", "1h 30m".
+export function humanPeriod(sec: number | undefined): string {
+  if (sec === undefined || !Number.isFinite(sec) || sec < 0) return 'unknown';
+  const s = Math.round(sec);
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return s % 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s / 60}m`;
+  const m = Math.round(s / 60);
+  return m % 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m / 60}h`;
+}
+
+export function beaconHeadline(r: BeaconResult | undefined): string {
+  if (!r) return '';
+  if (r.ready === false) return `not ready: ${r.notReadyReason || 'not enough history'}`;
+  const n = r.total || 0;
+  if (n === 0) return 'no periodic egress found in the window';
+  return `${n} periodic destination${n === 1 ? '' : 's'} to identify`;
+}
+
+export function beaconLabel(c: BeaconCandidate): string {
+  const who = `${c.namespace ? c.namespace + '/' : ''}${c.pod || c.workload}`;
+  const peer = c.name ? `${c.name} (${c.peer})` : c.peer;
+  return `${who} -> ${peer}:${c.port}${c.protocol ? '/' + c.protocol.toLowerCase() : ''}`;
+}
+
 // versionShare formats a version histogram as "1.3 90%, 1.2 10%", largest first.
 export function versionShare(versions: Record<string, number> | undefined): string {
   const entries = Object.entries(versions || {}).filter(([, n]) => n > 0);

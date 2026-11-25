@@ -11,6 +11,7 @@ Two read-only comparisons of the **recent** window against an earlier **baseline
 ```bash
 netractl insights dependency-drift [--recent 1h] [--baseline 144h] [--min-baseline 1h] [--namespace NS] [--node N] [--public-only] [--limit 100]
 netractl insights volume-shift     [--recent 1h] [--baseline 144h] [--factor 3] [--min-bytes 10485760] [--namespace NS] [--node N]
+netractl insights volume-shift     --baseline-mode same-time
 ```
 
 `GET /api/v1/insights/dependency-drift` and `GET /api/v1/insights/volume-shift` (viewer role; a scoped principal sees only its namespaces, as for `GET /api/v1/flows/history`). MCP: `netra_insights_dependency_drift`, `netra_insights_volume_shift`. Console: **Flow Drift**.
@@ -36,14 +37,24 @@ The baseline needs at least `min_baseline` (default 1h) of history before the re
 
 Per workload and direction, the byte rate (bytes per hour) of the recent window against the baseline average. `surge` when it is at least `factor` times the baseline (default 3, 1.5 to 1000) and the recent window moved at least `min_bytes` (default 10 MiB); `drop` when it is at most `1/factor` and the baseline predicts at least `min_bytes` for the window. A workload with no baseline traffic is not listed (that is a new dependency). Surges list first, then by the size of the change.
 
+### Same time of day (`baseline_mode=same-time`)
+
+The default baseline is one average over the whole history, so a nightly batch job or a business-hours service looks like a surge or a drop. `--baseline-mode same-time` (`baseline_mode=same-time`, MCP `baseline_mode`, or the *Volume baseline* menu on the Flow Drift page) compares the recent window with the **median** of the same window of the day on each earlier day instead.
+
+- The recent window must be at most 24h, and at least 2 earlier days must be covered, otherwise the report is not ready.
+- A day counts when the history reaches back to the start of its window and holds at least one record in it. A day with no records at all is skipped as a collection gap; a day on which only this workload was silent counts as zero.
+- `unusual-time`: the workload moved at least `min_bytes` now, has traffic elsewhere in the baseline, and its median at this time of day is zero. There is no ratio for these rows.
+- `baselineDays` says how many days were compared; `baselineBytes` is that median.
+- There is no day-of-week model. A weekly job, or a weekend, can still look like a shift.
+
 ## Limits
 
 - Built from retained flow deltas, not packets. Missing from history is a lead, not proof that it never happened.
 - A restarted pod with a new IP appears as a new private edge and its old one as gone quiet. Use `--public-only`, or read the name column (DNS name or SNI when the agent joined one).
-- The baseline is a single average. A nightly job or business-hours service can look like a shift; there is no time-of-day model.
+- By default the baseline is a single average, so a nightly job or business-hours service can look like a shift; use `baseline_mode=same-time` for those.
 - Windows: recent 1m to 48h, baseline 1h up to the flow retention (at most 14 days), at most 500 rows per list.
 - Advisory only. To act on a suspicious destination, use deny preview (which checks self-lockout) and a leased deny.
 
 ## Validation
 
-`go test ./internal/flowdrift ./internal/api -run 'Drift|Shift'` covers new, vanished and persistent edges, public-first ordering, the not-ready paths, one-off baseline rows, future and out-of-window rows, `public_only`, list limits, surge and drop thresholds and bad parameters. `web/src/lib/flowDrift.test.ts` covers the console helpers.
+`go test ./internal/flowdrift ./internal/api -run 'Drift|Shift|SameTime|Median|Baseline'` covers the same-time comparison (a daily cycle is not a shift, median, gap days, unusual time) and new, vanished and persistent edges, public-first ordering, the not-ready paths, one-off baseline rows, future and out-of-window rows, `public_only`, list limits, surge and drop thresholds and bad parameters. `web/src/lib/flowDrift.test.ts` covers the console helpers.

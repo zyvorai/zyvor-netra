@@ -38,7 +38,7 @@ export type Shift = {
   namespace?: string;
   workload: string;
   direction: string;
-  kind: 'surge' | 'drop';
+  kind: 'surge' | 'drop' | 'unusual-time';
   recentBytes: number;
   baselineBytes: number;
   recentBytesPerHour: number;
@@ -46,10 +46,14 @@ export type Shift = {
   ratio: number;
 };
 
+export type BaselineMode = 'average' | 'same-time';
+
 export type ShiftReport = {
   ready?: boolean;
   notReadyReason?: string;
   factor?: number;
+  baselineMode?: BaselineMode;
+  baselineDays?: number;
   shifts?: Shift[];
   total?: number;
   truncated?: boolean;
@@ -96,8 +100,18 @@ export function shiftHeadline(r: ShiftReport | undefined): string {
   if (r.ready === false) return `not ready: ${r.notReadyReason || 'not enough history'}`;
   const s = (r.shifts || []).filter((x) => x.kind === 'surge').length;
   const d = (r.shifts || []).filter((x) => x.kind === 'drop').length;
-  if (!s && !d) return `no workload moved by ${r.factor || 3}x or more`;
-  return `${s} surge${s === 1 ? '' : 's'}, ${d} drop${d === 1 ? '' : 's'} at ${r.factor || 3}x or more`;
+  const u = (r.shifts || []).filter((x) => x.kind === 'unusual-time').length;
+  const days = r.baselineMode === 'same-time' ? ` against the same time on ${r.baselineDays || 0} earlier days` : '';
+  if (!s && !d && !u) return `no workload moved by ${r.factor || 3}x or more${days}`;
+  const odd = u ? `, ${u} at an unusual time` : '';
+  return `${s} surge${s === 1 ? '' : 's'}, ${d} drop${d === 1 ? '' : 's'} at ${r.factor || 3}x or more${odd}${days}`;
+}
+
+// shiftQuery is the volume shift query: the shared windows plus the baseline mode.
+export function shiftQuery(recent: string, baseline: string, mode: BaselineMode): string {
+  const base = driftQuery(recent, baseline, false);
+  if (mode !== 'same-time') return base;
+  return `${base}${base ? '&' : '?'}baseline_mode=same-time`;
 }
 
 export function driftQuery(recent: string, baseline: string, publicOnly: boolean): string {

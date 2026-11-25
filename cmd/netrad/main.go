@@ -40,9 +40,17 @@ import (
 	"github.com/zyvorai/netra/internal/workloadobs"
 )
 
-const version = "0.32.0"
+const version = "0.33.0"
 
 func main() {
+	// Registered first so it runs last: a failed listener exits non-zero only
+	// after every other deferred shutdown step has run.
+	failed := false
+	defer func() {
+		if failed {
+			os.Exit(1)
+		}
+	}()
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	applyMemoryLimit(log)
 	allowUnauthenticated := strings.EqualFold(strings.TrimSpace(os.Getenv("NETRA_ALLOW_UNAUTHENTICATED")), "true")
@@ -90,7 +98,7 @@ func main() {
 			log.Error("HA startup refused", "reason", "NETRA_STATE_FILE is required in HA mode")
 			os.Exit(1)
 		}
-		runHA(ctx, log, k, h, stateFile, dispatcher, alertCfg, artifacts, gitopsCfg, gitopsEnabled)
+		failed = runHA(ctx, stop, log, k, h, stateFile, dispatcher, alertCfg, artifacts, gitopsCfg, gitopsEnabled) != nil
 		return
 	}
 
@@ -227,7 +235,12 @@ func main() {
 		defer autoWG.Wait()
 	}
 
-	runHTTP(ctx, log, handler, st.Persistent(), false)
+	if err := runHTTP(ctx, log, handler, st.Persistent(), false); err != nil {
+		// The deferred waits below end only when ctx does: without this a
+		// controller that could not listen would hang instead of exiting.
+		failed = true
+		stop()
+	}
 }
 
 // startSyslog starts the optional RFC5424/CEF/JSONL push sink when
@@ -811,7 +824,7 @@ func envUint32(key string, def uint32) uint32 {
 	return uint32(n)
 }
 
-func runHA(ctx context.Context, log *slog.Logger, k *kube.Client, h *hubble.Client, stateFile string, dispatcher *notify.Dispatcher, alertCfg alert.Config, artifacts *capture.ArtifactStore, gitopsCfg gitops.Config, gitopsEnabled bool) {
+func runHA(ctx context.Context, stop context.CancelFunc, log *slog.Logger, k *kube.Client, h *hubble.Client, stateFile string, dispatcher *notify.Dispatcher, alertCfg alert.Config, artifacts *capture.ArtifactStore, gitopsCfg gitops.Config, gitopsEnabled bool) error {
 	identity := strings.TrimSpace(os.Getenv("NETRA_POD_NAME"))
 	if identity == "" {
 		identity, _ = os.Hostname()
@@ -840,8 +853,13 @@ func runHA(ctx context.Context, log *slog.Logger, k *kube.Client, h *hubble.Clie
 		defer electionWG.Done()
 		electionLoop(ctx, log, k, h, gate, stateFile, namespace, leaseName, identity, leaseDuration, renewDeadline, retryPeriod, dispatcher, alertCfg, artifacts, gitopsCfg, gitopsEnabled)
 	}()
-	runHTTP(ctx, log, gate, true, true)
+	err := runHTTP(ctx, log, gate, true, true)
+	if err != nil {
+		// Give up leadership and stop the election loop instead of waiting on it.
+		stop()
+	}
 	electionWG.Wait()
+	return err
 }
 
 func electionLoop(
@@ -1137,7 +1155,9 @@ func tlsConfigured() bool {
 	return strings.TrimSpace(os.Getenv("NETRA_TLS_CERT")) != "" && strings.TrimSpace(os.Getenv("NETRA_TLS_KEY")) != ""
 }
 
-func runHTTP(ctx context.Context, log *slog.Logger, handler http.Handler, persistent, haMode bool) {
+// runHTTP serves until ctx ends. It returns an error when the server could not
+// be started or stopped serving for any other reason.
+func runHTTP(ctx context.Context, log *slog.Logger, handler http.Handler, persistent, haMode bool) error {
 	s := &http.Server{
 		Addr:              env("NETRA_LISTEN", ":30870"),
 		Handler:           handler,
@@ -1156,7 +1176,7 @@ func runHTTP(ctx context.Context, log *slog.Logger, handler http.Handler, persis
 	mode, tlsCfg, err := mtls.FromEnv(tlsOn)
 	if err != nil { // main already refused this; a second check costs nothing
 		log.Error("server", "error", err)
-		return
+		return err
 	}
 	s.TLSConfig = tlsCfg
 	log.Info("netrad starting", "addr", s.Addr, "version", version, "persistentState", persistent, "ha", haMode, "tls", tlsOn, "agentMTLS", string(mode))
@@ -1167,7 +1187,9 @@ func runHTTP(ctx context.Context, log *slog.Logger, handler http.Handler, persis
 	}
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Error("server", "error", err)
+		return err
 	}
+	return nil
 }
 
 func env(k, d string) string {

@@ -1,7 +1,8 @@
 name: Release
-# Tag vX.Y.Z -> multi-arch controller + agent images on ghcr.io, keyless cosign
-# signatures, and SBOM + provenance attestations. The tag must match the
-# version in cmd/netrad/main.go (scripts/check-version-sync.sh gates that).
+# Tag vX.Y.Z -> multi-arch controller, agent and netra-mcp images on ghcr.io,
+# keyless cosign signatures, SBOM + provenance attestations and the MCP Registry
+# entry. It creates no GitHub release. The tag must match the version in
+# cmd/netrad/main.go (scripts/check-version-sync.sh gates that).
 on:
   push:
     tags: ['v*']
@@ -68,7 +69,10 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         sbom: true
         provenance: mode=max
-    - uses: sigstore/cosign-installer@v4
+    # A full version, not "v4": cosign-installer publishes no moving v4 tag, so
+    # "@v4" does not resolve and fails the job before anything is built. The dry
+    # run references the same version; change both together.
+    - uses: sigstore/cosign-installer@v4.1.4
     - name: Sign the image digest (keyless)
       run: cosign sign --yes ghcr.io/zyvorai/${{ matrix.image }}@${{ steps.build.outputs.digest }}
   publish-mcp:

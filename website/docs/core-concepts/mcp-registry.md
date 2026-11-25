@@ -15,7 +15,7 @@ https://registry.modelcontextprotocol.io/v0.1/servers/io.github.zyvorai%2Fnetra/
 | | |
 |---|---|
 | Registry name | `io.github.zyvorai/netra` |
-| Image | `ghcr.io/zyvorai/netra-mcp:0.32.0` (multi-arch, cosign-signed) |
+| Image | `ghcr.io/zyvorai/netra-mcp:0.33.0` (multi-arch, cosign-signed) |
 | Transport | stdio |
 
 ## Client configuration
@@ -29,7 +29,7 @@ Any stdio MCP client can run the image directly:
       "command": "docker",
       "args": ["run", "-i", "--rm",
                "-e", "NETRA_URL", "-e", "NETRA_API_KEY",
-               "ghcr.io/zyvorai/netra-mcp:0.32.0"],
+               "ghcr.io/zyvorai/netra-mcp:0.33.0"],
       "env": { "NETRA_URL": "https://netra.example:30870", "NETRA_API_KEY": "..." }
     }
   }
@@ -54,7 +54,7 @@ controller's HTTP API.
 claude mcp add netra \
   -e NETRA_URL=https://<controller>:30870 \
   -e NETRA_API_KEY=<key> \
-  -- docker run -i --rm -e NETRA_URL -e NETRA_API_KEY ghcr.io/zyvorai/netra-mcp:0.32.0
+  -- docker run -i --rm -e NETRA_URL -e NETRA_API_KEY ghcr.io/zyvorai/netra-mcp:0.33.0
 ```
 
 **Claude Desktop or any stdio client:** use the JSON above. Restart the client and the `netra_*`
@@ -82,12 +82,12 @@ the key):
 ```
 printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
   '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
-| docker run -i --rm -e NETRA_URL -e NETRA_API_KEY ghcr.io/zyvorai/netra-mcp:0.32.0
+| docker run -i --rm -e NETRA_URL -e NETRA_API_KEY ghcr.io/zyvorai/netra-mcp:0.33.0
 ```
 
 ## Read tools and mutating tools
 
-The server exposes 231 tools: 169 read tools and 62 opt-in mutating tools. With
+The server exposes 233 tools: 171 read tools and 62 opt-in mutating tools. With
 `NETRA_MCP_ALLOW_MUTATIONS` unset or `false` (the default), only read tools are registered; the
 mutating tool names do not exist in the running process.
 

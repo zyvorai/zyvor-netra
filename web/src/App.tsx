@@ -35,6 +35,7 @@ import WhatChanged from './pages/WhatChanged';
 import IncidentBundle from './pages/IncidentBundle';
 import NetworkRisk from './pages/NetworkRisk';
 import FlowDrift from './pages/FlowDrift';
+import PolicyCoverage from './pages/PolicyCoverage';
 import BpfAttachments from './pages/BpfAttachments';
 import Detect from './pages/Detect';
 import Workloads from './pages/Workloads';
@@ -126,14 +127,20 @@ const pageHero: Partial<Record<Page, { eyebrow: string; title: string; lede: str
   },
   'network-risk': {
     eyebrow: 'Network risk',
-    title: 'Floods, capacity and TLS posture.',
-    lede: 'Inbound volumetric floods with a review-only suggested deny, conntrack and ephemeral-port exhaustion forecasts, and the TLS versions clients offer. Read-only.',
+    title: 'Floods, capacity, TLS and beacons.',
+    lede: 'Inbound volumetric floods with a review-only suggested deny, conntrack and ephemeral-port exhaustion forecasts, the TLS versions clients offer, and egress that repeats at a steady interval. Read-only.',
     tint: 'amber',
   },
   'flow-drift': {
     eyebrow: 'Flow drift',
     title: 'What is new compared with normal.',
     lede: 'New and vanished workload dependencies and byte-rate surges against the retained flow history. A lead to review, never a verdict. Read-only.',
+    tint: 'amber',
+  },
+  'policy-coverage': {
+    eyebrow: 'Policy coverage',
+    title: 'Where no NetworkPolicy applies.',
+    lede: 'Workloads that accept any traffic because no Kubernetes NetworkPolicy restricts them, and which of those were seen talking to public addresses. Read-only.',
     tint: 'amber',
   },
   'process-integrity': {
@@ -471,6 +478,7 @@ export default function App() {
     'incident-bundle': <IncidentBundle />,
     'network-risk': <NetworkRisk />,
     'flow-drift': <FlowDrift />,
+    'policy-coverage': <PolicyCoverage />,
     'process-integrity': <ProcessIntegrity />,
   }[page];
 
