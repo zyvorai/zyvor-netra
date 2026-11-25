@@ -102,7 +102,7 @@ export default function Detect() {
           Review-only timelines from the controller detectors. Absence of a finding is not proof of innocence.
           Correlate on Security Review; leased auto-mitigate stays inert without an enforce lease.
         </p>
-        <div className="filters" style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
+        <div className="filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '0.75rem' }}>
           <button type="button" className={tab === 'dns' ? 'active' : ''} onClick={() => setTab('dns')}>
             DNS ({dnsFindings.length})
           </button>

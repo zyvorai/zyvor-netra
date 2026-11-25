@@ -544,7 +544,7 @@ export default function Capture() {
                           ))}
                         </div>
                       ))}
-                      <pre>{hexDump(f.data, 128)}</pre>
+                      <pre tabIndex={0}>{hexDump(f.data, 128)}</pre>
                     </div>
                   )}
                 </Fragment>

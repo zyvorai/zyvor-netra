@@ -33,7 +33,11 @@ export function Toolbar({ search, onSearchChange, placeholder = 'Search', search
 }
 
 export function TableWrap({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={className ? `table-wrap ${className}` : 'table-wrap'}>{children}</div>;
+  return (
+    <div className={className ? `table-wrap ${className}` : 'table-wrap'} tabIndex={0} role="group" aria-label="Scrollable table">
+      {children}
+    </div>
+  );
 }
 
 type ListEmptyProps = { title: string; description?: string; action?: ReactNode; icon?: LucideIcon; compact?: boolean };

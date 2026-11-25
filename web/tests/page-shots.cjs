@@ -29,7 +29,7 @@ const settle = Number(process.env.NETRA_SHOTS_SETTLE_MS || 7000);
       p.on('pageerror', (e) => errors.push(e.message));
       await p.addInitScript(([t, theme]) => {
         if (t) localStorage.setItem('netra-token', t);
-        localStorage.setItem('netra-theme', theme);
+        localStorage.setItem('netra-appearance', theme);
       }, [token, v === 'dark' ? 'dark' : 'light']);
       await p.goto(`${base}/#page=${page}`);
       await p.waitForTimeout(settle);

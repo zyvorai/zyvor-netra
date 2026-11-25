@@ -196,88 +196,92 @@ export default function FlowObservePage() {
         <p className="eyebrow">FLOW HISTORY</p>
         <h2 className="card-title">{(history?.records || []).length} records</h2>
         {(history?.records || []).length === 0 && <p className="empty-state">No flow history for this filter. First samples are baselines and are not shown.</p>}
-        <table className="metric-table">
-          <thead>
-            <tr>
-              <th>When</th>
-              <th>Workload</th>
-              <th>Peer</th>
-              <th>Proto</th>
-              <th>Process</th>
-              <th className="num">Packets</th>
-              <th className="num">Blocked</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {(history?.records || []).map((rec, i) => (
-              <tr key={`${rec.observedAt}-${i}`}>
-                <td>{rec.observedAt ? new Date(rec.observedAt).toLocaleTimeString() : '—'}</td>
-                <td>
-                  {rec.namespace ? `${rec.namespace}/` : ''}
-                  {rec.pod || 'unattributed'}
-                </td>
-                <td>
-                  {rec.peer}:{rec.port}
-                </td>
-                <td>{rec.appProtocol || rec.protocol || '—'}</td>
-                <td>
-                  {rec.comm || '—'}
-                  {rec.pid ? ` · ${rec.pid}` : ''}
-                </td>
-                <td className="num">{rec.packets || 0}</td>
-                <td className="num">{rec.blocked || 0}</td>
-                <td>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={() =>
-                      navigate('investigate', {
-                        namespace: rec.namespace || '',
-                        pod: rec.pod || '',
-                        query: rec.peer || '',
-                      })
-                    }
-                  >
-                    Investigate
-                  </button>
-                </td>
+        <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
+          <table className="metric-table">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Workload</th>
+                <th>Peer</th>
+                <th>Proto</th>
+                <th>Process</th>
+                <th className="num">Packets</th>
+                <th className="num">Blocked</th>
+                <th />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {(history?.records || []).map((rec, i) => (
+                <tr key={`${rec.observedAt}-${i}`}>
+                  <td>{rec.observedAt ? new Date(rec.observedAt).toLocaleTimeString() : '—'}</td>
+                  <td>
+                    {rec.namespace ? `${rec.namespace}/` : ''}
+                    {rec.pod || 'unattributed'}
+                  </td>
+                  <td>
+                    {rec.peer}:{rec.port}
+                  </td>
+                  <td>{rec.appProtocol || rec.protocol || '—'}</td>
+                  <td>
+                    {rec.comm || '—'}
+                    {rec.pid ? ` · ${rec.pid}` : ''}
+                  </td>
+                  <td className="num">{rec.packets || 0}</td>
+                  <td className="num">{rec.blocked || 0}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() =>
+                        navigate('investigate', {
+                          namespace: rec.namespace || '',
+                          pod: rec.pod || '',
+                          query: rec.peer || '',
+                        })
+                      }
+                    >
+                      Investigate
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="card span3">
         <p className="eyebrow">RED · {red?.window || '5m'}</p>
         <h2 className="card-title">Workload rate, errors, latency</h2>
-        <table className="metric-table">
-          <thead>
-            <tr>
-              <th>Workload</th>
-              <th>Apps</th>
-              <th className="num">Rate/s</th>
-              <th className="num">Errors</th>
-              <th className="num">HTTP 5xx</th>
-              <th className="num">Avg SRTT µs</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(red?.rows || []).slice(0, 40).map((row, i) => (
-              <tr key={i}>
-                <td>
-                  {row.namespace ? `${row.namespace}/` : ''}
-                  {row.pod || 'unattributed'}
-                </td>
-                <td>{(row.appProtocols || []).join(', ') || '—'}</td>
-                <td className="num">{(row.ratePerSec || 0).toFixed(2)}</td>
-                <td className="num">{row.errors || 0}</td>
-                <td className="num">{row.http5xx || 0}</td>
-                <td className="num">{row.avgSrttUs || 0}</td>
+        <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
+          <table className="metric-table">
+            <thead>
+              <tr>
+                <th>Workload</th>
+                <th>Apps</th>
+                <th className="num">Rate/s</th>
+                <th className="num">Errors</th>
+                <th className="num">HTTP 5xx</th>
+                <th className="num">Avg SRTT µs</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {(red?.rows || []).slice(0, 40).map((row, i) => (
+                <tr key={i}>
+                  <td>
+                    {row.namespace ? `${row.namespace}/` : ''}
+                    {row.pod || 'unattributed'}
+                  </td>
+                  <td>{(row.appProtocols || []).join(', ') || '—'}</td>
+                  <td className="num">{(row.ratePerSec || 0).toFixed(2)}</td>
+                  <td className="num">{row.errors || 0}</td>
+                  <td className="num">{row.http5xx || 0}</td>
+                  <td className="num">{row.avgSrttUs || 0}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {(red?.rows || []).length === 0 && <p className="empty-state">No workload rate in this window.</p>}
       </section>
 

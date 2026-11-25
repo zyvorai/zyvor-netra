@@ -61,7 +61,7 @@ export default function Audit() {
         <h2 className="card-title">Netra control-plane audit</h2>
         {items.length === 0 && <p className="empty-state">No audit events recorded yet.</p>}
         {items.length > 0 && (
-          <div className="datatable-scroll">
+          <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
             <div className="datahead audit">
               <span>TIME</span>
               <span>ACTOR</span>

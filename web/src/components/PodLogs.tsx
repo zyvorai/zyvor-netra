@@ -111,7 +111,7 @@ export default function PodLogs({ namespace, name, containers = [], defaultConta
       </div>
       {err && <p>{err}</p>}
       <TerminalFrame title={`kubectl logs -f ${name}`}>
-        <pre ref={preRef} className="console-log">
+        <pre tabIndex={0} ref={preRef} className="console-log">
           {lines.length ? lines.join('\n') : running ? 'waiting…' : 'Start follow to stream logs.'}
         </pre>
       </TerminalFrame>

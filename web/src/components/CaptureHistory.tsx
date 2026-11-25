@@ -90,7 +90,7 @@ export default function CaptureHistory({ onRepeat }: { onRepeat: (e: HistoryEntr
       </div>
       {entries.length === 0 && <p className="empty-state">No past capture sessions yet.</p>}
       {entries.length > 0 && (
-        <div className="datatable-scroll">
+        <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
           <div className="datahead capture">
             <span>NODE</span>
             <span>TARGET</span>
@@ -162,7 +162,7 @@ export default function CaptureHistory({ onRepeat }: { onRepeat: (e: HistoryEntr
           {ctxErr && <p className="warning">{ctxErr}</p>}
           {!ctx && !ctxErr && <p className="empty-state">Loading context…</p>}
           {ctx && (
-            <pre className="code" style={{ maxHeight: '20rem', overflow: 'auto' }}>
+            <pre tabIndex={0} className="code" style={{ maxHeight: '20rem', overflow: 'auto' }}>
               {JSON.stringify(ctx, null, 2)}
             </pre>
           )}

@@ -3,23 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#f5f5f7" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="/zyvor-mark.svg" />
     <title>Netra · Zyvor</title>
-    <script>
-      (function () {
-        try {
-          var t = localStorage.getItem('netra-theme');
-          if (t !== 'dark' && t !== 'light') t = 'light';
-          document.documentElement.setAttribute('data-theme', t);
-          var m = document.querySelector('meta[name="theme-color"]');
-          if (m) m.setAttribute('content', t === 'dark' ? '#000000' : '#ffffff');
-        } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'light');
-        }
-      })();
-    </script>
+    <style>
+      /* First-paint colours only; everything else comes from the bundle. */
+      html { background: #f5f5f7; color-scheme: light; }
+      html[data-theme='dark'] { background: #000000; color-scheme: dark; }
+    </style>
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

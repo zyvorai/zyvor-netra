@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { anomalyBand, chartColor, formatTime, formatValue, latest, valueRange, type MetricResult } from '../lib/metrics';
+import { usePaintedTheme } from '../hooks/usePaintedTheme';
 
 type Props = {
   result?: MetricResult;
@@ -30,6 +31,7 @@ export default function MetricChart({ result, title, subtitle, height = 160, onH
   const [hover, setHover] = useState<number | null>(null);
   const [drag, setDrag] = useState<[number, number] | null>(null);
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
+  const theme = usePaintedTheme();
 
   const stacked = result?.chartType === 'stacked' || result?.chartType === 'area';
   const dims = useMemo(() => (result?.dimensions || []).filter((d) => !hidden[d.name]), [result, hidden]);
@@ -68,7 +70,7 @@ export default function MetricChart({ result, title, subtitle, height = 160, onH
     const [lo, hi] = valueRange(view, stacked);
     const yOf = (v: number) => PAD.t + plotH - ((v - lo) / (hi - lo)) * plotH;
 
-    g.font = '10px ui-sans-serif, system-ui, sans-serif';
+    g.font = `10px ${cssVar('--font-sans', 'system-ui, sans-serif')}`;
     g.fillStyle = muted;
     g.strokeStyle = grid;
     g.lineWidth = 1;
@@ -100,8 +102,10 @@ export default function MetricChart({ result, title, subtitle, height = 160, onH
       if (t1 > t0) {
         const xa = PAD.l + ((a - t0) / (t1 - t0)) * plotW;
         const xb = PAD.l + ((b - t0) / (t1 - t0)) * plotW;
-        g.fillStyle = 'rgba(0, 113, 227, 0.14)';
+        g.globalAlpha = 0.14;
+        g.fillStyle = cssVar('--apple-blue', '#0071e3');
         g.fillRect(Math.max(PAD.l, xa), PAD.t, Math.min(PAD.l + plotW, xb) - Math.max(PAD.l, xa), plotH);
+        g.globalAlpha = 1;
       }
     }
 
@@ -168,7 +172,7 @@ export default function MetricChart({ result, title, subtitle, height = 160, onH
       g.stroke();
       g.setLineDash([]);
     }
-  }, [view, result, hidden, width, height, hover, stacked, plotW, plotH, n, highlight, drag]);
+  }, [view, result, hidden, width, height, hover, stacked, plotW, plotH, n, highlight, drag, theme]);
 
   const onMove = (e: React.MouseEvent) => {
     if (!view || n === 0) return;

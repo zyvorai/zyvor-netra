@@ -163,7 +163,7 @@ export default function L7() {
     <section className="card span3">
       <p className="eyebrow">TLS CLIENTHELLO</p><h2 className="card-title">Parsed SNI metadata</h2>
       {(data?.tls || []).length === 0 && <p className="empty-state">No TLS ClientHello samples yet.</p>}
-      {(data?.tls || []).length > 0 && <div className="datatable-scroll">
+      {(data?.tls || []).length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>WORKLOAD</span><span>SNI</span><span>HANDSHAKES</span><span>BLOCKED</span><span>CGROUP</span></div>
         {(data?.tls || []).map((x:any, i:number) => {
           const who = x.namespace ? `${x.namespace}/${x.pod}` : 'node/unresolved';
@@ -178,7 +178,7 @@ export default function L7() {
     <section className="card span3">
       <p className="eyebrow">CLEARTEXT HTTP/1</p><h2 className="card-title">Method + host only</h2>
       {(data?.http || []).length === 0 && <p className="empty-state">No cleartext HTTP/1 samples yet.</p>}
-      {(data?.http || []).length > 0 && <div className="datatable-scroll">
+      {(data?.http || []).length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>WORKLOAD</span><span>METHOD</span><span>HOST</span><span>REQUESTS</span><span>CGROUP</span></div>
         {(data?.http || []).map((x:any, i:number) => {
           const who = x.namespace ? `${x.namespace}/${x.pod}` : 'node/unresolved';
@@ -194,7 +194,7 @@ export default function L7() {
       <p className="eyebrow">HTTP/1 STATUS</p><h2 className="card-title">Status line at the start of the packet</h2>
       <p>Cleartext HTTP/1.0 and HTTP/1.1 only. A split status line, HTTP/2, and HTTP/3 are not counted. The reason phrase is not stored.</p>
       {(data?.httpStatus || []).length === 0 && <p className="empty-state">No HTTP/1 status lines yet.</p>}
-      {(data?.httpStatus || []).length > 0 && <div className="datatable-scroll">
+      {(data?.httpStatus || []).length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>WORKLOAD</span><span>STATUS</span><span>CLASS</span><span>COUNT</span><span>CGROUP</span></div>
         {(data?.httpStatus || []).map((x: any, i: number) => {
           const who = x.namespace ? `${x.namespace}/${x.pod}` : 'node/unresolved';
@@ -213,7 +213,7 @@ export default function L7() {
     <section className="card span3">
       <p className="eyebrow">SOCKET ATTEMPTS</p><h2 className="card-title">Exact destination counters</h2>
       {connections.length === 0 && <p className="empty-state">No socket attempt samples yet.</p>}
-      {connections.length > 0 && <div className="datatable-scroll">
+      {connections.length > 0 && <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
         <div className="datahead obs"><span>WORKLOAD</span><span>PROTO</span><span>REMOTE</span><span>ATTEMPTS</span><span>BLOCKED</span></div>
         {connections.map((x:any, i:number) => {
           const who = x.namespace ? `${x.namespace}/${x.pod}` : `cgroup ${x.cgroupId || 0}`;

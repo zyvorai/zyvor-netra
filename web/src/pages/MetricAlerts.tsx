@@ -121,64 +121,66 @@ export default function MetricAlerts() {
         </h2>
         {snap && snap.active.length === 0 && <p className="empty-state">Nothing raised. Every evaluated instance is clear.</p>}
         {snap && snap.active.length > 0 && (
-          <table className="metric-table">
-            <thead>
-              <tr>
-                <th>Status</th>
-                <th>Alert</th>
-                <th>Node</th>
-                <th>Chart</th>
-                <th className="num">Value</th>
-                <th>For</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {snap.active.map((a) => (
-                <tr key={a.id}>
-                  <td>
-                    <span className={`metric-status ${a.status}`}>{a.status}</span>
-                  </td>
-                  <td>
-                    <b>{a.rule}</b>
-                    {a.info && <div className="kit-caption">{a.info}</div>}
-                    {a.silenced && <div className="kit-caption">silenced</div>}
-                    {a.acked && <div className="kit-caption">acknowledged{a.ackedBy ? ` by ${a.ackedBy}` : ''}</div>}
-                  </td>
-                  <td>{a.node}</td>
-                  <td>
-                    {a.chart}
-                    {a.dimension ? ` / ${a.dimension}` : ''}
-                  </td>
-                  <td className="num">{formatValue(a.value, a.units)}</td>
-                  <td>{since(a.since)}</td>
-                  <td>
-                    <button type="button" className="btn-secondary" onClick={() => openMetrics(a)}>
-                      {a.class === 'anomaly' ? 'Anomalies' : 'Metrics'}
-                    </button>
-                    {!a.acked && (
-                      <button type="button" className="btn-secondary" onClick={() => ack(a)}>
-                        Ack
-                      </button>
-                    )}
-                    {!a.silenced && (
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        onClick={() => {
-                          setSilenceFor(a);
-                          setSilenceDur('2h');
-                          setSilenceComment('silenced from the dashboard');
-                        }}
-                      >
-                        Silence
-                      </button>
-                    )}
-                  </td>
+          <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
+            <table className="metric-table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Alert</th>
+                  <th>Node</th>
+                  <th>Chart</th>
+                  <th className="num">Value</th>
+                  <th>For</th>
+                  <th />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {snap.active.map((a) => (
+                  <tr key={a.id}>
+                    <td>
+                      <span className={`metric-status ${a.status}`}>{a.status}</span>
+                    </td>
+                    <td>
+                      <b>{a.rule}</b>
+                      {a.info && <div className="kit-caption">{a.info}</div>}
+                      {a.silenced && <div className="kit-caption">silenced</div>}
+                      {a.acked && <div className="kit-caption">acknowledged{a.ackedBy ? ` by ${a.ackedBy}` : ''}</div>}
+                    </td>
+                    <td>{a.node}</td>
+                    <td>
+                      {a.chart}
+                      {a.dimension ? ` / ${a.dimension}` : ''}
+                    </td>
+                    <td className="num">{formatValue(a.value, a.units)}</td>
+                    <td>{since(a.since)}</td>
+                    <td>
+                      <button type="button" className="btn-secondary" onClick={() => openMetrics(a)}>
+                        {a.class === 'anomaly' ? 'Anomalies' : 'Metrics'}
+                      </button>
+                      {!a.acked && (
+                        <button type="button" className="btn-secondary" onClick={() => ack(a)}>
+                          Ack
+                        </button>
+                      )}
+                      {!a.silenced && (
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={() => {
+                            setSilenceFor(a);
+                            setSilenceDur('2h');
+                            setSilenceComment('silenced from the dashboard');
+                          }}
+                        >
+                          Silence
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
         {silenceFor && (
           <div className="filters" style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -213,128 +215,136 @@ export default function MetricAlerts() {
         <section className="card span3">
           <p className="eyebrow">EXPORTERS</p>
           <h2 className="card-title">Remote-write / OTLP / Graphite sinks</h2>
-          <table className="metric-table">
-            <thead>
-              <tr>
-                <th>Sink</th>
-                <th className="num">Sent</th>
-                <th className="num">Failures</th>
-                <th>Last send</th>
-                <th>Last error</th>
-              </tr>
-            </thead>
-            <tbody>
-              {exporters.map((e) => (
-                <tr key={e.sink}>
-                  <td>{e.sink}</td>
-                  <td className="num">{e.pointsSent ?? 0}</td>
-                  <td className="num">{e.failures ?? 0}</td>
-                  <td>{e.lastSend ? new Date(e.lastSend).toLocaleString() : '—'}</td>
-                  <td>{e.lastError || '—'}</td>
+          <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
+            <table className="metric-table">
+              <thead>
+                <tr>
+                  <th>Sink</th>
+                  <th className="num">Sent</th>
+                  <th className="num">Failures</th>
+                  <th>Last send</th>
+                  <th>Last error</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {exporters.map((e) => (
+                  <tr key={e.sink}>
+                    <td>{e.sink}</td>
+                    <td className="num">{e.pointsSent ?? 0}</td>
+                    <td className="num">{e.failures ?? 0}</td>
+                    <td>{e.lastSend ? new Date(e.lastSend).toLocaleString() : '—'}</td>
+                    <td>{e.lastError || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       )}
       {snap && snap.silences.length > 0 && (
         <section className="card span3">
           <p className="eyebrow">SILENCES</p>
-          <table className="metric-table">
-            <thead>
-              <tr>
-                <th>Rule</th>
-                <th>Node</th>
-                <th>Chart</th>
-                <th>Until</th>
-                <th>By</th>
-                <th>Comment</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {snap.silences.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.rule || '*'}</td>
-                  <td>{s.node || '*'}</td>
-                  <td>{s.chart || '*'}</td>
-                  <td>{new Date(s.until).toLocaleString()}</td>
-                  <td>{s.createdBy}</td>
-                  <td>{s.comment}</td>
-                  <td>
-                    <button type="button" className="btn-secondary" onClick={() => unsilence(s)}>
-                      Remove
-                    </button>
-                  </td>
+          <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
+            <table className="metric-table">
+              <thead>
+                <tr>
+                  <th>Rule</th>
+                  <th>Node</th>
+                  <th>Chart</th>
+                  <th>Until</th>
+                  <th>By</th>
+                  <th>Comment</th>
+                  <th />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {snap.silences.map((s) => (
+                  <tr key={s.id}>
+                    <td>{s.rule || '*'}</td>
+                    <td>{s.node || '*'}</td>
+                    <td>{s.chart || '*'}</td>
+                    <td>{new Date(s.until).toLocaleString()}</td>
+                    <td>{s.createdBy}</td>
+                    <td>{s.comment}</td>
+                    <td>
+                      <button type="button" className="btn-secondary" onClick={() => unsilence(s)}>
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       )}
       <section className="card span3">
         <p className="eyebrow">HISTORY</p>
-        <table className="metric-table">
-          <thead>
-            <tr>
-              <th>When</th>
-              <th>Alert</th>
-              <th>Node</th>
-              <th>Chart</th>
-              <th>Change</th>
-              <th className="num">Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(snap?.history || []).map((h, i) => (
-              <tr key={`${h.id}-${h.time}-${i}`}>
-                <td>{new Date(h.time).toLocaleTimeString()}</td>
-                <td>{h.rule}</td>
-                <td>{h.node}</td>
-                <td>{h.chart}</td>
-                <td>
-                  <span className={`metric-status ${h.from}`}>{h.from}</span> → <span className={`metric-status ${h.to}`}>{h.to}</span>
-                  {h.silenced && <span className="kit-caption"> (silenced)</span>}
-                </td>
-                <td className="num">{formatValue(h.value, h.units)}</td>
+        <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
+          <table className="metric-table">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Alert</th>
+                <th>Node</th>
+                <th>Chart</th>
+                <th>Change</th>
+                <th className="num">Value</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {(snap?.history || []).map((h, i) => (
+                <tr key={`${h.id}-${h.time}-${i}`}>
+                  <td>{new Date(h.time).toLocaleTimeString()}</td>
+                  <td>{h.rule}</td>
+                  <td>{h.node}</td>
+                  <td>{h.chart}</td>
+                  <td>
+                    <span className={`metric-status ${h.from}`}>{h.from}</span> → <span className={`metric-status ${h.to}`}>{h.to}</span>
+                    {h.silenced && <span className="kit-caption"> (silenced)</span>}
+                  </td>
+                  <td className="num">{formatValue(h.value, h.units)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
       <section className="card span3">
         <details>
           <summary>
             {snap?.rules.length || 0} rules loaded (built-in pack plus NETRA_METRICALERT_DIR)
           </summary>
-          <table className="metric-table">
-            <thead>
-              <tr>
-                <th>Rule</th>
-                <th>Context</th>
-                <th>Lookup</th>
-                <th>Warn</th>
-                <th>Crit</th>
-                <th>Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(snap?.rules || []).map((r) => (
-                <tr key={r.name} title={r.info}>
-                  <td>{r.name}</td>
-                  <td>{r.context}</td>
-                  <td>{r.lookup}</td>
-                  <td>
-                    <code>{r.warn}</code>
-                  </td>
-                  <td>
-                    <code>{r.crit}</code>
-                  </td>
-                  <td>{r.source}</td>
+          <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
+            <table className="metric-table">
+              <thead>
+                <tr>
+                  <th>Rule</th>
+                  <th>Context</th>
+                  <th>Lookup</th>
+                  <th>Warn</th>
+                  <th>Crit</th>
+                  <th>Source</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {(snap?.rules || []).map((r) => (
+                  <tr key={r.name} title={r.info}>
+                    <td>{r.name}</td>
+                    <td>{r.context}</td>
+                    <td>{r.lookup}</td>
+                    <td>
+                      <code>{r.warn}</code>
+                    </td>
+                    <td>
+                      <code>{r.crit}</code>
+                    </td>
+                    <td>{r.source}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </details>
       </section>
     </div>

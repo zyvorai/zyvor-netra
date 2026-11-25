@@ -111,83 +111,87 @@ export default function MetricAnomalies() {
       </section>
       <section className="card span3">
         <p className="eyebrow">NODES</p>
-        <table className="metric-table">
-          <thead>
-            <tr>
-              <th>Node</th>
-              <th>Anomaly rate</th>
-              <th className="num">Anomalous / scored dimensions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(data?.nodes || []).map((n) => (
-              <tr key={n.node}>
-                <td>{n.node}</td>
-                <td>
-                  <div className="metric-bar" title={formatValue(n.anomalyRate, '%')}>
-                    <span style={{ width: `${Math.min(100, n.anomalyRate * 5)}%` }} />
-                  </div>
-                  {formatValue(n.anomalyRate, '%')}
-                </td>
-                <td className="num">
-                  {n.anomalousDimensions} / {n.dimensions}
-                </td>
+        <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
+          <table className="metric-table">
+            <thead>
+              <tr>
+                <th>Node</th>
+                <th>Anomaly rate</th>
+                <th className="num">Anomalous / scored dimensions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {(data?.nodes || []).map((n) => (
+                <tr key={n.node}>
+                  <td>{n.node}</td>
+                  <td>
+                    <div className="metric-bar" title={formatValue(n.anomalyRate, '%')}>
+                      <span style={{ width: `${Math.min(100, n.anomalyRate * 5)}%` }} />
+                    </div>
+                    {formatValue(n.anomalyRate, '%')}
+                  </td>
+                  <td className="num">
+                    {n.anomalousDimensions} / {n.dimensions}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {data && !(data.nodes || []).length && <p className="empty-state">No scored metrics in this window yet.</p>}
       </section>
       <section className="card span3">
         <p className="eyebrow">{hl ? 'WHAT CHANGED IN THE HIGHLIGHT' : 'MOST ANOMALOUS'}</p>
         <h2 className="card-title">{hl ? 'Ranked by distribution shift versus the preceding baseline (Kolmogorov–Smirnov)' : 'Dimensions ranked by anomaly rate'}</h2>
-        <table className="metric-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Node</th>
-              <th>Chart</th>
-              <th>Dimension</th>
-              <th className="num">Anomaly rate</th>
-              <th className="num">Score</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={`${r.node}|${r.chart}|${r.dimension}`} className="clickable" onClick={() => setPick(r)}>
-                <td>{i + 1}</td>
-                <td>{r.node}</td>
-                <td>{r.chart}</td>
-                <td>{r.dimension}</td>
-                <td className="num">{formatValue(r.anomalyRate, '%')}</td>
-                <td className="num">{r.score.toFixed(2)}</td>
-                <td>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('metrics', { node: r.node, query: r.context });
-                    }}
-                  >
-                    Metrics
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('metric-alerts', { node: r.node, query: r.context });
-                    }}
-                  >
-                    Alerts
-                  </button>
-                </td>
+        <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
+          <table className="metric-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Node</th>
+                <th>Chart</th>
+                <th>Dimension</th>
+                <th className="num">Anomaly rate</th>
+                <th className="num">Score</th>
+                <th />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={`${r.node}|${r.chart}|${r.dimension}`} className="clickable" onClick={() => setPick(r)}>
+                  <td>{i + 1}</td>
+                  <td>{r.node}</td>
+                  <td>{r.chart}</td>
+                  <td>{r.dimension}</td>
+                  <td className="num">{formatValue(r.anomalyRate, '%')}</td>
+                  <td className="num">{r.score.toFixed(2)}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate('metrics', { node: r.node, query: r.context });
+                      }}
+                    >
+                      Metrics
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate('metric-alerts', { node: r.node, query: r.context });
+                      }}
+                    >
+                      Alerts
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {data && rows.length === 0 && <p className="empty-state">{hl ? 'Nothing changed noticeably in that window.' : 'No anomalous dimensions in this window.'}</p>}
       </section>
       {pick && (

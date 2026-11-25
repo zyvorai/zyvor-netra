@@ -75,7 +75,7 @@ export default function SecurityReview() {
         {feed.refreshError && <p className="warning">{feed.refreshError}</p>}
         {feed.lastRefresh && <p>Last refresh attempt: {new Date(feed.lastRefresh).toLocaleString()}</p>}
         <p>Expiry stops new matches and feed applications. Already imported denies keep their normal enforcement lease. Refresh and rollback never apply rules.</p>
-        <div className="table-wrap"><table><thead><tr><th>Revision</th><th>Updated</th><th>Entries</th><th>Source / note</th></tr></thead><tbody>
+        <div className="table-wrap" tabIndex={0} role="group" aria-label="Scrollable table"><table><thead><tr><th>Revision</th><th>Updated</th><th>Entries</th><th>Source / note</th></tr></thead><tbody>
           {[...(history?.revisions || [])].reverse().map(r => <tr key={r.revision}><td>{r.revision}</td><td>{new Date(r.updatedAt).toLocaleString()}</td><td>{r.entries?.length || 0}</td><td>{r.source} {r.note}</td></tr>)}
         </tbody></table></div>
         <div className="filters" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.75rem', alignItems: 'center' }}>
@@ -102,7 +102,7 @@ export default function SecurityReview() {
       <p className="eyebrow">INTEL HITS</p>
       <h2 className="card-title">Live feed matches against agent metadata</h2>
       <p>{hits?.note || 'Observe-only match of the active feed. Never auto-enforces.'}</p>
-      <div className="table-wrap"><table><thead><tr><th>Kind</th><th>Value</th><th>Workload</th><th>Node</th><th className="num">Packets</th><th className="num">Blocked</th></tr></thead><tbody>
+      <div className="table-wrap" tabIndex={0} role="group" aria-label="Scrollable table"><table><thead><tr><th>Kind</th><th>Value</th><th>Workload</th><th>Node</th><th className="num">Packets</th><th className="num">Blocked</th></tr></thead><tbody>
         {(hits?.match?.hits || []).map((h, i) => (
           <tr key={`${h.value}-${h.pod}-${i}`}>
             <td>{h.kind || h.type || '—'}</td>
@@ -146,7 +146,7 @@ export default function SecurityReview() {
       >
         Preview feed
       </button>
-      {previewOut && <pre style={{ marginTop: '0.75rem', maxHeight: '16rem', overflow: 'auto' }}>{previewOut}</pre>}
+      {previewOut && <pre tabIndex={0} style={{ marginTop: '0.75rem', maxHeight: '16rem', overflow: 'auto' }}>{previewOut}</pre>}
     </section>
     <section className="card span3">
       <p className="eyebrow">DENY RULE REVIEW</p><h2 className="card-title">Equivalent and covered predicates</h2>
@@ -154,10 +154,10 @@ export default function SecurityReview() {
       {review?.truncated && <p className="warning">Review capped. Inspect remaining configuration separately.</p>}
       {review && <>
         {!review.suggestions.length && <p className="empty-state">No predicate suggestions in this review.</p>}
-        <div className="table-wrap"><table><thead><tr><th>Kind</th><th>Rule</th><th>Related rule</th></tr></thead><tbody>
+        <div className="table-wrap" tabIndex={0} role="group" aria-label="Scrollable table"><table><thead><tr><th>Kind</th><th>Rule</th><th>Related rule</th></tr></thead><tbody>
           {review.suggestions.map((s,i) => <tr key={`${s.rule}:${s.relatedRule}:${i}`} title={s.message}><td>{s.kind}</td><td>{s.rule}</td><td>{s.relatedRule}</td></tr>)}
         </tbody></table></div>
-        <div className="table-wrap"><table><thead><tr><th>Rule ID</th><th>Predicate</th><th>Direction</th><th>Protocol</th><th>Matching sampled events</th></tr></thead><tbody>
+        <div className="table-wrap" tabIndex={0} role="group" aria-label="Scrollable table"><table><thead><tr><th>Rule ID</th><th>Predicate</th><th>Direction</th><th>Protocol</th><th>Matching sampled events</th></tr></thead><tbody>
           {review.rules.map(r => <tr key={r.id}><td>{r.id}</td><td>{r.type}: {r.value}{r.synOnly ? ' (TCP SYN restriction)' : ''}</td><td>{r.direction}</td><td>{r.protocol}</td><td>{r.matchingEvents}</td></tr>)}
         </tbody></table></div>
       </>}

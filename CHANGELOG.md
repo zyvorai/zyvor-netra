@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Console redesign.** The web console uses neutral light and dark surfaces, one blue accent, larger tight page titles with more space, flat cards, pill buttons and a translucent navigation bar (two rows on narrow screens). Per-page colour tints and glows are gone. System fonts only. Presentation only: no API, permission or behaviour change.
+- **Appearance menu.** Light, Dark or System, in the navigation bar and on the sign-in page. System is now the default and follows the operating system live; a previously chosen dark theme is kept. The theme is applied before first paint by a served script (`/theme-init.js`), because the controller's `script-src 'self'` policy blocked the earlier inline one.
+- **Console on phones.** The navigation menus open on narrow screens (the panel was masked away), and tables, the congestion map, ranked lists and long error messages scroll or wrap instead of being cut off at the right edge.
+- **Console accessibility.** WCAG AA text contrast in both themes, an always-visible focus ring, keyboard access to every scrolling table, log and code block, the Surfaces board pickers exposed as toggle buttons, and reduced motion honoured everywhere.
+
 ## 0.33.0 — 2026-11-25
 
 - **Upgrade note.** The controller's ClusterRole gains read-only `get` and `list` on `networking.k8s.io` `networkpolicies` (Helm chart and `deploy/rbac.yaml`) for the new coverage report. Apply the chart or manifest from this release, not only the new image tag; without the permission that one endpoint answers 502 and everything else works as before.

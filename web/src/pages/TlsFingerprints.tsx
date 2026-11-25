@@ -165,39 +165,41 @@ export default function TlsFingerprints() {
       {tab === 'risk' ? (
         <section className="card span3">
           <p className="eyebrow">JA3 RISK</p>
-          <table className="metric-table">
-            <thead>
-              <tr>
-                <th>Severity</th>
-                <th>SNI</th>
-                <th>JA3</th>
-                <th>JA4</th>
-                <th>Node</th>
-                <th className="num">Count</th>
-                <th>Reasons</th>
-              </tr>
-            </thead>
-            <tbody>
-              {riskRows.map((r, i) => (
-                <tr key={`${r.ja3}-${r.node}-${i}`}>
-                  <td>
-                    <span className={`severity-badge ${r.severity || 'warning'}`}>{r.severity || 'info'}</span>
-                    {r.ech ? <span className="kit-caption"> ECH</span> : null}
-                  </td>
-                  <td>{r.sni || '—'}</td>
-                  <td>
-                    <code title={r.ja3}>{r.ja3 ? `${r.ja3.slice(0, 16)}…` : '—'}</code>
-                  </td>
-                  <td>
-                    <code title={r.ja4}>{r.ja4 ? `${r.ja4.slice(0, 18)}…` : '—'}</code>
-                  </td>
-                  <td>{r.node || '—'}</td>
-                  <td className="num">{r.count || 0}</td>
-                  <td>{(r.reasons || []).join('; ')}</td>
+          <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
+            <table className="metric-table">
+              <thead>
+                <tr>
+                  <th>Severity</th>
+                  <th>SNI</th>
+                  <th>JA3</th>
+                  <th>JA4</th>
+                  <th>Node</th>
+                  <th className="num">Count</th>
+                  <th>Reasons</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {riskRows.map((r, i) => (
+                  <tr key={`${r.ja3}-${r.node}-${i}`}>
+                    <td>
+                      <span className={`severity-badge ${r.severity || 'warning'}`}>{r.severity || 'info'}</span>
+                      {r.ech ? <span className="kit-caption"> ECH</span> : null}
+                    </td>
+                    <td>{r.sni || '—'}</td>
+                    <td>
+                      <code title={r.ja3}>{r.ja3 ? `${r.ja3.slice(0, 16)}…` : '—'}</code>
+                    </td>
+                    <td>
+                      <code title={r.ja4}>{r.ja4 ? `${r.ja4.slice(0, 18)}…` : '—'}</code>
+                    </td>
+                    <td>{r.node || '—'}</td>
+                    <td className="num">{r.count || 0}</td>
+                    <td>{(r.reasons || []).join('; ')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {riskRows.length === 0 && <p className="empty-state">No risk-ranked fingerprints match this filter.</p>}
           {riskRows[0] && (
             <ExplainFinding
@@ -212,37 +214,39 @@ export default function TlsFingerprints() {
       ) : (
         <section className="card span3">
           <p className="eyebrow">ALL FINGERPRINTS</p>
-          <table className="metric-table">
-            <thead>
-              <tr>
-                <th>SNI</th>
-                <th>JA3</th>
-                <th>JA4</th>
-                <th>Node</th>
-                <th className="num">Count</th>
-                <th>Last seen</th>
-              </tr>
-            </thead>
-            <tbody>
-              {allRows.map((r, i) => (
-                <tr key={`${r.ja3}-${r.node}-${i}`}>
-                  <td>
-                    {r.sni || '—'}
-                    {r.ech ? ' · ECH' : ''}
-                  </td>
-                  <td>
-                    <code title={r.ja3}>{r.ja3 ? `${r.ja3.slice(0, 16)}…` : '—'}</code>
-                  </td>
-                  <td>
-                    <code title={r.ja4}>{r.ja4 ? `${r.ja4.slice(0, 18)}…` : '—'}</code>
-                  </td>
-                  <td>{r.node || '—'}</td>
-                  <td className="num">{r.count || 0}</td>
-                  <td>{r.lastSeen ? new Date(r.lastSeen).toLocaleString() : '—'}</td>
+          <div className="datatable-scroll" tabIndex={0} role="group" aria-label="Scrollable table">
+            <table className="metric-table">
+              <thead>
+                <tr>
+                  <th>SNI</th>
+                  <th>JA3</th>
+                  <th>JA4</th>
+                  <th>Node</th>
+                  <th className="num">Count</th>
+                  <th>Last seen</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {allRows.map((r, i) => (
+                  <tr key={`${r.ja3}-${r.node}-${i}`}>
+                    <td>
+                      {r.sni || '—'}
+                      {r.ech ? ' · ECH' : ''}
+                    </td>
+                    <td>
+                      <code title={r.ja3}>{r.ja3 ? `${r.ja3.slice(0, 16)}…` : '—'}</code>
+                    </td>
+                    <td>
+                      <code title={r.ja4}>{r.ja4 ? `${r.ja4.slice(0, 18)}…` : '—'}</code>
+                    </td>
+                    <td>{r.node || '—'}</td>
+                    <td className="num">{r.count || 0}</td>
+                    <td>{r.lastSeen ? new Date(r.lastSeen).toLocaleString() : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {allRows.length === 0 && <p className="empty-state">No fingerprints observed yet.</p>}
         </section>
       )}

@@ -13,7 +13,7 @@
 .metric-chart__tip {
   position: absolute; top: 6px; z-index: 5; min-width: 170px; max-width: 260px; padding: 6px 8px;
   background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12); font-size: 11px; pointer-events: none;
+  box-shadow: var(--shadow-2); font-size: 11px; pointer-events: none;
 }
 .metric-chart__tip-time { color: var(--text-secondary); margin-bottom: 4px; }
 .metric-chart__tip-row { display: flex; align-items: center; gap: 6px; line-height: 1.5; }
@@ -26,46 +26,42 @@
   font-size: 11px; color: var(--text-secondary); cursor: pointer; border-radius: 4px;
 }
 .metric-chart__legend button:hover { background: var(--hover-fill); }
-.metric-chart__legend button.off { opacity: 0.4; }
+.metric-chart__legend button.off { text-decoration: line-through; }
+.metric-chart__legend button.off i { opacity: 0.35; }
 .metric-chart__legend b { font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
 .metric-chart__more { font-size: 11px; color: var(--text-tertiary); }
 
 .metrics-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: start; }
-@media (max-width: 900px) { .metrics-layout { grid-template-columns: 1fr; } }
 .metrics-side {
-  position: sticky; top: 72px; max-height: calc(100vh - 96px); overflow: auto; padding: 12px;
-  border: 1px solid color-mix(in srgb, var(--page-accent, var(--chart-1)) 22%, var(--hairline-1));
-  border-radius: var(--radius-xl);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--page-accent, var(--chart-1)) 8%, var(--surface-1)), var(--surface-1));
+  position: sticky; top: calc(var(--nav-h) + 20px); max-height: calc(100vh - var(--nav-h) - 44px); overflow: auto; padding: 14px;
 }
-.metrics-side h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--page-accent-text, var(--text-tertiary)); margin: 10px 0 4px; }
+.metrics-side h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); margin: 10px 0 4px; }
 .metrics-side button {
-  display: flex; justify-content: space-between; width: 100%; padding: 4px 8px; border: 0; border-radius: 6px;
+  display: flex; justify-content: space-between; width: 100%; padding: 6px 10px; border: 0; border-radius: var(--radius-sm); min-height: 32px;
   background: none; color: var(--text-secondary); font-size: 13px; text-align: left; cursor: pointer;
 }
 .metrics-side button:hover { background: var(--hover-fill); }
 .metrics-side button.active {
-  background: color-mix(in srgb, var(--page-accent, var(--chart-1)) 16%, transparent);
-  color: var(--page-accent-text, var(--text-primary));
+  background: var(--hover-fill-strong);
+  color: var(--text-primary);
   font-weight: 600;
 }
 .metrics-side button small { color: var(--text-tertiary); font-weight: 400; }
-.metrics-charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 12px; }
+.metrics-charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr)); gap: 12px; min-width: 0; }
 .metrics-charts .card { padding: 12px; margin: 0; }
 .metrics-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
-.metrics-toolbar select, .metrics-toolbar input { padding: 5px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-elevated-2); color: var(--text-primary); font-size: 13px; }
-.metrics-seg { display: inline-flex; border: 1px solid color-mix(in srgb, var(--page-accent, var(--border)) 35%, var(--border)); border-radius: 8px; overflow: hidden; }
-.metrics-seg button { padding: 4px 10px; border: 0; background: none; color: var(--text-secondary); font-size: 12px; cursor: pointer; }
-.metrics-seg button.active { background: var(--page-accent, var(--apple-blue)); color: #fff; }
+.metrics-toolbar select, .metrics-toolbar input { padding: 5px 10px; min-height: 36px; border-radius: var(--radius-sm); border: 1px solid var(--border-input); background: var(--bg-elevated); color: var(--text-primary); font-size: 13px; }
+.metrics-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; background: var(--hover-fill); border-radius: var(--radius-pill); }
+.metrics-seg button { padding: 4px 12px; min-height: 30px; border: 0; border-radius: var(--radius-pill); background: none; color: var(--text-secondary); font-size: 12px; cursor: pointer; }
+.metrics-seg button.active { background: var(--apple-blue); color: #fff; }
 .metrics-live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
 .metrics-live::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--text-tertiary); }
-.metrics-live.on::before { background: var(--accent-green); box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.2); }
+.metrics-live.on::before { background: var(--accent-green); box-shadow: 0 0 0 3px var(--success-bg); }
 
 .metric-status { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
-.metric-status.critical { background: linear-gradient(135deg, rgba(255, 59, 48, 0.18), rgba(255, 55, 95, 0.14)); color: var(--danger); }
-.metric-status.warning { background: linear-gradient(135deg, rgba(255, 159, 10, 0.20), rgba(255, 214, 10, 0.12)); color: var(--accent-amber-text); }
-.metric-status.clear { background: linear-gradient(135deg, rgba(52, 199, 89, 0.18), rgba(50, 173, 230, 0.10)); color: var(--accent-green-text); }
+.metric-status.critical { background: var(--danger-bg); color: var(--danger); }
+.metric-status.warning { background: var(--warning-bg); color: var(--accent-amber-text); }
+.metric-status.clear { background: var(--success-bg); color: var(--accent-green-text); }
 .metric-status.undefined { background: var(--hover-fill-strong); color: var(--text-secondary); }
 .metric-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .metric-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--border); }
@@ -86,3 +82,4 @@
 .metric-evidence table { width: 100%; font-size: 12px; }
 .metric-evidence__links { margin: 6px 0 0; padding-left: 16px; color: var(--text-secondary); }
 .metric-evidence__links code { font-size: 11px; }
+@media (max-width: 900px) { .metrics-layout { grid-template-columns: minmax(0, 1fr); } .metrics-side { position: static; max-height: 320px; } }
