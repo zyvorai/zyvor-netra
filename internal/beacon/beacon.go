@@ -294,19 +294,15 @@ func less(a, b Candidate) bool {
 		fmt.Sprint(b.Namespace, "|", b.Workload, "|", b.Pod, "|", b.Node, "|", b.Peer, "|", b.Port, "|", b.Protocol)
 }
 
-type event struct {
-	at    time.Time
-	bytes uint64
-}
-
-// bursts joins samples less than burstGap apart into one event.
-func bursts(in []sample) []event {
+// bursts joins samples less than burstGap apart into one event, which keeps
+// the first sample's time and the summed bytes.
+func bursts(in []sample) []sample {
 	sort.Slice(in, func(i, j int) bool { return in[i].at.Before(in[j].at) })
-	var out []event
+	var out []sample
 	var last time.Time
 	for _, s := range in {
 		if len(out) == 0 || s.at.Sub(last) > burstGap {
-			out = append(out, event{s.at, s.bytes})
+			out = append(out, s)
 		} else {
 			out[len(out)-1].bytes += s.bytes
 		}
