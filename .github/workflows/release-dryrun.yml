@@ -35,6 +35,34 @@ jobs:
         tag="v${want}"
         [ "${tag#v}" = "$want" ]
         echo "a release of ${tag} would pass the tag check"
+  release-actions:
+    # Every action release.yml uses, resolved before a tag does it: a reference
+    # that does not exist fails here, in the pull request. Keep the versions equal
+    # to release.yml (checked below).
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v7
+    - name: The dry run references the same actions as the release
+      run: |
+        refs=$(sed -n 's/^ *-\{0,1\} *uses: *\([^ ]*\).*/\1/p' .github/workflows/release.yml | sort -u)
+        [ -n "$refs" ] || { echo "found no actions in release.yml" >&2; exit 1; }
+        missing=0
+        while read -r ref; do
+          grep -qF "uses: ${ref}" .github/workflows/release-dryrun.yml || { echo "release.yml uses ${ref}, the dry run does not" >&2; missing=1; }
+        done <<<"$refs"
+        exit "$missing"
+    - uses: docker/setup-qemu-action@v4
+    - uses: docker/setup-buildx-action@v4
+    - uses: docker/metadata-action@v6
+      with:
+        images: ghcr.io/zyvorai/netra
+    - uses: docker/login-action@v4
+      # Resolved with the job and never run: the dry run holds no registry credential.
+      if: github.event_name == 'never'
+    - uses: sigstore/cosign-installer@v4.1.4
+    - name: cosign runs
+      run: cosign version
   images:
     runs-on: ubuntu-latest
     timeout-minutes: 30

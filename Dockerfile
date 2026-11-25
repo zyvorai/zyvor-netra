@@ -21,5 +21,5 @@ FROM gcr.io/distroless/static-debian13:nonroot
 COPY --from=go /out/netrad /netrad
 COPY --from=web /src/web/dist /web
 ENV NETRA_WEB_DIR=/web
-EXPOSE 8080
+EXPOSE 30870
 ENTRYPOINT ["/netrad"]
